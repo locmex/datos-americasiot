@@ -1,0 +1,14 @@
+[build]
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA fallback. Con createHashRouter no es estrictamente necesario hoy
+# (las rutas viven en el fragmento #), pero protege si en el futuro
+# se migra a createBrowserRouter.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
