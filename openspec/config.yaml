@@ -1,0 +1,47 @@
+schema: spec-driven
+
+context: |
+  AmericasIoT — Plataforma de gestión de conectividad IoT (SIMs/dispositivos) con proxy a EMNIFY.
+  Frontend: Vite 6 + React 18 + TypeScript + Tailwind 4 + shadcn/ui (Radix) + MUI. HashRouter.
+  Dos áreas: portal Admin y portal Cliente. Gestor: pnpm.
+  Backend: 1 Edge Function Hono monolítica (make-server-ef736a01, ~2832 líneas, 55 rutas).
+  Persistencia: Supabase, 1 sola tabla key-value (kv_store_ef736a01, key→jsonb).
+  Auth: casera (SHA-256 + salt estático, sesiones por header X-IoT-Session). NO usa Supabase Auth.
+  Sin tsconfig.json, sin tests, sin linter, sin type-check. Build = vite build (esbuild, sin chequeo de tipos).
+
+strict_tdd: false
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected modules/packages
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns and conventions
+    - Use pnpm exclusively (never npm/yarn)
+  verify:
+    - No automated tests exist yet — verify manually until a runner is added
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas (large removals)
+
+testing:
+  strict_tdd: false
+  test_runner: none
+  unit: false
+  integration: false
+  e2e: false
+  coverage: false
+  linter: none
+  type_checker: none
+  formatter: none
+  note: "Proyecto sin infraestructura de testing ni tsconfig.json. Strict TDD no disponible."
