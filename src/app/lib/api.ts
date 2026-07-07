@@ -130,6 +130,30 @@ export const api = {
 
   // ACTIVITY
   getActivity: () => request("GET", "/activity"),
+
+  // PRODUCT CATALOG (admin)
+  getProducts: () => request("GET", "/products"),
+  createProduct: (data: { name: string; price: number; description?: string; currency?: string }) =>
+    request("POST", "/products", data),
+  updateProduct: (
+    id: string,
+    data: Partial<{ name: string; price: number; description: string; currency: string; status: "active" | "inactive" }>,
+  ) => request("PATCH", `/products/${id}`, data),
+  deleteProduct: (id: string) => request("DELETE", `/products/${id}`),
+
+  // ORDERS (admin)
+  getOrders: (filters?: { status?: string; client_id?: string }) => {
+    const qs = new URLSearchParams();
+    if (filters?.status) qs.set("status", filters.status);
+    if (filters?.client_id) qs.set("client_id", filters.client_id);
+    const q = qs.toString();
+    return request("GET", `/orders${q ? `?${q}` : ""}`);
+  },
+  getOrderById: (id: string) => request("GET", `/orders/${id}`),
+  updateOrderStatus: (
+    id: string,
+    data: { status: string; carrier?: string; tracking_number?: string; note?: string },
+  ) => request("PATCH", `/orders/${id}/status`, data),
 };
 
 // ── Client Portal API (uses portal_session_id) ───────────────────────────────
@@ -188,4 +212,15 @@ export const clientApi = {
     clientRequest("POST", `/client/devices/${endpointId}/reset-connectivity`, {}),
   renameDevice: (endpointId: string | number, name: string) =>
     clientRequest("PATCH", `/client/devices/${endpointId}/name`, { name }),
+
+  // PRODUCT CATALOG (client — active products only)
+  getProducts: () => clientRequest("GET", "/client/products"),
+
+  // ORDERS (client — scoped to own orders)
+  createOrder: (data: { items: { product_id: string; quantity: number }[]; notes?: string }) =>
+    clientRequest("POST", "/client/orders", data),
+  getMyOrders: () => clientRequest("GET", "/client/orders"),
+  markReceived: (id: string) => clientRequest("PATCH", `/client/orders/${id}/received`, {}),
+  cancelOrder: (id: string, note?: string) =>
+    clientRequest("PATCH", `/client/orders/${id}/cancel`, note ? { note } : {}),
 };

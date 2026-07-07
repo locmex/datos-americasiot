@@ -8,7 +8,10 @@ import InventoryPage from "./pages/InventoryPage";
 import ClientsPage from "./pages/ClientsPage";
 import AssignmentPage from "./pages/AssignmentPage";
 import DevicesPage from "./pages/DevicesPage";
+import AdminProductsPage from "./pages/AdminProductsPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
 import ClientPortalDashboard from "./pages/portal/ClientPortalDashboard";
+import ClientOrdersPage from "./pages/portal/ClientOrdersPage";
 
 function AdminRoot() {
   return (
@@ -38,6 +41,8 @@ export const router = createHashRouter([
           { path: "inventory",  Component: InventoryPage  },
           { path: "clients",    Component: ClientsPage    },
           { path: "assignment", Component: AssignmentPage },
+          { path: "products",   Component: AdminProductsPage },
+          { path: "orders",     Component: AdminOrdersPage   },
           { path: "*",          element: <Navigate to="/dashboard" replace /> },
         ],
       },
@@ -51,6 +56,7 @@ export const router = createHashRouter([
     Component: PortalRootLayout,
     children: [
       { index: true, Component: ClientPortalDashboard },
+      { path: "orders", Component: ClientOrdersPage },
       // Legacy /portal/login → back to unified login
       { path: "login", element: <Navigate to="/" replace /> },
       { path: "*",     element: <Navigate to="/portal" replace /> },

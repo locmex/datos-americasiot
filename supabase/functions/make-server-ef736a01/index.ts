@@ -2,6 +2,7 @@ import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
+import { db, buildTrackingUrl } from "./db.tsx";
 
 const app = new Hono();
 app.use("*", logger(console.log));
@@ -2316,6 +2317,42 @@ async function requireClientSession(c: any): Promise<any | null> {
   return session && session.role === "client" ? session : null;
 }
 
+// Helper: require admin session (403, not 401 — session may be valid but wrong role)
+async function requireAdmin(c: any): Promise<any | null> {
+  const session = await requireAuth(c);
+  return session && session.role === "admin" ? session : null;
+}
+
+// ────────────────────────────────────────────────
+// CLIENT ORDERS — state machine + history helper
+// ────────────────────────────────────────────────
+const ALLOWED: Record<string, string[]> = {
+  pending: ["preparing", "cancelled"],
+  preparing: ["shipped", "cancelled"],
+  shipped: ["delivered"],
+  delivered: [],
+  cancelled: [],
+};
+
+async function insertOrderHistory(
+  orderId: string,
+  fromStatus: string | null,
+  toStatus: string,
+  changedBy: string,
+  role: "admin" | "client",
+  note?: string | null,
+): Promise<void> {
+  const { error } = await db().from("order_status_history").insert({
+    order_id: orderId,
+    from_status: fromStatus,
+    to_status: toStatus,
+    changed_by: changedBy,
+    changed_by_role: role,
+    note: note ?? null,
+  });
+  if (error) throw new Error(error.message);
+}
+
 // ────────────────────────────────────────────────
 // CLIENT PORTAL — Get my SIMs (with emnify data)
 // ────────────────────────────────────���───────────
@@ -2827,6 +2864,376 @@ app.patch("/make-server-ef736a01/client/devices/:endpointId/name", async (c) => 
   } catch (e: any) {
     console.log("Client rename device error:", e);
     return c.json({ error: `Error renombrando dispositivo: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// ADMIN — PRODUCT CATALOG
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/products", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const { data, error } = await db().from("products").select("*").order("created_at", { ascending: false });
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ products: data ?? [] });
+  } catch (e: any) {
+    console.log("List products error:", e);
+    return c.json({ error: `Error listando productos: ${e.message}` }, 500);
+  }
+});
+
+app.post("/make-server-ef736a01/products", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const body = await c.req.json();
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const price = Number(body.price);
+
+    if (!name) return c.json({ error: "El nombre del producto es requerido" }, 400);
+    if (!isFinite(price) || price <= 0) return c.json({ error: "El precio debe ser un número mayor a 0" }, 400);
+
+    const { data, error } = await db().from("products").insert({
+      name,
+      description: body.description ?? null,
+      price,
+      currency: body.currency || "MXN",
+    }).select().single();
+
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ product: data }, 201);
+  } catch (e: any) {
+    console.log("Create product error:", e);
+    return c.json({ error: `Error creando producto: ${e.message}` }, 500);
+  }
+});
+
+app.patch("/make-server-ef736a01/products/:id", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const body = await c.req.json();
+
+    const { data: existing, error: findErr } = await db().from("products").select("id").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!existing) return c.json({ error: "Producto no encontrado" }, 404);
+
+    const update: Record<string, any> = { updated_at: new Date().toISOString() };
+
+    if (body.name !== undefined) {
+      const name = typeof body.name === "string" ? body.name.trim() : "";
+      if (!name) return c.json({ error: "El nombre del producto es requerido" }, 400);
+      update.name = name;
+    }
+    if (body.price !== undefined) {
+      const price = Number(body.price);
+      if (!isFinite(price) || price <= 0) return c.json({ error: "El precio debe ser un número mayor a 0" }, 400);
+      update.price = price;
+    }
+    if (body.description !== undefined) update.description = body.description;
+    if (body.currency !== undefined) update.currency = body.currency;
+    if (body.status !== undefined) {
+      if (body.status !== "active" && body.status !== "inactive") {
+        return c.json({ error: "status debe ser 'active' o 'inactive'" }, 400);
+      }
+      update.status = body.status;
+    }
+
+    const { data, error } = await db().from("products").update(update).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ product: data });
+  } catch (e: any) {
+    console.log("Update product error:", e);
+    return c.json({ error: `Error actualizando producto: ${e.message}` }, 500);
+  }
+});
+
+app.delete("/make-server-ef736a01/products/:id", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+
+    const { data: existing, error: findErr } = await db().from("products").select("id").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!existing) return c.json({ error: "Producto no encontrado" }, 404);
+
+    const { count, error: refErr } = await db()
+      .from("order_items")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", id);
+    if (refErr) return c.json({ error: refErr.message }, 500);
+    if ((count ?? 0) > 0) {
+      return c.json({ error: "No se puede eliminar: el producto está referenciado en pedidos existentes. Desactívalo en su lugar." }, 409);
+    }
+
+    const { error } = await db().from("products").delete().eq("id", id);
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ ok: true });
+  } catch (e: any) {
+    console.log("Delete product error:", e);
+    return c.json({ error: `Error eliminando producto: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// ADMIN — ORDERS
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/orders", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const status = c.req.query("status");
+    const clientId = c.req.query("client_id");
+
+    let query = db().from("orders").select("*, order_items(*)").order("created_at", { ascending: false });
+    if (status) query = query.eq("status", status);
+    if (clientId) query = query.eq("client_id", clientId);
+
+    const { data, error } = await query;
+    if (error) return c.json({ error: error.message }, 500);
+
+    const orders = (data ?? []).map((o: any) => ({ ...o, items: o.order_items, order_items: undefined }));
+    return c.json({ orders });
+  } catch (e: any) {
+    console.log("List orders error:", e);
+    return c.json({ error: `Error listando pedidos: ${e.message}` }, 500);
+  }
+});
+
+app.get("/make-server-ef736a01/orders/:id", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const { data: order, error: orderErr } = await db().from("orders").select("*").eq("id", id).maybeSingle();
+    if (orderErr) return c.json({ error: orderErr.message }, 500);
+    if (!order) return c.json({ error: "Pedido no encontrado" }, 404);
+
+    const { data: items, error: itemsErr } = await db().from("order_items").select("*").eq("order_id", id);
+    if (itemsErr) return c.json({ error: itemsErr.message }, 500);
+
+    const { data: history, error: histErr } = await db()
+      .from("order_status_history")
+      .select("*")
+      .eq("order_id", id)
+      .order("created_at", { ascending: true });
+    if (histErr) return c.json({ error: histErr.message }, 500);
+
+    return c.json({ order, items: items ?? [], history: history ?? [] });
+  } catch (e: any) {
+    console.log("Get order error:", e);
+    return c.json({ error: `Error obteniendo pedido: ${e.message}` }, 500);
+  }
+});
+
+app.patch("/make-server-ef736a01/orders/:id/status", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const nextStatus = body.status;
+
+    const { data: order, error: findErr } = await db().from("orders").select("*").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!order) return c.json({ error: "Pedido no encontrado" }, 404);
+
+    const allowedNext = ALLOWED[order.status] ?? [];
+    if (!allowedNext.includes(nextStatus)) {
+      return c.json({ error: `Transición inválida: '${order.status}' → '${nextStatus}'` }, 422);
+    }
+
+    const update: Record<string, any> = { status: nextStatus, updated_at: new Date().toISOString() };
+
+    if (nextStatus === "shipped") {
+      if (!body.carrier || !body.tracking_number) {
+        return c.json({ error: "Se requiere 'carrier' y 'tracking_number' para marcar como enviado" }, 422);
+      }
+      update.carrier = body.carrier;
+      update.tracking_number = body.tracking_number;
+      update.tracking_url = buildTrackingUrl(body.carrier, body.tracking_number);
+    }
+
+    const { data: updated, error } = await db().from("orders").update(update).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+
+    await insertOrderHistory(id, order.status, nextStatus, session.userId, "admin", body.note ?? null);
+
+    return c.json({ order: updated });
+  } catch (e: any) {
+    console.log("Update order status error:", e);
+    return c.json({ error: `Error actualizando estado del pedido: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// CLIENT — PRODUCT CATALOG (read-only, active only)
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/client/products", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const { data, error } = await db().from("products").select("*").eq("status", "active").order("name", { ascending: true });
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ products: data ?? [] });
+  } catch (e: any) {
+    console.log("Client list products error:", e);
+    return c.json({ error: `Error listando catálogo: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// CLIENT — ORDERS
+// ════════════════════════════════════════════════
+app.post("/make-server-ef736a01/client/orders", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const body = await c.req.json();
+    const items = Array.isArray(body.items) ? body.items : [];
+
+    if (items.length === 0) return c.json({ error: "El pedido debe tener al menos un producto" }, 400);
+    for (const item of items) {
+      const qty = Number(item?.quantity);
+      if (!item?.product_id || !isFinite(qty) || qty <= 0) {
+        return c.json({ error: "Cada producto debe tener una cantidad mayor a 0" }, 400);
+      }
+    }
+
+    const productIds = items.map((i: any) => i.product_id);
+    const { data: products, error: prodErr } = await db().from("products").select("*").in("id", productIds);
+    if (prodErr) return c.json({ error: prodErr.message }, 500);
+
+    const productMap = new Map((products ?? []).map((p: any) => [p.id, p]));
+    for (const item of items) {
+      const product = productMap.get(item.product_id);
+      if (!product) return c.json({ error: `Producto ${item.product_id} no existe` }, 400);
+      if (product.status !== "active") return c.json({ error: `Producto "${product.name}" ya no está disponible` }, 400);
+    }
+
+    const client = await kv.get(`client:${session.clientId}`);
+    const clientName = client?.name ?? "Cliente";
+
+    const { data: order, error: orderErr } = await db().from("orders").insert({
+      client_id: session.clientId,
+      client_name: clientName,
+      status: "pending",
+      notes: body.notes ?? null,
+    }).select().single();
+    if (orderErr) return c.json({ error: orderErr.message }, 500);
+
+    const itemRows = items.map((item: any) => {
+      const product = productMap.get(item.product_id);
+      return {
+        order_id: order.id,
+        product_id: item.product_id,
+        product_name: product.name,
+        unit_price: product.price,
+        quantity: Number(item.quantity),
+      };
+    });
+
+    const { data: insertedItems, error: itemsErr } = await db().from("order_items").insert(itemRows).select();
+    if (itemsErr) return c.json({ error: itemsErr.message }, 500);
+
+    await insertOrderHistory(order.id, null, "pending", session.clientId, "client");
+
+    return c.json({ order, items: insertedItems ?? [] }, 201);
+  } catch (e: any) {
+    console.log("Create client order error:", e);
+    return c.json({ error: `Error creando pedido: ${e.message}` }, 500);
+  }
+});
+
+app.get("/make-server-ef736a01/client/orders", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const { data, error } = await db()
+      .from("orders")
+      .select("*, order_items(*)")
+      .eq("client_id", session.clientId)
+      .order("created_at", { ascending: false });
+    if (error) return c.json({ error: error.message }, 500);
+
+    const orders = (data ?? []).map((o: any) => ({ ...o, items: o.order_items, order_items: undefined }));
+    return c.json({ orders });
+  } catch (e: any) {
+    console.log("List client orders error:", e);
+    return c.json({ error: `Error listando pedidos: ${e.message}` }, 500);
+  }
+});
+
+app.patch("/make-server-ef736a01/client/orders/:id/received", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    const { data: order, error: findErr } = await db().from("orders").select("*").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!order) return c.json({ error: "Pedido no encontrado" }, 404);
+    if (order.client_id !== session.clientId) return c.json({ error: "No autorizado para este pedido" }, 403);
+    if (order.status !== "shipped") {
+      return c.json({ error: "El pedido debe estar en tránsito ('shipped') para marcarse como recibido" }, 422);
+    }
+
+    const { data: updated, error } = await db().from("orders").update({
+      status: "delivered",
+      updated_at: new Date().toISOString(),
+    }).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+
+    await insertOrderHistory(id, order.status, "delivered", session.clientId, "client");
+
+    return c.json({ order: updated });
+  } catch (e: any) {
+    console.log("Mark order received error:", e);
+    return c.json({ error: `Error marcando pedido recibido: ${e.message}` }, 500);
+  }
+});
+
+app.patch("/make-server-ef736a01/client/orders/:id/cancel", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    const body = await c.req.json().catch(() => ({}));
+
+    const { data: order, error: findErr } = await db().from("orders").select("*").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!order) return c.json({ error: "Pedido no encontrado" }, 404);
+    if (order.client_id !== session.clientId) return c.json({ error: "No autorizado para este pedido" }, 403);
+    if (!ALLOWED[order.status]?.includes("cancelled")) {
+      return c.json({ error: `No se puede cancelar un pedido en estado '${order.status}'` }, 422);
+    }
+
+    const { data: updated, error } = await db().from("orders").update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    }).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+
+    await insertOrderHistory(id, order.status, "cancelled", session.clientId, "client", body?.note ?? null);
+
+    return c.json({ order: updated });
+  } catch (e: any) {
+    console.log("Cancel client order error:", e);
+    return c.json({ error: `Error cancelando pedido: ${e.message}` }, 500);
   }
 });
 

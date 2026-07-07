@@ -3,7 +3,7 @@ import { Outlet, Navigate, NavLink, useLocation } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "../../lib/auth-context";
 import { AmericasIoTLogo } from "../AmericasIoTLogo";
-import { Menu, LayoutDashboard, CreditCard, UserCheck, Users, Cpu } from "lucide-react";
+import { Menu, LayoutDashboard, CreditCard, UserCheck, Users, Cpu, Package, ClipboardList } from "lucide-react";
 
 const bottomNav = [
   { to: "/dashboard",  icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -11,6 +11,8 @@ const bottomNav = [
   { to: "/inventory",  icon: CreditCard,      label: "Inventario" },
   { to: "/assignment", icon: UserCheck,       label: "Asignación" },
   { to: "/clients",    icon: Users,           label: "Clientes" },
+  { to: "/orders",     icon: ClipboardList,   label: "Pedidos" },
+  { to: "/products",   icon: Package,         label: "Productos" },
 ];
 
 function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
@@ -21,6 +23,8 @@ function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
     "/inventory":  "Inventario SIMs",
     "/assignment": "Asignación",
     "/clients":    "Clientes",
+    "/orders":     "Pedidos",
+    "/products":   "Productos",
   };
   const title = labels[location.pathname] ?? "";
 
