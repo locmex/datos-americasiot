@@ -8,8 +8,11 @@ export type Period = { activatedAt: string; deactivatedAt: string | null };
 
 const MX = 6 * 3600e3; // offset ms (UTC-6)
 
-const startOfM = (y: number, m: number) => Date.UTC(y, m - 1, 1) + MX;
-const startNext = (y: number, m: number) => Date.UTC(m === 12 ? y + 1 : y, m % 12, 1) + MX;
+// Exportadas para reutilizar los límites de mes (zona MX) fuera de esta función pura
+// — p.ej. el filtro SQL de /billing/generate y el chequeo de "período futuro" — sin
+// reimplementar la aritmética de zona horaria en el edge.
+export const startOfM = (y: number, m: number) => Date.UTC(y, m - 1, 1) + MX;
+export const startNext = (y: number, m: number) => Date.UTC(m === 12 ? y + 1 : y, m % 12, 1) + MX;
 const mxDay = (iso: string) => new Date(Date.parse(iso) - MX).getUTCDate();
 
 function overlaps(p: Period, y: number, m: number): boolean {

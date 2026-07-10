@@ -5,8 +5,8 @@
 - [x] 1.1 Escribir `supabase/migrations/0002_billing.sql`: tablas `plans`, `sim_assignments`, `invoices`, `invoice_items`, `payments` (orden FK), constraints (`unique(invoice_id,iccid)`, `unique(client_id,period_year,period_month)`, partial unique open period), índices, RLS deny-all, `down`.
 - [x] 1.2 SQL de seed `plans` ("Plan único", $45.00 MXN) preparado — entregado al orquestador para ejecutar vía MCP (no incluido en el archivo de migración por instrucción explícita de la tarea).
 - [x] 1.3 SQL de backfill `sim_assignments` desde `kv_store_ef736a01` (238 SIMs, `activated_at='2026-01-01-06'`, idempotente `NOT EXISTS`) preparado — entregado al orquestador para ejecutar vía MCP. Confirmado: primer mes a facturar (junio 2026) es posterior a esa fecha.
-- [ ] 1.4 Aplicar `0002_billing.sql` vía MCP Supabase (`apply_migration`). Depende de: 1.1-1.3. — PENDIENTE (fuera de alcance de este batch; lo aplica el orquestador).
-- [ ] 1.5 Verificar con `list_tables`/`get_advisors` que las 5 tablas, constraints y RLS quedaron como en el diseño. Depende de: 1.4. — PENDIENTE.
+- [x] 1.4 Aplicar `0002_billing.sql` vía MCP Supabase (`apply_migration`). Depende de: 1.1-1.3. — Aplicada + seed ($45) + backfill (288 filas / 5 clientes).
+- [x] 1.5 Verificar con `list_tables`/`get_advisors` que las 5 tablas, constraints y RLS quedaron como en el diseño. Depende de: 1.4. — Verificado: 288 asignaciones, 0 vacíos, 0 duplicados, 0 sin plan.
 
 ## Phase 2: Testing setup + lógica pura (red de seguridad)
 
@@ -17,17 +17,17 @@
 
 ## Phase 3: Backend
 
-- [ ] 3.1 Implementar `supabase/functions/make-server-ef736a01/billing/sim-periods.ts` con `syncSimPeriod(iccid,{statusId?,actorId?})`. Depende de: 1.4, 2.3.
-- [ ] 3.2 Enganchar `syncSimPeriod` en `index.ts:597` y `:2509` (tras PATCH status EMNIFY OK), en try/catch que no rompe la request. Depende de: 3.1.
-- [ ] 3.3 Enganchar `syncSimPeriod` en `index.ts:1953`, `:1970`, `:1989` (tras assign/unassign/bulk, `kv.set` OK). Depende de: 3.1.
-- [ ] 3.4 CRUD `/plans` (`GET`/`POST`/`PATCH`, `requireAdmin`; 422 nombre vacío/precio≤0). Depende de: 1.4.
-- [ ] 3.5 `POST /billing/generate {year,month}`: agrupa `sim_assignments` por cliente/iccid, usa `computeProrationFactor`, upsert invoice draft, rebuild items si draft/skip si no; 422 período futuro. Depende de: 2.4, 3.1-3.3.
-- [ ] 3.6 `GET /invoices` (filtros status/client/year/month) y `GET /invoices/:id` (items+payments+balance). Depende de: 3.5.
-- [ ] 3.7 `POST /invoices/:id/issue` (draft→issued; 422 si no draft). Depende de: 3.5.
-- [ ] 3.8 `POST /invoices/:id/payments` (abono): valida status, sobrepago, fecha/método; recalcula `partially_paid`/`paid`. Depende de: 3.7.
-- [ ] 3.9 `POST /invoices/:id/cancel` (422 si `paid`). Depende de: 3.5.
-- [ ] 3.10 `GET /billing/reconcile` (read-only diff KV↔períodos). Depende de: 3.1.
-- [ ] 3.11 `GET /client/invoices` y `GET /client/invoices/:id` (`requireClientSession`; ajena → 403/404). Depende de: 3.6.
+- [x] 3.1 Implementar `supabase/functions/make-server-ef736a01/billing/sim-periods.ts` con `syncSimPeriod(iccid,{statusId?,actorId?})`. Depende de: 1.4, 2.3.
+- [x] 3.2 Enganchar `syncSimPeriod` en `index.ts:621` y `:2537` (tras PATCH status EMNIFY OK; línea-drift desde el design original 597/2509 por imports/helpers agregados), en try/catch que no rompe la request. Depende de: 3.1.
+- [x] 3.3 Enganchar `syncSimPeriod` en `index.ts:1981` (assign), `:1998` (unassign), `:2017` (bulk-assign) (tras `kv.set` OK; línea-drift desde el design original 1953/1970/1989). Depende de: 3.1.
+- [x] 3.4 CRUD `/plans` (`GET`/`POST`/`PATCH`/`DELETE`, `requireAdmin`; 422 nombre vacío/precio≤0; `DELETE` 409 si referenciado por `sim_assignments`/`invoice_items`). Depende de: 1.4.
+- [x] 3.5 `POST /billing/generate {year,month}`: agrupa `sim_assignments` por cliente/iccid, usa `computeProrationFactor`, upsert invoice draft, rebuild items si draft/skip si no; 422 período futuro. Depende de: 2.4, 3.1-3.3.
+- [x] 3.6 `GET /invoices` (filtros status/client/year/month) y `GET /invoices/:id` (items+payments+balance). Depende de: 3.5.
+- [x] 3.7 `POST /invoices/:id/issue` (draft→issued; 422 si no draft). Depende de: 3.5.
+- [x] 3.8 `POST /invoices/:id/payments` (abono): valida status, sobrepago, fecha/método; recalcula `partially_paid`/`paid`. Depende de: 3.7.
+- [x] 3.9 `POST /invoices/:id/cancel` (422 si `paid`). Depende de: 3.5.
+- [x] 3.10 `GET /billing/reconcile` (read-only diff KV↔períodos). Depende de: 3.1.
+- [x] 3.11 `GET /client/invoices` y `GET /client/invoices/:id` (`requireClientSession`; ajena → 403/404). Depende de: 3.6.
 
 ## Phase 4: Frontend
 

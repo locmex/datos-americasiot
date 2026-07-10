@@ -3,6 +3,8 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 import { db, buildTrackingUrl } from "./db.tsx";
+import { syncSimPeriod } from "./billing/sim-periods.ts";
+import { computeProrationFactor, startOfM, startNext } from "./billing/proration.ts";
 
 const app = new Hono();
 app.use("*", logger(console.log));
@@ -167,6 +169,29 @@ async function requireAuth(c: any): Promise<any | null> {
 function logActivity(type: string, message: string, extra: Record<string, any> = {}) {
   const key = `activity:${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   return kv.set(key, { type, message, ...extra, timestamp: new Date().toISOString() });
+}
+
+// ────────────────────────────────────────────────
+// BILLING — resolve current SIM status id (only used by assign/unassign/
+// bulk-assign hooks, which don't change status and so don't get statusId
+// for free like the PATCH .../status endpoints do). 1 GET to emnify per call
+// (design decision: low-frequency ops). Returns null if it can't be resolved
+// — callers must skip syncSimPeriod in that case rather than guess.
+// ────────────────────────────────────────────────
+async function resolveSimStatusId(iccid: string, chip?: any): Promise<number | null> {
+  try {
+    if (chip?.emnifyId) {
+      const { data } = await emnifyFetch(`/sim/${chip.emnifyId}`);
+      if (data?.status?.id !== undefined) return data.status.id;
+    }
+    const v19 = iccid.length >= 20 ? iccid.slice(0, 19) : iccid;
+    const { data } = await emnifyFetch(`/sim?q=iccid:${encodeURIComponent(v19)}&per_page=1`);
+    const sims: any[] = Array.isArray(data) ? data : (data?.items || []);
+    return sims[0]?.status?.id ?? null;
+  } catch (e: any) {
+    console.log(`resolveSimStatusId(${iccid}) error:`, e.message);
+    return null;
+  }
 }
 
 // ────────────────────────────────────────────────
@@ -605,6 +630,10 @@ app.patch("/make-server-ef736a01/emnify/sims/:id/status", async (c) => {
     });
     const label = statusId === 1 ? "activado" : statusId === 2 ? "suspendido" : "actualizado";
     await logActivity("sim_status", `SIM ${iccid || c.req.param("id")} ${label}`, { iccid, userId: session.userId });
+    if (iccid) {
+      try { await syncSimPeriod(iccid, { statusId }); }
+      catch (syncErr: any) { console.log(`syncSimPeriod(${iccid}) error:`, syncErr.message); }
+    }
     return c.json({ success: true });
   } catch (e: any) {
     console.log("Error updating SIM:", e);
@@ -1961,6 +1990,10 @@ app.post("/make-server-ef736a01/chips/:iccid/assign", async (c) => {
     const updated = { ...chip, clientId, clientName, assignedAt: new Date().toISOString(), assignedBy: session.userId };
     await kv.set(`chip:${iccid}`, updated);
     await logActivity("chip_assigned", `Chip ${iccid} asignado a ${clientName}`, { iccid, clientId, userId: session.userId });
+    try {
+      const statusId = await resolveSimStatusId(iccid, updated);
+      if (statusId !== null) await syncSimPeriod(iccid, { statusId, clientId, clientName });
+    } catch (syncErr: any) { console.log(`syncSimPeriod(${iccid}) error:`, syncErr.message); }
     return c.json({ chip: updated });
   } catch (e: any) {
     return c.json({ error: `Error asignando chip: ${e.message}` }, 500);
@@ -1977,6 +2010,10 @@ app.post("/make-server-ef736a01/chips/:iccid/unassign", async (c) => {
     const updated = { ...chip, clientId: null, clientName: null, assignedAt: null };
     await kv.set(`chip:${iccid}`, updated);
     await logActivity("chip_unassigned", `Chip ${iccid} desasignado`, { iccid, userId: session.userId });
+    try {
+      const statusId = await resolveSimStatusId(iccid, updated);
+      if (statusId !== null) await syncSimPeriod(iccid, { statusId, clientId: null, clientName: null });
+    } catch (syncErr: any) { console.log(`syncSimPeriod(${iccid}) error:`, syncErr.message); }
     return c.json({ chip: updated });
   } catch (e: any) {
     return c.json({ error: `Error: ${e.message}` }, 500);
@@ -2002,10 +2039,15 @@ app.post("/make-server-ef736a01/chips/bulk-assign", async (c) => {
         try {
           let chip = await kv.get(`chip:${iccid}`);
           if (!chip) chip = { iccid, addedAt: now, addedBy: session.userId, notes: "" };
-          await kv.set(`chip:${iccid}`, {
+          const updated = {
             ...chip, clientId, clientName,
             assignedAt: now, assignedBy: session.userId,
-          });
+          };
+          await kv.set(`chip:${iccid}`, updated);
+          try {
+            const statusId = await resolveSimStatusId(iccid, updated);
+            if (statusId !== null) await syncSimPeriod(iccid, { statusId, clientId, clientName });
+          } catch (syncErr: any) { console.log(`syncSimPeriod(${iccid}) error:`, syncErr.message); }
           results.push({ iccid, status: "ok" });
         } catch (e: any) {
           results.push({ iccid, status: "error", error: e.message });
@@ -2527,6 +2569,8 @@ app.patch("/make-server-ef736a01/client/sims/:simId/status", async (c) => {
     await logActivity("client_sim_status", `Cliente ${session.email} ${action} SIM ${iccid}`, {
       clientId: session.clientId, iccid, statusId,
     });
+    try { await syncSimPeriod(iccid, { statusId }); }
+    catch (syncErr: any) { console.log(`syncSimPeriod(${iccid}) error:`, syncErr.message); }
     return c.json({ success: true });
   } catch (e: any) {
     console.log("Client sim status error:", e);
@@ -3234,6 +3278,494 @@ app.patch("/make-server-ef736a01/client/orders/:id/cancel", async (c) => {
   } catch (e: any) {
     console.log("Cancel client order error:", e);
     return c.json({ error: `Error cancelando pedido: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// ADMIN — BILLING PLANS
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/plans", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const { data, error } = await db().from("plans").select("*").order("created_at", { ascending: true });
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ plans: data ?? [] });
+  } catch (e: any) {
+    console.log("List plans error:", e);
+    return c.json({ error: `Error listando planes: ${e.message}` }, 500);
+  }
+});
+
+app.post("/make-server-ef736a01/plans", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const body = await c.req.json();
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const unitPrice = Number(body.unit_price);
+
+    if (!name) return c.json({ error: "El nombre del plan es requerido" }, 422);
+    if (!isFinite(unitPrice) || unitPrice <= 0) return c.json({ error: "El precio debe ser un número mayor a 0" }, 422);
+
+    const { data, error } = await db().from("plans").insert({
+      name,
+      unit_price: unitPrice,
+      currency: body.currency || "MXN",
+    }).select().single();
+
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ plan: data }, 201);
+  } catch (e: any) {
+    console.log("Create plan error:", e);
+    return c.json({ error: `Error creando plan: ${e.message}` }, 500);
+  }
+});
+
+app.patch("/make-server-ef736a01/plans/:id", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const body = await c.req.json();
+
+    const { data: existing, error: findErr } = await db().from("plans").select("id").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!existing) return c.json({ error: "Plan no encontrado" }, 404);
+
+    const update: Record<string, any> = { updated_at: new Date().toISOString() };
+
+    if (body.name !== undefined) {
+      const name = typeof body.name === "string" ? body.name.trim() : "";
+      if (!name) return c.json({ error: "El nombre del plan es requerido" }, 422);
+      update.name = name;
+    }
+    if (body.unit_price !== undefined) {
+      const unitPrice = Number(body.unit_price);
+      if (!isFinite(unitPrice) || unitPrice <= 0) return c.json({ error: "El precio debe ser un número mayor a 0" }, 422);
+      update.unit_price = unitPrice;
+    }
+    if (body.currency !== undefined) update.currency = body.currency;
+    if (body.active !== undefined) update.active = !!body.active; // desactivar = soft delete
+
+    const { data, error } = await db().from("plans").update(update).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ plan: data });
+  } catch (e: any) {
+    console.log("Update plan error:", e);
+    return c.json({ error: `Error actualizando plan: ${e.message}` }, 500);
+  }
+});
+
+app.delete("/make-server-ef736a01/plans/:id", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+
+    const { data: existing, error: findErr } = await db().from("plans").select("id").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!existing) return c.json({ error: "Plan no encontrado" }, 404);
+
+    const { count: simCount, error: simErr } = await db()
+      .from("sim_assignments").select("id", { count: "exact", head: true }).eq("plan_id", id);
+    if (simErr) return c.json({ error: simErr.message }, 500);
+
+    const { count: itemCount, error: itemErr } = await db()
+      .from("invoice_items").select("id", { count: "exact", head: true }).eq("plan_id", id);
+    if (itemErr) return c.json({ error: itemErr.message }, 500);
+
+    if ((simCount ?? 0) > 0 || (itemCount ?? 0) > 0) {
+      return c.json({ error: "No se puede eliminar: el plan está referenciado por SIMs o facturas existentes. Desactívalo en su lugar." }, 409);
+    }
+
+    const { error } = await db().from("plans").delete().eq("id", id);
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ ok: true });
+  } catch (e: any) {
+    console.log("Delete plan error:", e);
+    return c.json({ error: `Error eliminando plan: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// ADMIN — BILLING GENERATION
+// ════════════════════════════════════════════════
+app.post("/make-server-ef736a01/billing/generate", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const body = await c.req.json();
+    const year = Number(body.year);
+    const month = Number(body.month);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return c.json({ error: "'year' y 'month' son requeridos y deben ser válidos (month entre 1 y 12)" }, 422);
+    }
+    if (startOfM(year, month) > Date.now()) {
+      return c.json({ error: "No se puede generar facturas de un período futuro" }, 422);
+    }
+
+    const sMonth = new Date(startOfM(year, month)).toISOString();
+    const eMonth = new Date(startNext(year, month)).toISOString();
+
+    // Períodos vigentes >=1 día del mes M (misma fórmula de solape que proration.ts,
+    // aplicada como filtro SQL: activated_at < finDeM AND (deactivated_at is null OR deactivated_at >= inicioDeM)).
+    const { data: rows, error: rowsErr } = await db()
+      .from("sim_assignments")
+      .select("iccid, client_id, client_name, plan_id, activated_at, deactivated_at, last_status_id")
+      .lt("activated_at", eMonth)
+      .or(`deactivated_at.is.null,deactivated_at.gte.${sMonth}`);
+    if (rowsErr) return c.json({ error: rowsErr.message }, 500);
+
+    const { data: plans, error: plansErr } = await db().from("plans").select("id,name,unit_price,currency");
+    if (plansErr) return c.json({ error: plansErr.message }, 500);
+    const planMap = new Map((plans ?? []).map((p: any) => [p.id, p]));
+
+    // Agrupa por cliente → por iccid (todos los períodos vigentes de esa SIM en M,
+    // para que computeProrationFactor resuelva ciclos baja/alta dentro del mismo mes).
+    const byClient = new Map<string, Map<string, any[]>>();
+    const clientNames = new Map<string, string>();
+    for (const row of rows ?? []) {
+      if (!byClient.has(row.client_id)) byClient.set(row.client_id, new Map());
+      const byIccid = byClient.get(row.client_id)!;
+      if (!byIccid.has(row.iccid)) byIccid.set(row.iccid, []);
+      byIccid.get(row.iccid)!.push(row);
+      clientNames.set(row.client_id, row.client_name);
+    }
+
+    let created = 0, skipped = 0;
+    const invoicesOut: any[] = [];
+
+    for (const [clientId, byIccid] of byClient) {
+      const clientName = clientNames.get(clientId) ?? "—";
+
+      const { data: existing, error: findErr } = await db()
+        .from("invoices").select("*")
+        .eq("client_id", clientId).eq("period_year", year).eq("period_month", month)
+        .maybeSingle();
+      if (findErr) return c.json({ error: findErr.message }, 500);
+
+      // Emitida/pagada/cancelada = inmutable: no se toca (idempotencia de doble generación).
+      if (existing && existing.status !== "draft") {
+        skipped++;
+        invoicesOut.push(existing);
+        continue;
+      }
+
+      let invoice = existing;
+      if (!invoice) {
+        const { data: ins, error: insErr } = await db().from("invoices").insert({
+          client_id: clientId, client_name: clientName,
+          period_year: year, period_month: month, status: "draft", currency: "MXN", total: 0,
+        }).select().single();
+        if (insErr) return c.json({ error: insErr.message }, 500);
+        invoice = ins;
+      } else {
+        // draft ya existente: borra items y recomputa (evita duplicados en re-generación).
+        const { error: delErr } = await db().from("invoice_items").delete().eq("invoice_id", invoice.id);
+        if (delErr) return c.json({ error: delErr.message }, 500);
+      }
+
+      let total = 0;
+      const itemRows: any[] = [];
+      for (const [iccid, periods] of byIccid) {
+        const factor = computeProrationFactor(
+          periods.map((p: any) => ({ activatedAt: p.activated_at, deactivatedAt: p.deactivated_at })),
+          year, month,
+        );
+        if (factor <= 0) continue; // no debería pasar (ya vienen prefiltrados por solape), defensivo
+        const latest = periods.reduce((a: any, b: any) => (a.activated_at > b.activated_at ? a : b));
+        const plan = planMap.get(latest.plan_id);
+        const unitPrice = Number(plan?.unit_price ?? 0);
+        if (!(unitPrice > 0)) continue; // plan sin precio válido: no genera cargo congelado inválido
+        const amount = Math.round(unitPrice * factor * 100) / 100;
+        itemRows.push({
+          invoice_id: invoice.id,
+          iccid,
+          plan_id: latest.plan_id,
+          plan_name: plan?.name ?? "—",
+          unit_price: unitPrice,
+          proration_factor: factor,
+          activated_at: latest.activated_at,
+          sim_status: latest.last_status_id === 1 ? "Activa" : latest.last_status_id === 2 ? "Suspendida" : "Desconocido",
+          amount,
+        });
+        total += amount;
+      }
+
+      if (itemRows.length > 0) {
+        const { error: itemsErr } = await db().from("invoice_items").insert(itemRows);
+        if (itemsErr) return c.json({ error: itemsErr.message }, 500);
+      }
+
+      const { data: updatedInv, error: updErr } = await db().from("invoices")
+        .update({ total: Math.round(total * 100) / 100, updated_at: new Date().toISOString() })
+        .eq("id", invoice.id).select().single();
+      if (updErr) return c.json({ error: updErr.message }, 500);
+
+      created++;
+      invoicesOut.push(updatedInv);
+    }
+
+    await logActivity("billing_generate", `Facturación ${month}/${year}: ${created} generadas/actualizadas, ${skipped} omitidas`, {
+      year, month, created, skipped, userId: session.userId,
+    });
+    return c.json({ created, skipped, invoices: invoicesOut });
+  } catch (e: any) {
+    console.log("Generate invoices error:", e);
+    return c.json({ error: `Error generando facturas: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// ADMIN — INVOICES
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/invoices", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const status = c.req.query("status");
+    const clientId = c.req.query("client_id");
+    const year = c.req.query("year");
+    const month = c.req.query("month");
+
+    let query = db().from("invoices").select("*")
+      .order("period_year", { ascending: false })
+      .order("period_month", { ascending: false });
+    if (status) query = query.eq("status", status);
+    if (clientId) query = query.eq("client_id", clientId);
+    if (year) query = query.eq("period_year", Number(year));
+    if (month) query = query.eq("period_month", Number(month));
+
+    const { data, error } = await query;
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ invoices: data ?? [] });
+  } catch (e: any) {
+    console.log("List invoices error:", e);
+    return c.json({ error: `Error listando facturas: ${e.message}` }, 500);
+  }
+});
+
+app.get("/make-server-ef736a01/invoices/:id", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const { data: invoice, error: invErr } = await db().from("invoices").select("*").eq("id", id).maybeSingle();
+    if (invErr) return c.json({ error: invErr.message }, 500);
+    if (!invoice) return c.json({ error: "Factura no encontrada" }, 404);
+
+    const { data: items, error: itemsErr } = await db().from("invoice_items").select("*").eq("invoice_id", id);
+    if (itemsErr) return c.json({ error: itemsErr.message }, 500);
+
+    const { data: payments, error: payErr } = await db()
+      .from("payments").select("*").eq("invoice_id", id).order("paid_at", { ascending: true });
+    if (payErr) return c.json({ error: payErr.message }, 500);
+
+    const paid = (payments ?? []).reduce((s: number, p: any) => s + Number(p.amount), 0);
+    const balance = Math.round((Number(invoice.total) - paid) * 100) / 100;
+
+    return c.json({ invoice, items: items ?? [], payments: payments ?? [], balance });
+  } catch (e: any) {
+    console.log("Get invoice error:", e);
+    return c.json({ error: `Error obteniendo factura: ${e.message}` }, 500);
+  }
+});
+
+app.post("/make-server-ef736a01/invoices/:id/issue", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const { data: invoice, error: findErr } = await db().from("invoices").select("*").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!invoice) return c.json({ error: "Factura no encontrada" }, 404);
+    if (invoice.status !== "draft") {
+      return c.json({ error: `No se puede emitir una factura en estado '${invoice.status}'` }, 422);
+    }
+
+    const { data: updated, error } = await db().from("invoices").update({
+      status: "issued", issued_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+
+    await logActivity("invoice_issued", `Factura ${id} emitida`, { invoiceId: id, userId: session.userId });
+    return c.json({ invoice: updated });
+  } catch (e: any) {
+    console.log("Issue invoice error:", e);
+    return c.json({ error: `Error emitiendo factura: ${e.message}` }, 500);
+  }
+});
+
+app.post("/make-server-ef736a01/invoices/:id/payments", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const amount = Number(body.amount);
+    const paidAt = body.paid_at;
+    const method = typeof body.method === "string" ? body.method.trim() : "";
+
+    if (!isFinite(amount) || amount <= 0) return c.json({ error: "El monto del abono debe ser mayor a 0" }, 422);
+    if (!paidAt) return c.json({ error: "La fecha de pago es requerida" }, 422);
+    if (!method) return c.json({ error: "El método de pago es requerido" }, 422);
+
+    const { data: invoice, error: findErr } = await db().from("invoices").select("*").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!invoice) return c.json({ error: "Factura no encontrada" }, 404);
+    if (invoice.status !== "issued" && invoice.status !== "partially_paid") {
+      return c.json({ error: `No se puede registrar un abono sobre una factura en estado '${invoice.status}'` }, 422);
+    }
+
+    const { data: existingPayments, error: payErr } = await db().from("payments").select("amount").eq("invoice_id", id);
+    if (payErr) return c.json({ error: payErr.message }, 500);
+    const paidSoFar = (existingPayments ?? []).reduce((s: number, p: any) => s + Number(p.amount), 0);
+    const balance = Math.round((Number(invoice.total) - paidSoFar) * 100) / 100;
+
+    if (amount > balance) {
+      return c.json({ error: `El abono (${amount}) excede el saldo pendiente (${balance}). No se admite sobrepago.` }, 422);
+    }
+
+    const { data: payment, error: insErr } = await db().from("payments").insert({
+      invoice_id: id, amount, paid_at: paidAt, method, note: body.note ?? null, created_by: session.userId,
+    }).select().single();
+    if (insErr) return c.json({ error: insErr.message }, 500);
+
+    const newPaid = Math.round((paidSoFar + amount) * 100) / 100;
+    const newStatus = newPaid >= Number(invoice.total) ? "paid" : "partially_paid";
+    const { data: updatedInvoice, error: updErr } = await db().from("invoices").update({
+      status: newStatus, updated_at: new Date().toISOString(),
+    }).eq("id", id).select().single();
+    if (updErr) return c.json({ error: updErr.message }, 500);
+
+    await logActivity("invoice_payment", `Abono de ${amount} registrado en factura ${id}`, {
+      invoiceId: id, amount, userId: session.userId,
+    });
+    return c.json({ payment, invoice: updatedInvoice });
+  } catch (e: any) {
+    console.log("Register payment error:", e);
+    return c.json({ error: `Error registrando abono: ${e.message}` }, 500);
+  }
+});
+
+app.post("/make-server-ef736a01/invoices/:id/cancel", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const id = c.req.param("id");
+    const { data: invoice, error: findErr } = await db().from("invoices").select("*").eq("id", id).maybeSingle();
+    if (findErr) return c.json({ error: findErr.message }, 500);
+    if (!invoice) return c.json({ error: "Factura no encontrada" }, 404);
+    if (!["draft", "issued", "partially_paid"].includes(invoice.status)) {
+      return c.json({ error: `No se puede cancelar una factura en estado '${invoice.status}'` }, 422);
+    }
+
+    const { data: updated, error } = await db().from("invoices").update({
+      status: "cancelled", updated_at: new Date().toISOString(),
+    }).eq("id", id).select().single();
+    if (error) return c.json({ error: error.message }, 500);
+
+    await logActivity("invoice_cancelled", `Factura ${id} cancelada`, { invoiceId: id, userId: session.userId });
+    return c.json({ invoice: updated });
+  } catch (e: any) {
+    console.log("Cancel invoice error:", e);
+    return c.json({ error: `Error cancelando factura: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// ADMIN — BILLING RECONCILE (read-only diff KV ↔ períodos)
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/billing/reconcile", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const chips = await kv.getByPrefix("chip:");
+    const { data: openPeriods, error } = await db()
+      .from("sim_assignments").select("iccid, client_id").is("deactivated_at", null);
+    if (error) return c.json({ error: error.message }, 500);
+
+    const periodMap = new Map((openPeriods ?? []).map((p: any) => [p.iccid, p.client_id as string | null]));
+    const divergences: { iccid: string; kvClientId: string | null; periodClientId: string | null }[] = [];
+
+    for (const chip of chips as any[]) {
+      const kvClientId: string | null = chip.clientId ?? null;
+      const periodClientId = periodMap.has(chip.iccid) ? periodMap.get(chip.iccid)! : null;
+      if (kvClientId !== periodClientId) {
+        divergences.push({ iccid: chip.iccid, kvClientId, periodClientId });
+      }
+      periodMap.delete(chip.iccid);
+    }
+    // Períodos abiertos sin chip correspondiente en KV (no debería pasar; señal de datos huérfanos).
+    for (const [iccid, periodClientId] of periodMap) {
+      divergences.push({ iccid, kvClientId: null, periodClientId });
+    }
+
+    return c.json({ divergences });
+  } catch (e: any) {
+    console.log("Billing reconcile error:", e);
+    return c.json({ error: `Error reconciliando: ${e.message}` }, 500);
+  }
+});
+
+// ════════════════════════════════════════════════
+// CLIENT — INVOICES (solo lectura, solo propias)
+// ════════════════════════════════════════════════
+app.get("/make-server-ef736a01/client/invoices", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const { data, error } = await db()
+      .from("invoices").select("*")
+      .eq("client_id", session.clientId)
+      .order("period_year", { ascending: false })
+      .order("period_month", { ascending: false });
+    if (error) return c.json({ error: error.message }, 500);
+    return c.json({ invoices: data ?? [] });
+  } catch (e: any) {
+    console.log("List client invoices error:", e);
+    return c.json({ error: `Error listando facturas: ${e.message}` }, 500);
+  }
+});
+
+app.get("/make-server-ef736a01/client/invoices/:id", async (c) => {
+  try {
+    const session = await requireClientSession(c);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const id = c.req.param("id");
+    const { data: invoice, error: invErr } = await db().from("invoices").select("*").eq("id", id).maybeSingle();
+    if (invErr) return c.json({ error: invErr.message }, 500);
+    if (!invoice) return c.json({ error: "Factura no encontrada" }, 404);
+    if (invoice.client_id !== session.clientId) return c.json({ error: "No autorizado para esta factura" }, 403);
+
+    const { data: items, error: itemsErr } = await db().from("invoice_items").select("*").eq("invoice_id", id);
+    if (itemsErr) return c.json({ error: itemsErr.message }, 500);
+
+    const { data: payments, error: payErr } = await db()
+      .from("payments").select("*").eq("invoice_id", id).order("paid_at", { ascending: true });
+    if (payErr) return c.json({ error: payErr.message }, 500);
+
+    const paid = (payments ?? []).reduce((s: number, p: any) => s + Number(p.amount), 0);
+    const balance = Math.round((Number(invoice.total) - paid) * 100) / 100;
+
+    return c.json({ invoice, items: items ?? [], payments: payments ?? [], balance });
+  } catch (e: any) {
+    console.log("Get client invoice error:", e);
+    return c.json({ error: `Error obteniendo factura: ${e.message}` }, 500);
   }
 });
 
