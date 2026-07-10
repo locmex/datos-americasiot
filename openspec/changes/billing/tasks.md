@@ -2,18 +2,18 @@
 
 ## Phase 1: Infra / DB
 
-- [ ] 1.1 Escribir `supabase/migrations/0002_billing.sql`: tablas `plans`, `sim_assignments`, `invoices`, `invoice_items`, `payments` (orden FK), constraints (`unique(invoice_id,iccid)`, `unique(client_id,period_year,period_month)`, partial unique open period), índices, RLS deny-all, `down`.
-- [ ] 1.2 En la misma migración: seed `plans` ("Plan único", $45.00 MXN).
-- [ ] 1.3 En la misma migración: backfill `sim_assignments` desde `kv_store_ef736a01` (238 SIMs, `activated_at='2026-01-01-06'`, idempotente `NOT EXISTS`). Confirmar antes de aplicar que el primer mes a facturar (junio 2026) sea posterior a esa fecha.
-- [ ] 1.4 Aplicar `0002_billing.sql` vía MCP Supabase (`apply_migration`). Depende de: 1.1-1.3.
-- [ ] 1.5 Verificar con `list_tables`/`get_advisors` que las 5 tablas, constraints y RLS quedaron como en el diseño. Depende de: 1.4.
+- [x] 1.1 Escribir `supabase/migrations/0002_billing.sql`: tablas `plans`, `sim_assignments`, `invoices`, `invoice_items`, `payments` (orden FK), constraints (`unique(invoice_id,iccid)`, `unique(client_id,period_year,period_month)`, partial unique open period), índices, RLS deny-all, `down`.
+- [x] 1.2 SQL de seed `plans` ("Plan único", $45.00 MXN) preparado — entregado al orquestador para ejecutar vía MCP (no incluido en el archivo de migración por instrucción explícita de la tarea).
+- [x] 1.3 SQL de backfill `sim_assignments` desde `kv_store_ef736a01` (238 SIMs, `activated_at='2026-01-01-06'`, idempotente `NOT EXISTS`) preparado — entregado al orquestador para ejecutar vía MCP. Confirmado: primer mes a facturar (junio 2026) es posterior a esa fecha.
+- [ ] 1.4 Aplicar `0002_billing.sql` vía MCP Supabase (`apply_migration`). Depende de: 1.1-1.3. — PENDIENTE (fuera de alcance de este batch; lo aplica el orquestador).
+- [ ] 1.5 Verificar con `list_tables`/`get_advisors` que las 5 tablas, constraints y RLS quedaron como en el diseño. Depende de: 1.4. — PENDIENTE.
 
 ## Phase 2: Testing setup + lógica pura (red de seguridad)
 
-- [ ] 2.1 `pnpm add -D vitest`; crear `vitest.config.ts` (`environment:'node'`, `include:['**/*.test.ts']`); agregar scripts `test`/`test:watch` en `package.json`.
-- [ ] 2.2 Escribir `supabase/functions/make-server-ef736a01/billing/proration.test.ts` con los 15 escenarios del spec (RED — deben fallar sin implementación).
-- [ ] 2.3 Implementar `supabase/functions/make-server-ef736a01/billing/proration.ts` (`isSimBillable`, `computeProrationFactor`, sin imports Deno/Node). Depende de: 2.2.
-- [ ] 2.4 Correr `pnpm test`; los 15 casos deben pasar en verde. Depende de: 2.3.
+- [x] 2.1 `pnpm add -D vitest`; crear `vitest.config.ts` (`environment:'node'`, `include:['**/*.test.ts']`); agregar scripts `test`/`test:watch` en `package.json`.
+- [x] 2.2 Escribir `supabase/functions/make-server-ef736a01/billing/proration.test.ts` con los 15 escenarios del spec (RED confirmado — fallaban por módulo inexistente).
+- [x] 2.3 Implementar `supabase/functions/make-server-ef736a01/billing/proration.ts` (`isSimBillable`, `computeProrationFactor`, sin imports Deno/Node). Depende de: 2.2.
+- [x] 2.4 Correr `pnpm test`; los 15 casos pasan en verde. Depende de: 2.3.
 
 ## Phase 3: Backend
 
