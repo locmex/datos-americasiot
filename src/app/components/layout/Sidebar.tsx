@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, CreditCard, Users, UserCheck, LogOut, Cpu, ClipboardList, Package,
+  LayoutDashboard, CreditCard, Users, UserCheck, LogOut, Cpu, ClipboardList, Package, Receipt, Layers,
 } from "lucide-react";
 import { useNavigate, NavLink } from "react-router";
 import { useAuth } from "../../lib/auth-context";
@@ -14,6 +14,8 @@ const navItems = [
   { to: "/clients",   icon: Users,           label: "Clientes" },
   { to: "/orders",    icon: ClipboardList,   label: "Pedidos" },
   { to: "/products",  icon: Package,         label: "Productos" },
+  { to: "/invoices",  icon: Receipt,         label: "Facturación" },
+  { to: "/plans",     icon: Layers,          label: "Planes" },
 ];
 
 interface SidebarProps {

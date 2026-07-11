@@ -31,15 +31,15 @@
 
 ## Phase 4: Frontend
 
-- [ ] 4.1 `pnpm add jspdf`.
-- [ ] 4.2 Crear `src/app/lib/invoice-status.ts` (mapa de estados + `formatCurrency`), siguiendo el patrón de `src/app/lib/order-status.ts`.
-- [ ] 4.3 Agregar métodos `api.*` (plans, billing/generate, invoices, payments, cancel, reconcile) y `clientApi.*` (invoices) en `src/app/lib/api.ts`. Depende de: 3.4-3.11.
-- [ ] 4.4 Crear `src/app/pages/AdminPlansPage.tsx` (CRUD planes), siguiendo el patrón de `src/app/pages/AdminOrdersPage.tsx`. Depende de: 4.3.
-- [ ] 4.5 Crear `src/app/pages/AdminInvoicesPage.tsx` (listado, detalle, generar, emitir, abonar, cancelar, botón PDF). Depende de: 4.3, 4.2.
-- [ ] 4.6 Crear `src/app/pages/portal/ClientInvoicesPage.tsx` (listado + detalle solo-lectura, botón PDF gate `status!=draft`). Depende de: 4.3, 4.2.
-- [ ] 4.7 Implementar generación de PDF client-side con jsPDF a partir del JSON de factura ya autorizado (usado en 4.5 y 4.6). Depende de: 4.1.
-- [ ] 4.8 Agregar rutas en `routes.tsx` (admin: Planes/Facturación; portal: Mis Facturas). Depende de: 4.4-4.6.
-- [ ] 4.9 Agregar nav en `Sidebar.tsx`/`AppLayout.tsx` (admin) y `ClientPortalLayout.tsx` (portal). Depende de: 4.8.
+- [x] 4.1 `pnpm add jspdf`.
+- [x] 4.2 Crear `src/app/lib/invoice-status.ts` (mapa de estados + `formatCurrency`), siguiendo el patrón de `src/app/lib/order-status.ts`.
+- [x] 4.3 Agregar métodos `api.*` (plans, billing/generate, invoices, payments, cancel, reconcile) y `clientApi.*` (invoices) en `src/app/lib/api.ts`. Depende de: 3.4-3.11.
+- [x] 4.4 Crear `src/app/pages/AdminPlansPage.tsx` (CRUD planes), siguiendo el patrón de `src/app/pages/AdminOrdersPage.tsx`. Depende de: 4.3.
+- [x] 4.5 Crear `src/app/pages/AdminInvoicesPage.tsx` (listado, detalle, generar, emitir, abonar, cancelar, botón PDF). Depende de: 4.3, 4.2.
+- [x] 4.6 Crear `src/app/pages/portal/ClientInvoicesPage.tsx` (listado + detalle solo-lectura, botón PDF gate `status!=draft`). Depende de: 4.3, 4.2.
+- [x] 4.7 Implementar generación de PDF client-side con jsPDF a partir del JSON de factura ya autorizado (usado en 4.5 y 4.6). Depende de: 4.1.
+- [x] 4.8 Agregar rutas en `routes.tsx` (admin: Planes/Facturación; portal: Mis Facturas). Depende de: 4.4-4.6.
+- [x] 4.9 Agregar nav en `Sidebar.tsx`/`AppLayout.tsx` (admin) y `ClientPortalLayout.tsx` (portal). Depende de: 4.8.
 
 ## Phase 5: Verify / QA
 
