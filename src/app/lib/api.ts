@@ -154,6 +154,33 @@ export const api = {
     id: string,
     data: { status: string; carrier?: string; tracking_number?: string; note?: string },
   ) => request("PATCH", `/orders/${id}/status`, data),
+
+  // BILLING — PLANS (admin)
+  getPlans: () => request("GET", "/plans"),
+  createPlan: (data: { name: string; unit_price: number; currency?: string }) =>
+    request("POST", "/plans", data),
+  updatePlan: (id: string, data: Partial<{ name: string; unit_price: number; currency: string; active: boolean }>) =>
+    request("PATCH", `/plans/${id}`, data),
+  deletePlan: (id: string) => request("DELETE", `/plans/${id}`),
+
+  // BILLING — INVOICES (admin)
+  generateInvoices: (data: { year: number; month: number }) =>
+    request("POST", "/billing/generate", data),
+  getInvoices: (filters?: { status?: string; client_id?: string; year?: number; month?: number }) => {
+    const qs = new URLSearchParams();
+    if (filters?.status) qs.set("status", filters.status);
+    if (filters?.client_id) qs.set("client_id", filters.client_id);
+    if (filters?.year) qs.set("year", String(filters.year));
+    if (filters?.month) qs.set("month", String(filters.month));
+    const q = qs.toString();
+    return request("GET", `/invoices${q ? `?${q}` : ""}`);
+  },
+  getInvoiceById: (id: string) => request("GET", `/invoices/${id}`),
+  issueInvoice: (id: string) => request("POST", `/invoices/${id}/issue`, {}),
+  addPayment: (id: string, data: { amount: number; paid_at: string; method: string; note?: string }) =>
+    request("POST", `/invoices/${id}/payments`, data),
+  cancelInvoice: (id: string) => request("POST", `/invoices/${id}/cancel`, {}),
+  reconcileBilling: () => request("GET", "/billing/reconcile"),
 };
 
 // ── Client Portal API (uses portal_session_id) ───────────────────────────────
@@ -223,4 +250,8 @@ export const clientApi = {
   markReceived: (id: string) => clientRequest("PATCH", `/client/orders/${id}/received`, {}),
   cancelOrder: (id: string, note?: string) =>
     clientRequest("PATCH", `/client/orders/${id}/cancel`, note ? { note } : {}),
+
+  // BILLING — INVOICES (client — scoped to own invoices)
+  getInvoices: () => clientRequest("GET", "/client/invoices"),
+  getInvoiceById: (id: string) => clientRequest("GET", `/client/invoices/${id}`),
 };

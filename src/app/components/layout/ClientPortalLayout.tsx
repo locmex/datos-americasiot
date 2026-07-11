@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Outlet, Navigate, NavLink, useLocation } from "react-router";
-import { LogOut, Cpu, ShoppingCart } from "lucide-react";
+import { LogOut, Cpu, ShoppingCart, Receipt } from "lucide-react";
 import { clientApi } from "../../lib/api";
 import { ClientAuthContext, ClientUser } from "../../lib/client-auth";
 import { AmericasIoTLogo } from "../AmericasIoTLogo";
 
 const portalNav = [
-  { to: "/portal",        icon: Cpu,          label: "Mis Dispositivos", end: true },
-  { to: "/portal/orders", icon: ShoppingCart, label: "Pedidos" },
+  { to: "/portal",          icon: Cpu,          label: "Mis Dispositivos", end: true },
+  { to: "/portal/orders",   icon: ShoppingCart, label: "Pedidos" },
+  { to: "/portal/invoices", icon: Receipt,      label: "Mis Facturas" },
 ];
 
 function PortalNav() {
