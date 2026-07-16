@@ -303,6 +303,10 @@ function InvoiceDetailDrawer({
                   <span className="text-sm font-bold text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</span>
                 </div>
                 <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">SIMs facturadas</span>
+                  <span className="text-sm font-semibold text-gray-700">{items.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Saldo pendiente</span>
                   <span className="text-sm font-semibold" style={{ color: balance > 0 ? "#d97706" : "#16a34a" }}>
                     {formatCurrency(balance, invoice.currency)}
@@ -318,7 +322,7 @@ function InvoiceDetailDrawer({
 
               {/* SIM breakdown */}
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Desglose por SIM</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Desglose por SIM ({items.length})</p>
                 <div className="rounded-xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between px-3 py-2.5">
@@ -502,7 +506,7 @@ export default function AdminInvoicesPage() {
         <table className="w-full">
           <thead>
             <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e5e7eb" }}>
-              {["Cliente", "Período", "Estado", "Total", ""].map((label) => (
+              {["Cliente", "Período", "Estado", "SIMs", "Total", ""].map((label) => (
                 <th key={label} className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap">
                   {label}
                 </th>
@@ -513,7 +517,7 @@ export default function AdminInvoicesPage() {
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 5 }).map((_, j) => (
+                    {Array.from({ length: 6 }).map((_, j) => (
                       <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
                     ))}
                   </tr>
@@ -533,6 +537,9 @@ export default function AdminInvoicesPage() {
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>
                           {cfg.label}
                         </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="text-sm font-medium text-gray-600">{invoice.sim_count ?? "—"}</p>
                       </td>
                       <td className="px-5 py-4">
                         <p className="text-sm font-semibold text-gray-700">{formatCurrency(invoice.total, invoice.currency)}</p>
