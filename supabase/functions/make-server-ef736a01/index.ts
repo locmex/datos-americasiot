@@ -3535,7 +3535,7 @@ app.get("/make-server-ef736a01/invoices", async (c) => {
     const year = c.req.query("year");
     const month = c.req.query("month");
 
-    let query = db().from("invoices").select("*")
+    let query = db().from("invoices").select("*, invoice_items(count)")
       .order("period_year", { ascending: false })
       .order("period_month", { ascending: false });
     if (status) query = query.eq("status", status);
@@ -3545,7 +3545,12 @@ app.get("/make-server-ef736a01/invoices", async (c) => {
 
     const { data, error } = await query;
     if (error) return c.json({ error: error.message }, 500);
-    return c.json({ invoices: data ?? [] });
+    // Aplanar el count embebido de PostgREST a `sim_count` por factura
+    const invoices = (data ?? []).map((inv: any) => {
+      const { invoice_items, ...rest } = inv;
+      return { ...rest, sim_count: invoice_items?.[0]?.count ?? 0 };
+    });
+    return c.json({ invoices });
   } catch (e: any) {
     console.log("List invoices error:", e);
     return c.json({ error: `Error listando facturas: ${e.message}` }, 500);
