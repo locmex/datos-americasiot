@@ -130,6 +130,61 @@ export const api = {
 
   // ACTIVITY
   getActivity: () => request("GET", "/activity"),
+
+  // PRODUCT CATALOG (admin)
+  getProducts: () => request("GET", "/products"),
+  createProduct: (data: { name: string; price: number; description?: string; currency?: string }) =>
+    request("POST", "/products", data),
+  updateProduct: (
+    id: string,
+    data: Partial<{ name: string; price: number; description: string; currency: string; status: "active" | "inactive" }>,
+  ) => request("PATCH", `/products/${id}`, data),
+  deleteProduct: (id: string) => request("DELETE", `/products/${id}`),
+
+  // ORDERS (admin)
+  getOrders: (filters?: { status?: string; client_id?: string }) => {
+    const qs = new URLSearchParams();
+    if (filters?.status) qs.set("status", filters.status);
+    if (filters?.client_id) qs.set("client_id", filters.client_id);
+    const q = qs.toString();
+    return request("GET", `/orders${q ? `?${q}` : ""}`);
+  },
+  getOrderById: (id: string) => request("GET", `/orders/${id}`),
+  updateOrderStatus: (
+    id: string,
+    data: { status: string; carrier?: string; tracking_number?: string; note?: string },
+  ) => request("PATCH", `/orders/${id}/status`, data),
+
+  // BILLING — PLANS (admin)
+  getPlans: () => request("GET", "/plans"),
+  createPlan: (data: { name: string; unit_price: number; currency?: string }) =>
+    request("POST", "/plans", data),
+  updatePlan: (id: string, data: Partial<{ name: string; unit_price: number; currency: string; active: boolean }>) =>
+    request("PATCH", `/plans/${id}`, data),
+  deletePlan: (id: string) => request("DELETE", `/plans/${id}`),
+
+  // BILLING — INVOICES (admin)
+  generateInvoices: (data: { year: number; month: number }) =>
+    request("POST", "/billing/generate", data),
+  getInvoices: (filters?: { status?: string; client_id?: string; year?: number; month?: number }) => {
+    const qs = new URLSearchParams();
+    if (filters?.status) qs.set("status", filters.status);
+    if (filters?.client_id) qs.set("client_id", filters.client_id);
+    if (filters?.year) qs.set("year", String(filters.year));
+    if (filters?.month) qs.set("month", String(filters.month));
+    const q = qs.toString();
+    return request("GET", `/invoices${q ? `?${q}` : ""}`);
+  },
+  getInvoiceById: (id: string) => request("GET", `/invoices/${id}`),
+  issueInvoice: (id: string) => request("POST", `/invoices/${id}/issue`, {}),
+  addPayment: (id: string, data: { amount: number; paid_at: string; method: string; note?: string }) =>
+    request("POST", `/invoices/${id}/payments`, data),
+  cancelInvoice: (id: string) => request("POST", `/invoices/${id}/cancel`, {}),
+  reconcileBilling: () => request("GET", "/billing/reconcile"),
+  // Resincroniza los períodos de SIM contra el estado real de EMNIFY.
+  // dryRun=true devuelve solo el preview (no modifica nada).
+  resyncSimStates: (dryRun = true) =>
+    request("POST", `/billing/resync-sim-states?dry_run=${dryRun}`, {}),
 };
 
 // ── Client Portal API (uses portal_session_id) ───────────────────────────────
@@ -188,4 +243,19 @@ export const clientApi = {
     clientRequest("POST", `/client/devices/${endpointId}/reset-connectivity`, {}),
   renameDevice: (endpointId: string | number, name: string) =>
     clientRequest("PATCH", `/client/devices/${endpointId}/name`, { name }),
+
+  // PRODUCT CATALOG (client — active products only)
+  getProducts: () => clientRequest("GET", "/client/products"),
+
+  // ORDERS (client — scoped to own orders)
+  createOrder: (data: { items: { product_id: string; quantity: number }[]; notes?: string }) =>
+    clientRequest("POST", "/client/orders", data),
+  getMyOrders: () => clientRequest("GET", "/client/orders"),
+  markReceived: (id: string) => clientRequest("PATCH", `/client/orders/${id}/received`, {}),
+  cancelOrder: (id: string, note?: string) =>
+    clientRequest("PATCH", `/client/orders/${id}/cancel`, note ? { note } : {}),
+
+  // BILLING — INVOICES (client — scoped to own invoices)
+  getInvoices: () => clientRequest("GET", "/client/invoices"),
+  getInvoiceById: (id: string) => clientRequest("GET", `/client/invoices/${id}`),
 };

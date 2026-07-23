@@ -15,6 +15,7 @@ import { clientApi } from "../../lib/api";
 import { ClientAuthContext } from "../../lib/client-auth";
 import { toast } from "sonner";
 import { DeviceDetailModal, EmnifyEndpoint } from "../../components/DeviceDetailModal";
+import { BRAND, STATUS_TOKENS, type Tone } from "../../lib/status-tokens";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ClientSIM {
@@ -50,7 +51,7 @@ function getPortalConnBadge(sim: ClientSIM): { label: string; online: boolean; c
   const hasPdp = !!(pdp?.start_time || pdp?.created || pdp?.ip_address || pdp?.ue_ip_address);
   const rat = resolveRat(sim.rat_type ?? pdp?.rat_type ?? conn?.rat_type);
   const online = hasPdp || statusId === 1 || statusDesc.includes("online");
-  if (online) return { label: rat ? `${rat} Online` : "Online", online: true, color: "#16a34a", bg: "rgba(22,163,74,0.10)" };
+  if (online) return { label: rat ? `${rat} Online` : "Online", online: true, color: "#059669", bg: "rgba(5,150,105,0.10)" };
   const attached = statusId === 2 || statusDesc.includes("attach");
   if (attached) return { label: "Registrado", online: false, color: "#d97706", bg: "rgba(217,119,6,0.10)" };
   return { label: "Sin conexión", online: false, color: "#94a3b8", bg: "rgba(148,163,184,0.10)" };
@@ -59,7 +60,7 @@ function getPortalConnBadge(sim: ClientSIM): { label: string; online: boolean; c
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const STATUS = {
   0: { label: "Sin estado",  color: "#94a3b8", bg: "rgba(148,163,184,0.12)", icon: Circle },
-  1: { label: "Activa",      color: "#16a34a", bg: "rgba(22,163,74,0.12)",   icon: CheckCircle2 },
+  1: { label: "Activa",      color: "#059669", bg: "rgba(5,150,105,0.12)",   icon: CheckCircle2 },
   2: { label: "Suspendida",  color: "#d97706", bg: "rgba(217,119,6,0.12)",   icon: PauseCircle },
   3: { label: "Desactivada", color: "#dc2626", bg: "rgba(220,38,38,0.12)",   icon: WifiOff },
 } as const;
@@ -67,6 +68,14 @@ const STATUS = {
 function getStatus(id: number) {
   return STATUS[id as keyof typeof STATUS] ?? STATUS[0];
 }
+
+// Metadatos de cada filtro de estado (chip "Filtro activo"). Categorías excluyentes.
+const FILTER_META: Record<number, { label: string; tone: Tone }> = {
+  0: { label: "Disponibles",  tone: STATUS_TOKENS.muted },
+  1: { label: "Activas",      tone: STATUS_TOKENS.good },
+  2: { label: "Suspendidas",  tone: STATUS_TOKENS.warning },
+  3: { label: "Desactivadas", tone: STATUS_TOKENS.danger },
+};
 
 function formatMB(mb: number): string {
   if (!mb || mb === 0) return "0 MB";
@@ -687,7 +696,7 @@ export default function ClientPortalDashboard() {
   const [simSearch, setSimSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("iccid");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [statusFilter, setStatusFilter] = useState<number | null>(null); // null = all, 1 = active, 2 = suspended, 3 = offline
+  const [statusFilter, setStatusFilter] = useState<number | null>(null); // null = all, 0 = disponible, 1 = activa, 2 = suspendida, 3 = desactivada
 
   // Dispositivos — search + sort + multi-select + rename + reset + status loading
   const [deviceSearch, setDeviceSearch] = useState("");
@@ -763,11 +772,7 @@ export default function ClientPortalDashboard() {
   const filteredSims = (() => {
     const byStatus = sims.filter((s) => {
       if (statusFilter !== null) {
-        if (statusFilter === 3) {
-          if (s.status?.id === 1 || s.status?.id === 2) return false;
-        } else {
-          if (s.status?.id !== statusFilter) return false;
-        }
+        if ((s.status?.id ?? 0) !== statusFilter) return false;
       }
       return true;
     });
@@ -995,15 +1000,16 @@ export default function ClientPortalDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const active    = sims.filter((s) => s.status?.id === 1).length;
-  const suspended = sims.filter((s) => s.status?.id === 2).length;
-  const offline   = sims.filter((s) => s.status?.id !== 1 && s.status?.id !== 2).length;
+  const active      = sims.filter((s) => s.status?.id === 1).length;
+  const suspended   = sims.filter((s) => s.status?.id === 2).length;
+  const available   = sims.filter((s) => (s.status?.id ?? 0) === 0).length;
+  const deactivated = sims.filter((s) => s.status?.id === 3).length;
 
   const devicesWithEp = devicesOnly;
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-10">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-10">
       {/* Header/Controls */}
       <div className="flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex-1 w-full sm:max-w-md flex items-center gap-2">
@@ -1052,14 +1058,15 @@ export default function ClientPortalDashboard() {
         </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Summary cards — Total es el número hero (marca); el resto son estados excluyentes */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
-          { label: "Total SIMs",  value: sims.length, color: "#6366f1", icon: CreditCard, filter: null },
-          { label: "Activas",     value: active,       color: "#16a34a", icon: CheckCircle2, filter: 1 },
-          { label: "Suspendidas", value: suspended,    color: "#d97706", icon: PauseCircle, filter: 2 },
-          { label: "Offline",     value: offline,      color: "#94a3b8", icon: WifiOff, filter: 3 },
-        ].map(({ label, value, color, icon: Icon, filter }) => {
+          { label: "Total SIMs",   value: sims.length, tone: BRAND,                 icon: CreditCard,   filter: null },
+          { label: "Activas",      value: active,      tone: STATUS_TOKENS.good,     icon: CheckCircle2, filter: 1 },
+          { label: "Suspendidas",  value: suspended,   tone: STATUS_TOKENS.warning,  icon: PauseCircle,  filter: 2 },
+          { label: "Disponibles",  value: available,   tone: STATUS_TOKENS.muted,    icon: Circle,       filter: 0 },
+          { label: "Desactivadas", value: deactivated, tone: STATUS_TOKENS.danger,   icon: WifiOff,      filter: 3 },
+        ].map(({ label, value, tone, icon: Icon, filter }) => {
           const isActive = statusFilter === filter;
           return (
             <button
@@ -1068,18 +1075,20 @@ export default function ClientPortalDashboard() {
                 setStatusFilter(filter);
                 setActiveView("sims"); // Switch to SIMs tab when clicking a filter
               }}
-              className="bg-white rounded-xl p-4 shadow-sm border-2 transition-all hover:shadow-md active:scale-95 flex items-center gap-3 text-left"
+              className="group bg-white rounded-2xl p-4 shadow-sm border transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] flex items-center gap-3 text-left"
               style={{
-                borderColor: isActive ? color : "#e5e7eb",
-                background: isActive ? `${color}08` : "#ffffff",
+                borderColor: isActive ? tone.solid : "#eef0f2",
+                background: isActive ? tone.tint : "#ffffff",
               }}
             >
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
-                <Icon className="w-4 h-4" style={{ color }} />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105" style={{ background: tone.tint }}>
+                <Icon className="w-5 h-5" style={{ color: tone.text }} />
               </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold text-gray-900 leading-tight">{loading ? "—" : value}</p>
-                <p className="text-[10px] text-gray-500 truncate">{label}</p>
+                <p className="text-2xl font-bold leading-none tracking-tight" style={{ color: loading ? "#cbd5e1" : "#0f172a" }}>
+                  {loading ? "—" : value}
+                </p>
+                <p className="text-[11px] font-medium text-gray-500 truncate mt-1">{label}</p>
               </div>
             </button>
           );
@@ -1139,11 +1148,11 @@ export default function ClientPortalDashboard() {
                     onClick={() => setStatusFilter(null)}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors"
                     style={{
-                      background: statusFilter === 1 ? "rgba(22,163,74,0.12)" : statusFilter === 2 ? "rgba(217,119,6,0.12)" : "rgba(148,163,184,0.12)",
-                      color: statusFilter === 1 ? "#16a34a" : statusFilter === 2 ? "#d97706" : "#64748b"
+                      background: FILTER_META[statusFilter]?.tone.tint,
+                      color: FILTER_META[statusFilter]?.tone.text,
                     }}
                   >
-                    {statusFilter === 1 ? "Activas" : statusFilter === 2 ? "Suspendidas" : "Offline"}
+                    {FILTER_META[statusFilter]?.label ?? "Filtro"}
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -1473,8 +1482,8 @@ export default function ClientPortalDashboard() {
                                   <button
                                     onClick={() => setSmsTarget(sim)}
                                     disabled={!hasEp}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-indigo-50 disabled:opacity-40 active:scale-95"
-                                    style={{ color: "#6366f1" }}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-emerald-50 disabled:opacity-40 active:scale-95"
+                                    style={{ color: BRAND.text }}
                                   >
                                     <MessageSquare className="w-4 h-4" />
                                   </button>
@@ -1486,7 +1495,7 @@ export default function ClientPortalDashboard() {
                             </div>
                           </td>
 
-                          {/* Conexión */}
+                          {/* Conexión — pill; el dot late cuando está online para que resalte */}
                           <td className="py-3 px-4">
                             {connectivityLoading && !sim.connectivity ? (
                               <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
@@ -1494,9 +1503,15 @@ export default function ClientPortalDashboard() {
                                 <span>Cargando…</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: conn.color }} />
-                                <span style={{ color: conn.color }}>{conn.label}</span>
+                              <span
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                                style={{ background: conn.bg, color: conn.color }}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${conn.online ? "animate-pulse" : ""}`}
+                                  style={{ background: conn.color }}
+                                />
+                                {conn.label}
                               </span>
                             )}
                           </td>
