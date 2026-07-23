@@ -63,6 +63,7 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [open, setOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -78,12 +79,51 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
     }
   };
 
+  // Resincroniza los períodos de SIM contra el estado REAL de EMNIFY.
+  // Corre primero en modo preview (dry run) y pide confirmación antes de aplicar,
+  // porque borra períodos de facturación.
+  const handleResync = async () => {
+    setResyncing(true);
+    try {
+      const p: any = await api.resyncSimStates(true);
+      const ok = window.confirm(
+        `Resincronización contra EMNIFY\n\n` +
+        `Períodos abiertos revisados: ${p.periodos_abiertos}\n` +
+        `SIMs encontradas en EMNIFY: ${p.sims_en_emnify}\n\n` +
+        `• ${p.a_borrar_nunca_activadas} nunca activadas → se borran\n` +
+        `• ${p.a_cerrar_desactivadas} desactivadas → se cierran\n` +
+        `• ${p.a_actualizar_estado} cambian de estado\n` +
+        `• ${p.no_encontradas_en_emnify} no encontradas en EMNIFY (sin cambios)\n\n` +
+        `¿Aplicar estos cambios?`
+      );
+      if (!ok) return;
+      const r: any = await api.resyncSimStates(false);
+      toast.success(
+        `Resync aplicado: ${r.a_borrar_nunca_activadas} borradas, ${r.a_cerrar_desactivadas} cerradas, ${r.a_actualizar_estado} actualizadas`
+      );
+      onGenerated();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setResyncing(false);
+    }
+  };
+
   if (!open) {
     return (
-      <Button onClick={() => setOpen(true)} className="gap-2 text-black font-semibold" style={{ background: "#3ECF8E" }}>
-        <Receipt className="w-4 h-4" />
-        Generar Facturas
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button onClick={() => setOpen(true)} className="gap-2 text-black font-semibold" style={{ background: "#3ECF8E" }}>
+          <Receipt className="w-4 h-4" />
+          Generar Facturas
+        </Button>
+        <Button
+          variant="outline" disabled={resyncing} onClick={handleResync} className="gap-2"
+          title="Corrige los períodos de SIM contra el estado real de EMNIFY"
+        >
+          {resyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {resyncing ? "Resincronizando…" : "Resincronizar estados"}
+        </Button>
+      </div>
     );
   }
 

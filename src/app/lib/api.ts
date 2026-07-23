@@ -181,6 +181,10 @@ export const api = {
     request("POST", `/invoices/${id}/payments`, data),
   cancelInvoice: (id: string) => request("POST", `/invoices/${id}/cancel`, {}),
   reconcileBilling: () => request("GET", "/billing/reconcile"),
+  // Resincroniza los períodos de SIM contra el estado real de EMNIFY.
+  // dryRun=true devuelve solo el preview (no modifica nada).
+  resyncSimStates: (dryRun = true) =>
+    request("POST", `/billing/resync-sim-states?dry_run=${dryRun}`, {}),
 };
 
 // ── Client Portal API (uses portal_session_id) ───────────────────────────────

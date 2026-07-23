@@ -3525,6 +3525,95 @@ app.post("/make-server-ef736a01/billing/generate", async (c) => {
 // ════════════════════════════════════════════════
 // ADMIN — INVOICES
 // ════════════════════════════════════════════════
+// POST /billing/resync-sim-states?dry_run=true
+// Corrige los períodos de sim_assignments contra el estado REAL de EMNIFY.
+// Necesario porque el backfill inicial marcó todas las SIMs como activas.
+//   status 0 (Disponible, nunca activada) → borra el período (no debió existir)
+//   status 3 (Desactivada)                → cierra el período
+//   status 1/2 (Activa/Suspendida)        → actualiza last_status_id
+app.post("/make-server-ef736a01/billing/resync-sim-states", async (c) => {
+  try {
+    const session = await requireAdmin(c);
+    if (!session) return c.json({ error: "Forbidden" }, 403);
+
+    const dryRun = c.req.query("dry_run") === "true";
+
+    const { data: openPeriods, error: perErr } = await db()
+      .from("sim_assignments")
+      .select("id, iccid, client_name, last_status_id")
+      .is("deactivated_at", null);
+    if (perErr) return c.json({ error: perErr.message }, 500);
+
+    // Mapa iccid(19) → status.id, paginando EMNIFY (no 1 request por SIM).
+    // Nota: `extractSims` es local al handler /emnify/sims, así que se replica acá.
+    const pickSims = (d: any): any[] => {
+      if (Array.isArray(d)) return d;
+      if (d && Array.isArray(d.items)) return d.items;
+      if (d) { const k = Object.keys(d).find((kk) => Array.isArray(d[kk])); return k ? d[k] : []; }
+      return [];
+    };
+    const statusByIccid = new Map<string, number>();
+    const PER_PAGE = 100;
+    for (let page = 1; page <= 60; page++) {
+      const { data } = await emnifyFetch(`/sim?page=${page}&per_page=${PER_PAGE}`);
+      const sims = pickSims(data);
+      if (!sims.length) break;
+      for (const s of sims) {
+        const raw = String(s.iccid ?? "");
+        const key = raw.length === 20 ? raw.slice(0, 19) : raw;
+        if (key) statusByIccid.set(key, s.status?.id ?? -1);
+      }
+      if (sims.length < PER_PAGE) break;
+    }
+
+    const toDelete: string[] = [];
+    const toClose: string[] = [];
+    const toUpdate: { id: string; st: number }[] = [];
+    const notFound: string[] = [];
+
+    for (const p of openPeriods ?? []) {
+      const raw = String((p as any).iccid ?? "");
+      const key = raw.length === 20 ? raw.slice(0, 19) : raw;
+      const st = statusByIccid.get(key);
+      if (st === undefined) { notFound.push(raw); continue; }
+      if (st === 0) toDelete.push((p as any).id);
+      else if (st === 3) toClose.push((p as any).id);
+      else if (st !== (p as any).last_status_id) toUpdate.push({ id: (p as any).id, st });
+    }
+
+    const summary = {
+      dry_run: dryRun,
+      periodos_abiertos: openPeriods?.length ?? 0,
+      sims_en_emnify: statusByIccid.size,
+      a_borrar_nunca_activadas: toDelete.length,
+      a_cerrar_desactivadas: toClose.length,
+      a_actualizar_estado: toUpdate.length,
+      no_encontradas_en_emnify: notFound.length,
+    };
+
+    if (dryRun) return c.json({ ...summary, preview: true });
+
+    if (toDelete.length) {
+      const { error } = await db().from("sim_assignments").delete().in("id", toDelete);
+      if (error) return c.json({ error: `Borrando períodos: ${error.message}` }, 500);
+    }
+    if (toClose.length) {
+      const { error } = await db().from("sim_assignments")
+        .update({ deactivated_at: new Date().toISOString(), last_status_id: 3 })
+        .in("id", toClose);
+      if (error) return c.json({ error: `Cerrando períodos: ${error.message}` }, 500);
+    }
+    for (const u of toUpdate) {
+      await db().from("sim_assignments").update({ last_status_id: u.st }).eq("id", u.id);
+    }
+
+    return c.json({ ...summary, applied: true });
+  } catch (e: any) {
+    console.log("Resync sim states error:", e);
+    return c.json({ error: `Error resincronizando estados: ${e.message}` }, 500);
+  }
+});
+
 app.get("/make-server-ef736a01/invoices", async (c) => {
   try {
     const session = await requireAdmin(c);
