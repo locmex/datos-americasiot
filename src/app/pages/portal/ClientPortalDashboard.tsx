@@ -16,6 +16,20 @@ import { ClientAuthContext } from "../../lib/client-auth";
 import { toast } from "sonner";
 import { DeviceDetailModal, EmnifyEndpoint } from "../../components/DeviceDetailModal";
 import { BRAND, STATUS_TOKENS, type Tone } from "../../lib/status-tokens";
+import { Icon } from "../../components/ui/icon";
+
+// Ventana de páginas con elipsis: 1 … 4 5 6 … 20
+function pageWindow(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: (number | "…")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end   = Math.min(total - 1, current + 1);
+  if (start > 2) out.push("…");
+  for (let i = start; i <= end; i++) out.push(i);
+  if (end < total - 1) out.push("…");
+  out.push(total);
+  return out;
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ClientSIM {
@@ -701,6 +715,8 @@ export default function ClientPortalDashboard() {
   // Dispositivos — search + sort + multi-select + rename + reset + status loading
   const [deviceSearch, setDeviceSearch] = useState("");
   const [deviceSort, setDeviceSort] = useState<{ col: string; dir: "asc" | "desc" }>({ col: "Dispositivo", dir: "asc" });
+  const [devicePage, setDevicePage] = useState(1);
+  const [devicePerPage, setDevicePerPage] = useState(25);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [renameTargets, setRenameTargets] = useState<ClientSIM[] | null>(null);
   const [resettingId, setResettingId] = useState<number | null>(null);
@@ -887,10 +903,17 @@ export default function ClientPortalDashboard() {
     });
   };
 
+  // Selecciona/deselecciona solo la PÁGINA visible: marcar 200 dispositivos
+  // cuando en pantalla hay 25 es contraintuitivo (y "Renombrar" abriría 200 campos).
   const handleSelectAll = () => {
-    const withEp = sims.filter((s) => !!s.endpointId);
-    if (selectedIds.size === withEp.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(withEp.map((s) => s.iccid)));
+    const pageIccids = pagedDevices.map((s) => s.iccid);
+    const allPageSelected = pageIccids.length > 0 && pageIccids.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) pageIccids.forEach((id) => next.delete(id));
+      else pageIccids.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const handleRenameSelected = () => {
@@ -973,6 +996,24 @@ export default function ClientPortalDashboard() {
     });
   })();
 
+  // ── Paginación de Dispositivos ──
+  // Solo se renderiza la página actual: con 200+ SIMs, montar todas las filas
+  // en el DOM es lo que traba el scroll, el filtrado y el ordenamiento.
+  const deviceTotalPages = Math.max(1, Math.ceil(filteredDevices.length / devicePerPage));
+  const deviceFrom = filteredDevices.length === 0 ? 0 : (devicePage - 1) * devicePerPage + 1;
+  const deviceTo   = Math.min(devicePage * devicePerPage, filteredDevices.length);
+  const pagedDevices = filteredDevices.slice((devicePage - 1) * devicePerPage, devicePage * devicePerPage);
+
+  // Al cambiar búsqueda, orden, filtro o tamaño de página, volver al inicio
+  useEffect(() => {
+    setDevicePage(1);
+  }, [deviceSearch, deviceSort.col, deviceSort.dir, statusFilter, devicePerPage]);
+
+  // Si la página actual queda fuera de rango (p. ej. tras filtrar), corregirla
+  useEffect(() => {
+    if (devicePage > deviceTotalPages) setDevicePage(deviceTotalPages);
+  }, [devicePage, deviceTotalPages]);
+
   const exportDevicesToCSV = () => {
     const headers = ["Nombre", "Estado", "Conexión", "ICCID", "IMEI", "IMSI", "IP"];
     const rows = devicesOnly.map((s) => {
@@ -1004,8 +1045,6 @@ export default function ClientPortalDashboard() {
   const suspended   = sims.filter((s) => s.status?.id === 2).length;
   const available   = sims.filter((s) => (s.status?.id ?? 0) === 0).length;
   const deactivated = sims.filter((s) => s.status?.id === 3).length;
-
-  const devicesWithEp = devicesOnly;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -1331,7 +1370,7 @@ export default function ClientPortalDashboard() {
                     <tr className="border-b border-gray-100 bg-gray-50/60">
                       <th className="py-3 px-4 w-10">
                         <button onClick={handleSelectAll} className="flex items-center justify-center">
-                          {selectedIds.size === devicesWithEp.length && devicesWithEp.length > 0
+                          {pagedDevices.length > 0 && pagedDevices.every((s) => selectedIds.has(s.iccid))
                             ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
                             : <Square className="w-4 h-4 text-gray-300" />}
                         </button>
@@ -1388,7 +1427,7 @@ export default function ClientPortalDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDevices.map((sim) => {
+                    {pagedDevices.map((sim) => {
                       const st = getStatus(sim.status?.id ?? 0);
                       const conn = getPortalConnBadge(sim);
                       const hasEp = !!sim.endpointId;
@@ -1526,6 +1565,64 @@ export default function ClientPortalDashboard() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Paginación */}
+            {!loading && filteredDevices.length > 0 && (
+              <div className="border-t border-hairline px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+                <div className="flex items-center gap-3">
+                  <span className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+                    Mostrando {deviceFrom}–{deviceTo} de {filteredDevices.length}
+                  </span>
+                  <select
+                    value={devicePerPage}
+                    onChange={(e) => setDevicePerPage(Number(e.target.value))}
+                    className="font-body-sm text-body-sm border border-hairline rounded-lg px-2 py-1 bg-white text-on-surface focus:outline-none focus:border-primary"
+                  >
+                    {[10, 25, 50, 100].map((n) => (
+                      <option key={n} value={n}>{n} por página</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setDevicePage((p) => Math.max(1, p - 1))}
+                    disabled={devicePage === 1}
+                    className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40 transition-colors"
+                    aria-label="Página anterior"
+                  >
+                    <Icon name="chevron_left" className="text-[20px]" />
+                  </button>
+
+                  {pageWindow(devicePage, deviceTotalPages).map((p, i) =>
+                    p === "…" ? (
+                      <span key={`gap-${i}`} className="px-1 text-on-surface-variant">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setDevicePage(p)}
+                        className={`w-8 h-8 rounded-lg font-label-md text-label-md flex items-center justify-center transition-colors ${
+                          p === devicePage
+                            ? "bg-primary-container/20 text-primary"
+                            : "text-on-surface-variant hover:bg-surface-container-low"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => setDevicePage((p) => Math.min(deviceTotalPages, p + 1))}
+                    disabled={devicePage === deviceTotalPages}
+                    className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40 transition-colors"
+                    aria-label="Página siguiente"
+                  >
+                    <Icon name="chevron_right" className="text-[20px]" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
