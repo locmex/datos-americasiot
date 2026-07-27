@@ -9,6 +9,8 @@ import {
   regimenesPara,
   usosCfdiPara,
   validarDatosFiscales,
+  validarDatosFiscalesParciales,
+  camposFiscalesFaltantes,
   puedeFacturarse,
   RFC_GENERICO_NACIONAL,
 } from "./sat-catalogs";
@@ -165,5 +167,66 @@ describe("validarDatosFiscales", () => {
 
   it("normaliza el RFC antes de validar (minúsculas y guiones)", () => {
     expect(validarDatosFiscales({ ...completos, rfc: "fec-920212-pb9" })).toEqual({});
+  });
+});
+
+describe("validarDatosFiscalesParciales (campos opcionales)", () => {
+  it("acepta un objeto vacío: los datos fiscales se capturan después", () => {
+    expect(validarDatosFiscalesParciales({})).toEqual({});
+  });
+
+  it("acepta una captura a medias sin reportar faltantes", () => {
+    expect(validarDatosFiscalesParciales({ rfc: RFC_MORAL })).toEqual({});
+    expect(validarDatosFiscalesParciales({ razon_social: "ACME SA DE CV" })).toEqual({});
+  });
+
+  it("rechaza un RFC presente pero mal formado", () => {
+    expect(validarDatosFiscalesParciales({ rfc: "NOESRFC" }).rfc).toBeTruthy();
+  });
+
+  it("rechaza un CP presente pero inválido", () => {
+    expect(validarDatosFiscalesParciales({ cp_fiscal: "342" }).cp_fiscal).toBeTruthy();
+  });
+
+  it("rechaza una clave de régimen inexistente", () => {
+    expect(validarDatosFiscalesParciales({ regimen_fiscal: "999" }).regimen_fiscal).toBeTruthy();
+  });
+
+  it("rechaza un régimen incoherente con el tipo de persona del RFC", () => {
+    const err = validarDatosFiscalesParciales({ rfc: RFC_MORAL, regimen_fiscal: "612" });
+    expect(err.regimen_fiscal).toContain("no aplica");
+  });
+
+  it("no exige coherencia de régimen si todavía no hay RFC", () => {
+    expect(validarDatosFiscalesParciales({ regimen_fiscal: "612" })).toEqual({});
+  });
+
+  it("rechaza un uso de CFDI inexistente", () => {
+    expect(validarDatosFiscalesParciales({ uso_cfdi: "ZZ9" }).uso_cfdi).toBeTruthy();
+  });
+});
+
+describe("camposFiscalesFaltantes", () => {
+  it("lista los cinco campos cuando no hay nada capturado", () => {
+    expect(camposFiscalesFaltantes({})).toHaveLength(5);
+  });
+
+  it("lista solo lo que falta", () => {
+    expect(
+      camposFiscalesFaltantes({ rfc: RFC_MORAL, razon_social: "ACME", cp_fiscal: "34200" })
+    ).toEqual(["Régimen fiscal", "Uso de CFDI"]);
+  });
+
+  it("no lista nada cuando está completo", () => {
+    expect(
+      camposFiscalesFaltantes({
+        rfc: RFC_MORAL, razon_social: "ACME", cp_fiscal: "34200",
+        regimen_fiscal: "601", uso_cfdi: "G03",
+      })
+    ).toEqual([]);
+  });
+
+  it("ignora valores que son solo espacios", () => {
+    expect(camposFiscalesFaltantes({ rfc: "   " })).toContain("RFC");
   });
 });

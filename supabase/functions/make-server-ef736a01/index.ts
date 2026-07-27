@@ -5,6 +5,7 @@ import * as kv from "./kv_store.tsx";
 import { db, buildTrackingUrl } from "./db.tsx";
 import { syncSimPeriod } from "./billing/sim-periods.ts";
 import { computeProrationFactor, startOfM, startNext } from "./billing/proration.ts";
+import { extraerFiscales, validarFiscalesParciales } from "./cfdi/fiscal.ts";
 
 const app = new Hono();
 app.use("*", logger(console.log));
@@ -2124,11 +2125,20 @@ app.post("/make-server-ef736a01/clients", async (c) => {
   try {
     const session = await requireAuth(c);
     if (!session) return c.json({ error: "Unauthorized" }, 401);
-    const { name, email, company, phone, notes } = await c.req.json();
+    const body = await c.req.json();
+    const { name, email, company, phone, notes } = body;
     if (!name || !email) return c.json({ error: "Nombre y email requeridos" }, 400);
+
+    // Datos fiscales (CFDI): opcionales al dar de alta, pero si vienen deben ser válidos
+    const fiscales = extraerFiscales(body);
+    const erroresFiscales = validarFiscalesParciales(fiscales);
+    if (Object.keys(erroresFiscales).length > 0) {
+      return c.json({ error: "Datos fiscales inválidos", fields: erroresFiscales }, 422);
+    }
+
     const normalEmail = email.trim().toLowerCase();
     const id = `clt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const client = { id, name: name.trim(), email: normalEmail, company: company?.trim() || "", phone: phone?.trim() || "", notes: notes?.trim() || "", createdAt: new Date().toISOString(), createdBy: session.userId };
+    const client = { id, name: name.trim(), email: normalEmail, company: company?.trim() || "", phone: phone?.trim() || "", notes: notes?.trim() || "", ...fiscales, createdAt: new Date().toISOString(), createdBy: session.userId };
     await kv.set(`client:${id}`, client);
     await logActivity("client_created", `Nuevo cliente: ${name.trim()} (${normalEmail})`, { clientId: id, userId: session.userId });
     return c.json({ client });
@@ -2145,6 +2155,20 @@ app.patch("/make-server-ef736a01/clients/:id", async (c) => {
     const existing = await kv.get(`client:${id}`);
     if (!existing) return c.json({ error: "Cliente no encontrado" }, 404);
     const updates = await c.req.json();
+
+    // Si el update toca datos fiscales, se valida el resultado COMBINADO:
+    // los chequeos cruzados (régimen vs tipo de persona del RFC) necesitan ver
+    // tanto lo que ya estaba guardado como lo que llega.
+    const fiscalesEnUpdate = extraerFiscales(updates);
+    if (Object.keys(fiscalesEnUpdate).length > 0) {
+      const combinados = { ...extraerFiscales(existing), ...fiscalesEnUpdate };
+      const erroresFiscales = validarFiscalesParciales(combinados);
+      if (Object.keys(erroresFiscales).length > 0) {
+        return c.json({ error: "Datos fiscales inválidos", fields: erroresFiscales }, 422);
+      }
+      Object.assign(updates, fiscalesEnUpdate); // guardar normalizado (RFC en mayúsculas)
+    }
+
     const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
     await kv.set(`client:${id}`, updated);
     return c.json({ client: updated });

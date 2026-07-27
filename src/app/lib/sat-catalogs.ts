@@ -199,3 +199,71 @@ export function validarDatosFiscales(d: DatosFiscales): Record<string, string> {
 export function puedeFacturarse(d: DatosFiscales): boolean {
   return Object.keys(validarDatosFiscales(d)).length === 0;
 }
+
+/** Etiqueta legible de cada campo fiscal (para mensajes y tooltips). */
+export const ETIQUETA_CAMPO_FISCAL: Record<keyof DatosFiscales, string> = {
+  rfc: "RFC",
+  razon_social: "Razón social",
+  cp_fiscal: "Código postal fiscal",
+  regimen_fiscal: "Régimen fiscal",
+  uso_cfdi: "Uso de CFDI",
+};
+
+/**
+ * Valida ÚNICAMENTE los campos que vienen con valor.
+ *
+ * Los datos fiscales son opcionales al dar de alta un cliente (el admin los captura
+ * cuando el cliente entrega su Constancia de Situación Fiscal), así que un campo
+ * vacío NO es un error. Pero un campo mal formado sí: es mejor rechazarlo acá que
+ * descubrirlo cuando el PAC rechace el timbrado.
+ */
+export function validarDatosFiscalesParciales(d: DatosFiscales): Record<string, string> {
+  const errores: Record<string, string> = {};
+
+  const rfc = normalizeRfc(d.rfc ?? "");
+  if (rfc && !isValidRfc(rfc)) {
+    errores.rfc = "El RFC no tiene un formato válido";
+  }
+
+  const cp = (d.cp_fiscal ?? "").trim();
+  if (cp && !isValidCp(cp)) {
+    errores.cp_fiscal = "El código postal debe tener 5 dígitos";
+  }
+
+  // Si el RFC todavía no está (o es inválido), no se puede deducir el tipo de
+  // persona: en ese caso solo se verifica que la clave exista en el catálogo.
+  const tipo = rfc && isValidRfc(rfc) ? tipoPersonaDeRfc(rfc) : null;
+
+  const regimen = (d.regimen_fiscal ?? "").trim();
+  if (regimen) {
+    if (!REGIMENES_FISCALES.some((r) => r.clave === regimen)) {
+      errores.regimen_fiscal = "El régimen fiscal no existe en el catálogo del SAT";
+    } else if (tipo && !isRegimenValidoPara(regimen, tipo)) {
+      errores.regimen_fiscal = `El régimen ${regimen} no aplica a una persona ${tipo}`;
+    }
+  }
+
+  const uso = (d.uso_cfdi ?? "").trim();
+  if (uso) {
+    if (!USOS_CFDI.some((u) => u.clave === uso)) {
+      errores.uso_cfdi = "El uso de CFDI no existe en el catálogo del SAT";
+    } else if (tipo && !isUsoCfdiValidoPara(uso, tipo)) {
+      errores.uso_cfdi = `El uso ${uso} no aplica a una persona ${tipo}`;
+    }
+  }
+
+  return errores;
+}
+
+/**
+ * Campos fiscales que faltan para poder facturar.
+ * Devuelve etiquetas legibles, listas para mostrar en un tooltip.
+ */
+export function camposFiscalesFaltantes(d: DatosFiscales): string[] {
+  const claves: (keyof DatosFiscales)[] = [
+    "rfc", "razon_social", "cp_fiscal", "regimen_fiscal", "uso_cfdi",
+  ];
+  return claves
+    .filter((k) => !((d[k] ?? "") as string).trim())
+    .map((k) => ETIQUETA_CAMPO_FISCAL[k]);
+}
