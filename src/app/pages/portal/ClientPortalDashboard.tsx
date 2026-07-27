@@ -708,6 +708,8 @@ export default function ClientPortalDashboard() {
 
   // Mis SIMs — search + sort + filter
   const [simSearch, setSimSearch] = useState("");
+  const [simPage, setSimPage] = useState(1);
+  const [simPerPage, setSimPerPage] = useState(25);
   const [sortKey, setSortKey] = useState<SortKey>("iccid");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [statusFilter, setStatusFilter] = useState<number | null>(null); // null = all, 0 = disponible, 1 = activa, 2 = suspendida, 3 = desactivada
@@ -826,6 +828,20 @@ export default function ClientPortalDashboard() {
     }
     return sortDir === "asc" ? cmp : -cmp;
   });
+
+  // ── Paginación de Mis SIMs (mismo criterio que Dispositivos) ──
+  const simTotalPages = Math.max(1, Math.ceil(sortedSims.length / simPerPage));
+  const simFrom = sortedSims.length === 0 ? 0 : (simPage - 1) * simPerPage + 1;
+  const simTo   = Math.min(simPage * simPerPage, sortedSims.length);
+  const pagedSims = sortedSims.slice((simPage - 1) * simPerPage, simPage * simPerPage);
+
+  useEffect(() => {
+    setSimPage(1);
+  }, [simSearch, sortKey, sortDir, statusFilter, simPerPage]);
+
+  useEffect(() => {
+    if (simPage > simTotalPages) setSimPage(simTotalPages);
+  }, [simPage, simTotalPages]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -1187,116 +1203,196 @@ export default function ClientPortalDashboard() {
           {loading ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl overflow-hidden">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 last:border-0 animate-pulse">
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-gray-100 rounded w-2/3" />
-                    <div className="h-2.5 bg-gray-100 rounded w-1/3" />
-                  </div>
-                  <div className="h-5 w-16 bg-gray-100 rounded-full" />
-                  <div className="w-4 h-4 bg-gray-100 rounded" />
+                <div key={i} className="flex items-center gap-4 p-4 border-b border-hairline last:border-0 animate-pulse">
+                  <div className="h-3 bg-surface-container rounded w-44 shrink-0" />
+                  <div className="h-3 bg-surface-container rounded w-32" />
+                  <div className="ml-auto h-5 w-20 bg-surface-container rounded-full" />
                 </div>
               ))}
             </div>
           ) : sims.length === 0 ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl py-20 text-center">
-              <CreditCard className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-              <p className="font-semibold text-gray-500">Sin SIMs asignadas</p>
-              <p className="text-sm text-gray-400 mt-1 max-w-xs mx-auto">Contacta a tu administrador para que te asigne SIMs a tu cuenta.</p>
+              <Icon name="sim_card" className="text-[48px] text-outline-variant mb-3" />
+              <p className="font-label-md text-label-md text-on-surface">Sin SIMs asignadas</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xs mx-auto">
+                Contacta a tu administrador para que te asigne SIMs a tu cuenta.
+              </p>
             </div>
           ) : sortedSims.length === 0 ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl py-12 text-center">
-              <Search className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="font-semibold text-gray-500">Sin resultados</p>
-              <p className="text-sm text-gray-400 mt-1">No se encontraron SIMs para "{simSearch}"</p>
+              <Icon name="search_off" className="text-[40px] text-outline-variant mb-3" />
+              <p className="font-label-md text-label-md text-on-surface">Sin resultados</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                No se encontraron SIMs para "{simSearch}"
+              </p>
             </div>
           ) : (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl shadow-sm overflow-hidden">
-              {/* Table header with sort */}
-              <div className="grid items-center px-4 py-2.5 bg-gray-50/80 border-b border-gray-100"
-                style={{ gridTemplateColumns: "1fr auto auto auto" }}>
-                <button
-                  onClick={() => handleSort("iccid")}
-                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  SIM / ICCID <SortIcon k="iccid" />
-                </button>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right mr-6 hidden sm:block">TX / RX</span>
-                <button
-                  onClick={() => handleSort("status")}
-                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-gray-600 mr-3 transition-colors"
-                >
-                  Estado <SortIcon k="status" />
-                </button>
-                <span />
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-hairline bg-row-hover">
+                      {([
+                        { label: "ICCID",           key: "iccid"  as SortKey },
+                        { label: "Dispositivo",     key: null },
+                        { label: "Consumo del mes", key: "usage"  as SortKey },
+                        { label: "Estado",          key: "status" as SortKey },
+                      ] as const).map(({ label, key }) => (
+                        <th key={label} className="p-4 text-left whitespace-nowrap">
+                          {key ? (
+                            <button onClick={() => handleSort(key)} className="flex items-center gap-1 group">
+                              <span className={`font-label-xs text-label-xs uppercase tracking-wider transition-colors ${sortKey === key ? "text-on-surface" : "text-on-surface-variant group-hover:text-on-surface"}`}>
+                                {label}
+                              </span>
+                              <Icon
+                                name={sortKey === key && sortDir === "desc" ? "arrow_downward" : "arrow_upward"}
+                                className={`text-[14px] transition-opacity ${sortKey === key ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
+                              />
+                            </button>
+                          ) : (
+                            <span className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant">
+                              {label}
+                            </span>
+                          )}
+                        </th>
+                      ))}
+                      <th className="p-4 w-12" />
+                    </tr>
+                  </thead>
+                  <tbody className="font-body-md text-body-md">
+                    {pagedSims.map((sim) => {
+                      const iccid = sim.iccid_with_luhn || sim.iccid;
+                      const st = getStatus(sim.status?.id ?? 0);
+                      const u = getUsageMB(sim.usage);
+                      const isSelected = selectedSim?.iccid === sim.iccid;
+
+                      return (
+                        <tr
+                          key={sim.iccid}
+                          onClick={() => setSelectedSim(sim)}
+                          className={`table-row-hover group border-b border-hairline last:border-0 cursor-pointer ${isSelected ? "bg-primary-container/10" : ""}`}
+                        >
+                          {/* ICCID */}
+                          <td className="p-4 font-mono font-body-sm text-body-sm text-on-surface whitespace-nowrap">
+                            {iccid}
+                          </td>
+
+                          {/* Dispositivo */}
+                          <td className="p-4">
+                            {sim.endpoint?.name ? (
+                              <span className="flex items-center gap-2 text-on-surface">
+                                <Icon name="router" className="text-[16px] text-tertiary shrink-0" />
+                                <span className="truncate max-w-[180px]">{sim.endpoint.name}</span>
+                              </span>
+                            ) : (
+                              <span className="italic font-body-sm text-body-sm text-outline-variant">Sin dispositivo</span>
+                            )}
+                          </td>
+
+                          {/* Consumo del mes */}
+                          <td className="p-4 whitespace-nowrap">
+                            <span className="flex items-center gap-3 font-body-sm text-body-sm text-on-surface-variant">
+                              <span className="flex items-center gap-1" title="Enviado (TX)">
+                                <Icon name="arrow_upward" className="text-[14px]" />
+                                {u.tx > 0 ? formatMB(u.tx) : "—"}
+                              </span>
+                              <span className="flex items-center gap-1" title="Recibido (RX)">
+                                <Icon name="arrow_downward" className="text-[14px]" />
+                                {u.rx > 0 ? formatMB(u.rx) : "—"}
+                              </span>
+                            </span>
+                          </td>
+
+                          {/* Estado — pastilla clicable */}
+                          <td className="p-4">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleDeviceStatus(sim, e.currentTarget); }}
+                                  disabled={statusLoadingIds.has(sim.iccid)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap font-label-xs text-label-xs transition-all active:scale-95 disabled:opacity-60 disabled:scale-100 hover:brightness-95"
+                                  style={{ background: st.bg, color: st.color }}
+                                >
+                                  {statusLoadingIds.has(sim.iccid)
+                                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                                    : <st.icon className="w-3 h-3" />}
+                                  {st.label}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{st.id === 1 ? "Click para suspender" : "Click para activar"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </td>
+
+                          {/* Indicador de detalle */}
+                          <td className="p-4 text-right">
+                            <Icon
+                              name="chevron_right"
+                              className={`text-[20px] transition-colors ${isSelected ? "text-primary" : "text-outline-variant group-hover:text-on-surface-variant"}`}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Rows */}
-              <div className="divide-y divide-gray-50">
-                {sortedSims.map((sim) => {
-                  const iccid = sim.iccid_with_luhn || sim.iccid;
-                  const st = getStatus(sim.status?.id ?? 0);
-                  const StIcon = st.icon;
-                  const u = getUsageMB(sim.usage);
-                  const isSelected = selectedSim?.iccid === sim.iccid;
+              {/* Paginación */}
+              <div className="border-t border-hairline px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+                <div className="flex items-center gap-3">
+                  <span className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+                    Mostrando {simFrom}–{simTo} de {sortedSims.length}
+                  </span>
+                  <select
+                    value={simPerPage}
+                    onChange={(e) => setSimPerPage(Number(e.target.value))}
+                    className="font-body-sm text-body-sm border border-hairline rounded-lg px-2 py-1 bg-white text-on-surface focus:outline-none focus:border-primary"
+                  >
+                    {[10, 25, 50, 100].map((n) => (
+                      <option key={n} value={n}>{n} por página</option>
+                    ))}
+                  </select>
+                </div>
 
-                  return (
-                    <button
-                      key={sim.iccid}
-                      onClick={() => setSelectedSim(sim)}
-                      className="w-full grid items-center px-4 py-3.5 text-left transition-all hover:bg-gray-50/80 active:bg-gray-100"
-                      style={{
-                        gridTemplateColumns: "1fr auto auto auto",
-                        background: isSelected ? "rgba(62,207,142,0.04)" : undefined,
-                        borderLeft: isSelected ? "3px solid #3ECF8E" : "3px solid transparent",
-                      }}
-                    >
-                      {/* ICCID + device */}
-                      <div className="flex items-center gap-3 min-w-0 pr-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: st.bg }}>
-                          <StIcon className="w-4 h-4" style={{ color: st.color }} />
-                        </div>
-                        <div className="min-w-0">
-                          <code className="text-xs font-mono font-semibold text-gray-800 block truncate">
-                            …{iccid.slice(-12)}
-                          </code>
-                          <p className="text-[10px] text-gray-400 truncate mt-0.5">
-                            {sim.endpoint?.name || "Sin dispositivo"}
-                          </p>
-                        </div>
-                      </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSimPage((p) => Math.max(1, p - 1))}
+                    disabled={simPage === 1}
+                    className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40 transition-colors"
+                    aria-label="Página anterior"
+                  >
+                    <Icon name="chevron_left" className="text-[20px]" />
+                  </button>
 
-                      {/* TX / RX */}
-                      <div className="hidden sm:flex flex-col items-end mr-6 shrink-0">
-                        <span className="text-[10px] text-gray-400">{u.tx > 0 ? `↑ ${formatMB(u.tx)}` : "↑ —"}</span>
-                        <span className="text-[10px] text-gray-400">{u.rx > 0 ? `↓ ${formatMB(u.rx)}` : "↓ —"}</span>
-                      </div>
+                  {pageWindow(simPage, simTotalPages).map((p, i) =>
+                    p === "…" ? (
+                      <span key={`simgap-${i}`} className="px-1 text-on-surface-variant">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setSimPage(p)}
+                        className={`w-8 h-8 rounded-lg font-label-md text-label-md flex items-center justify-center transition-colors ${
+                          p === simPage
+                            ? "bg-primary-container/20 text-primary"
+                            : "text-on-surface-variant hover:bg-surface-container-low"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
 
-                      {/* Status pill */}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleDeviceStatus(sim, e.currentTarget); }}
-                            disabled={statusLoadingIds.has(sim.iccid)}
-                            className="flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap mr-3 shrink-0 transition-transform active:scale-95 disabled:opacity-60 disabled:scale-100 hover:brightness-95"
-                            style={{ background: st.bg, color: st.color }}
-                          >
-                            {statusLoadingIds.has(sim.iccid) ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : null}
-                            {st.label}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{st.id === 1 ? "Click para suspender" : "Click para activar"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      {/* Arrow */}
-                      <ChevronRight className="w-4 h-4 shrink-0 transition-colors" style={{ color: isSelected ? "#3ECF8E" : "#d1d5db" }} />
-                    </button>
-                  );
-                })}
+                  <button
+                    onClick={() => setSimPage((p) => Math.min(simTotalPages, p + 1))}
+                    disabled={simPage === simTotalPages}
+                    className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40 transition-colors"
+                    aria-label="Página siguiente"
+                  >
+                    <Icon name="chevron_right" className="text-[20px]" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1334,18 +1430,23 @@ export default function ClientPortalDashboard() {
           <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl shadow-sm overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : devicesOnly.length === 0 ? (
               <div className="py-20 text-center">
-                <Cpu className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="font-semibold text-gray-500">Sin dispositivos</p>
+                <Icon name="devices_off" className="text-[48px] text-outline-variant mb-3" />
+                <p className="font-label-md text-label-md text-on-surface">Sin dispositivos</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xs mx-auto">
+                  Tus SIMs todavía no están vinculadas a un dispositivo.
+                </p>
               </div>
             ) : filteredDevices.length === 0 ? (
               <div className="py-12 text-center">
-                <Search className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="font-semibold text-gray-500">Sin resultados</p>
-                <p className="text-sm text-gray-400 mt-1">No se encontraron dispositivos para "{deviceSearch}"</p>
+                <Icon name="search_off" className="text-[40px] text-outline-variant mb-3" />
+                <p className="font-label-md text-label-md text-on-surface">Sin resultados</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  No se encontraron dispositivos para "{deviceSearch}"
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
