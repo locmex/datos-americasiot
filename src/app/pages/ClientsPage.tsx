@@ -11,6 +11,8 @@ import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
 import { api } from "../lib/api";
 import { toast } from "sonner";
+import { FiscalDataFields } from "../components/FiscalDataFields";
+import { validarDatosFiscalesParciales, puedeFacturarse, camposFiscalesFaltantes } from "../lib/sat-catalogs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Client {
@@ -590,17 +592,26 @@ function CreateClientStepper({ open, onClose, onSaved }: {
 function EditClientModal({ open, onClose, onSaved, client }: {
   open: boolean; onClose: () => void; onSaved: () => void; client: Client;
 }) {
-  const [form, setForm] = useState({ name: "", email: "", company: "", phone: "", notes: "" });
+  const [form, setForm] = useState({
+    name: "", email: "", company: "", phone: "", notes: "",
+    rfc: "", razon_social: "", cp_fiscal: "", regimen_fiscal: "", uso_cfdi: "",
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (client) {
+      const c = client as any;
       setForm({
         name: client.name,
         email: client.email,
         company: client.company || "",
         phone: client.phone || "",
         notes: client.notes || "",
+        rfc: c.rfc || "",
+        razon_social: c.razon_social || "",
+        cp_fiscal: c.cp_fiscal || "",
+        regimen_fiscal: c.regimen_fiscal || "",
+        uso_cfdi: c.uso_cfdi || "",
       });
     }
   }, [client, open]);
@@ -610,6 +621,12 @@ function EditClientModal({ open, onClose, onSaved, client }: {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email) { toast.error("Nombre y email son requeridos"); return; }
+    // Los datos fiscales son opcionales, pero si hay algo capturado debe ser válido
+    const erroresFiscales = validarDatosFiscalesParciales(form);
+    if (Object.keys(erroresFiscales).length > 0) {
+      toast.error(Object.values(erroresFiscales)[0]);
+      return;
+    }
     setLoading(true);
     try {
       await api.updateClient(client.id, form);
@@ -622,8 +639,8 @@ function EditClientModal({ open, onClose, onSaved, client }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92dvh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
           <div>
             <h3 className="font-bold text-gray-900">Editar Cliente</h3>
             <p className="text-xs text-gray-400 mt-0.5">Modifica los datos del cliente</p>
@@ -659,6 +676,17 @@ function EditClientModal({ open, onClose, onSaved, client }: {
               className="w-full h-20 px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 resize-none bg-gray-50"
             />
           </div>
+          {/* Datos fiscales (CFDI) — opcionales */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              Datos fiscales (facturación)
+            </p>
+            <FiscalDataFields
+              value={form}
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            />
+          </div>
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
               Cancelar
@@ -1168,6 +1196,9 @@ export default function ClientsPage() {
             const chipCount = clientChips.length;
             const isActive = activeClient?.id === client.id;
             const hasPortal = (client as any).portalEnabled;
+            // Estado fiscal: sin estos datos no se le puede timbrar una factura
+            const facturable = puedeFacturarse(client as any);
+            const faltantesFiscales = camposFiscalesFaltantes(client as any);
 
             return (
               <div key={client.id}
@@ -1187,6 +1218,24 @@ export default function ClientsPage() {
                           <Building className="w-3 h-3 shrink-0" />{client.company}
                         </p>
                       )}
+                      {/* Estado fiscal — sin datos completos no se puede timbrar */}
+                      <span
+                        title={
+                          facturable
+                            ? "Datos fiscales completos: se le pueden emitir facturas"
+                            : `No se pueden emitir facturas. Falta: ${faltantesFiscales.join(", ")}`
+                        }
+                        className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        style={
+                          facturable
+                            ? { background: "rgba(5,150,105,0.12)", color: "#059669" }
+                            : { background: "rgba(217,119,6,0.12)", color: "#d97706" }
+                        }
+                      >
+                        {facturable
+                          ? <><ShieldCheck className="w-3 h-3" />Facturable</>
+                          : <><AlertTriangle className="w-3 h-3" />Sin datos fiscales</>}
+                      </span>
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
