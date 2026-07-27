@@ -1308,24 +1308,23 @@ export default function ClientPortalDashboard() {
         <>
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-teal-200 bg-teal-50">
-              <span className="text-sm font-semibold text-teal-700">
+            <div className="bg-surface-container-high border-x border-hairline px-card-padding py-3 flex items-center justify-between gap-3">
+              <span className="font-label-md text-label-md text-on-surface">
                 {selectedIds.size} dispositivo{selectedIds.size !== 1 ? "s" : ""} seleccionado{selectedIds.size !== 1 ? "s" : ""}
               </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleRenameSelected}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all active:scale-95"
-                  style={{ background: "#059669" }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white border border-hairline rounded-lg text-primary hover:bg-surface transition-colors font-label-md text-label-xs"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
+                  <Icon name="edit" className="text-[14px]" />
                   Renombrar
                 </button>
                 <button
                   onClick={() => setSelectedIds(new Set())}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-teal-600 hover:bg-teal-100 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors font-label-md text-label-xs"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Icon name="close" className="text-[14px]" />
                   Limpiar
                 </button>
               </div>
@@ -1352,18 +1351,22 @@ export default function ClientPortalDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50/60">
-                      <th className="py-3 px-4 w-10">
+                    <tr className="border-b border-hairline bg-row-hover">
+                      <th className="p-4 w-12">
                         <button onClick={handleSelectAll} className="flex items-center justify-center">
-                          {pagedDevices.length > 0 && pagedDevices.every((s) => selectedIds.has(s.iccid))
-                            ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
-                            : <Square className="w-4 h-4 text-gray-300" />}
+                          <Icon
+                            name={pagedDevices.length > 0 && pagedDevices.every((s) => selectedIds.has(s.iccid))
+                              ? "check_box" : "check_box_outline_blank"}
+                            filled
+                            className={pagedDevices.length > 0 && pagedDevices.every((s) => selectedIds.has(s.iccid))
+                              ? "text-[18px] text-primary" : "text-[18px] text-outline"}
+                          />
                         </button>
                       </th>
-                      {(["Dispositivo", "Estado"] as const).map((h) => {
+                      {(["Dispositivo", "Estado", "Conexión", "ICCID", "IMEI"] as const).map((h) => {
                         const active = deviceSort.col === h;
                         return (
-                          <th key={h} className="text-left py-3 px-4 whitespace-nowrap">
+                          <th key={h} className="p-4 text-left whitespace-nowrap">
                             <button
                               onClick={() => setDeviceSort((prev) =>
                                 prev.col === h
@@ -1372,43 +1375,20 @@ export default function ClientPortalDashboard() {
                               )}
                               className="flex items-center gap-1 group"
                             >
-                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${active ? "text-gray-600" : "text-gray-400 group-hover:text-gray-500"}`}>
+                              <span className={`font-label-xs text-label-xs uppercase tracking-wider transition-colors ${active ? "text-on-surface" : "text-on-surface-variant group-hover:text-on-surface"}`}>
                                 {h}
                               </span>
-                              <span className="flex flex-col -space-y-0.5">
-                                <ChevronUp className={`w-2.5 h-2.5 transition-colors ${active && deviceSort.dir === "asc" ? "text-teal-500" : "text-gray-300 group-hover:text-gray-400"}`} />
-                                <ChevronDown className={`w-2.5 h-2.5 transition-colors ${active && deviceSort.dir === "desc" ? "text-teal-500" : "text-gray-300 group-hover:text-gray-400"}`} />
-                              </span>
+                              <Icon
+                                name={active && deviceSort.dir === "desc" ? "arrow_downward" : "arrow_upward"}
+                                className={`text-[14px] transition-opacity ${active ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
+                              />
                             </button>
                           </th>
                         );
                       })}
-                      <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">
+                      <th className="p-4 text-right font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant whitespace-nowrap">
                         Acciones
                       </th>
-                      {(["Conexión", "ICCID", "IMEI"] as const).map((h) => {
-                        const active = deviceSort.col === h;
-                        return (
-                          <th key={h} className="text-left py-3 px-4 whitespace-nowrap">
-                            <button
-                              onClick={() => setDeviceSort((prev) =>
-                                prev.col === h
-                                  ? { col: h, dir: prev.dir === "asc" ? "desc" : "asc" }
-                                  : { col: h, dir: "asc" }
-                              )}
-                              className="flex items-center gap-1 group"
-                            >
-                              <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${active ? "text-gray-600" : "text-gray-400 group-hover:text-gray-500"}`}>
-                                {h}
-                              </span>
-                              <span className="flex flex-col -space-y-0.5">
-                                <ChevronUp className={`w-2.5 h-2.5 transition-colors ${active && deviceSort.dir === "asc" ? "text-teal-500" : "text-gray-300 group-hover:text-gray-400"}`} />
-                                <ChevronDown className={`w-2.5 h-2.5 transition-colors ${active && deviceSort.dir === "desc" ? "text-teal-500" : "text-gray-300 group-hover:text-gray-400"}`} />
-                              </span>
-                            </button>
-                          </th>
-                        );
-                      })}
                     </tr>
                   </thead>
                   <tbody>
@@ -1420,48 +1400,50 @@ export default function ClientPortalDashboard() {
                       const isResetting = resettingId === sim.endpointId;
 
                       return (
-                        <tr key={sim.iccid} className="border-b border-gray-50 transition-colors hover:bg-gray-50/60">
+                        <tr key={sim.iccid} className="table-row-hover group border-b border-hairline last:border-0">
                           {/* Checkbox */}
-                          <td className="py-3 px-4 w-10">
+                          <td className="p-4 w-12">
                             {hasEp && (
                               <button
                                 onClick={() => handleToggleSelect(sim.iccid)}
                                 className="flex items-center justify-center"
                               >
-                                {isChecked
-                                  ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
-                                  : <Square className="w-4 h-4 text-gray-300" />}
+                                <Icon
+                                  name={isChecked ? "check_box" : "check_box_outline_blank"}
+                                  filled
+                                  className={isChecked ? "text-[18px] text-primary" : "text-[18px] text-outline"}
+                                />
                               </button>
                             )}
                           </td>
 
-                          {/* Dispositivo — clickable to open detail */}
-                          <td className="py-3 px-4">
+                          {/* Dispositivo — abre el detalle */}
+                          <td className="p-4">
                             <button
                               onClick={() => hasEp && handleOpenDevice(sim)}
                               disabled={!hasEp}
-                              className="flex items-center gap-2 text-left group disabled:opacity-60"
+                              className="flex items-center gap-2 text-left disabled:opacity-60"
                             >
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors group-hover:bg-teal-100" style={{ background: "rgba(62,207,142,0.10)" }}>
-                                <Cpu className="w-4 h-4" style={{ color: "#3ECF8E" }} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-xs truncate max-w-[140px] group-hover:underline" style={{ color: hasEp ? "#059669" : "#374151" }}>
+                              <Icon name="router" className="text-[16px] text-tertiary shrink-0" />
+                              <span className="min-w-0">
+                                <span className={`block font-label-md text-label-md truncate max-w-[180px] ${hasEp ? "text-primary hover:underline" : "text-on-surface-variant"}`}>
                                   {sim.endpoint?.name || `Endpoint #${sim.endpointId || "—"}`}
-                                </p>
-                                <p className="text-[10px] text-gray-400">SIM ID: {sim.simId || "—"}</p>
-                              </div>
+                                </span>
+                                <span className="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                                  SIM {sim.simId || "—"}
+                                </span>
+                              </span>
                             </button>
                           </td>
 
-                          {/* Estado */}
-                          <td className="py-3 px-4">
+                          {/* Estado — pastilla clicable */}
+                          <td className="p-4">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); toggleDeviceStatus(sim, e.currentTarget); }}
                                   disabled={statusLoadingIds.has(sim.iccid)}
-                                  className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-transform active:scale-95 disabled:opacity-60 disabled:scale-100 hover:brightness-95"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap font-label-xs text-label-xs transition-all active:scale-95 disabled:opacity-60 disabled:scale-100 hover:brightness-95"
                                   style={{ background: st.bg, color: st.color }}
                                 >
                                   {statusLoadingIds.has(sim.iccid) ? (
@@ -1478,73 +1460,69 @@ export default function ClientPortalDashboard() {
                             </Tooltip>
                           </td>
 
-                          {/* Acciones */}
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1">
-                              {/* Refrescar SIM */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={(e) => handleResetConnectivity(sim, e.currentTarget)}
-                                    disabled={!hasEp || isResetting}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-orange-50 disabled:opacity-40 active:scale-95"
-                                    style={{ color: "#d97706" }}
-                                  >
-                                    {isResetting
-                                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                                      : <RotateCcw className="w-4 h-4" />}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>REFRESCAR SIM</p>
-                                </TooltipContent>
-                              </Tooltip>
-
-                              {/* Enviar SMS */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => setSmsTarget(sim)}
-                                    disabled={!hasEp}
-                                    className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-emerald-50 disabled:opacity-40 active:scale-95"
-                                    style={{ color: BRAND.text }}
-                                  >
-                                    <MessageSquare className="w-4 h-4" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Enviar SMS</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </td>
-
                           {/* Conexión — pill; el dot late cuando está online para que resalte */}
-                          <td className="py-3 px-4">
+                          <td className="p-4">
                             {connectivityLoading && !sim.connectivity ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+                              <span className="inline-flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
                                 <Loader2 className="w-3 h-3 animate-spin" />
-                                <span>Cargando…</span>
+                                Cargando…
                               </span>
                             ) : (
-                              <span
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
-                                style={{ background: conn.bg, color: conn.color }}
-                              >
+                              <span className="flex items-center gap-2 whitespace-nowrap">
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${conn.online ? "animate-pulse" : ""}`}
+                                  className={`w-2 h-2 rounded-full shrink-0 ${conn.online ? "pulse-dot" : ""}`}
                                   style={{ background: conn.color }}
                                 />
-                                {conn.label}
+                                <span className={conn.online ? "text-on-surface font-medium" : "text-on-surface-variant"}>
+                                  {conn.label}
+                                </span>
                               </span>
                             )}
                           </td>
 
                           {/* ICCID */}
-                          <td className="py-3 px-4 font-mono text-xs text-gray-900 whitespace-nowrap">{sim.iccid_with_luhn || sim.iccid || "—"}</td>
+                          <td className="p-4 font-mono font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+                            {sim.iccid_with_luhn || sim.iccid || "—"}
+                          </td>
 
                           {/* IMEI */}
-                          <td className="py-3 px-4 font-mono text-xs text-gray-900 whitespace-nowrap">{sim.endpoint?.imei_with_luhn || sim.endpoint?.imei || sim.imei || "—"}</td>
+                          <td className="p-4 font-mono font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
+                            {sim.endpoint?.imei_with_luhn || sim.endpoint?.imei || sim.imei
+                              || <span className="italic text-outline-variant">No disponible</span>}
+                          </td>
+
+                          {/* Acciones — visibles al pasar el cursor (siempre visibles en táctil) */}
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={(e) => handleResetConnectivity(sim, e.currentTarget)}
+                                    disabled={!hasEp || isResetting}
+                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors disabled:opacity-40"
+                                  >
+                                    {isResetting
+                                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                                      : <Icon name="sync" className="text-[18px]" />}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Refrescar conexión</p></TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => setSmsTarget(sim)}
+                                    disabled={!hasEp}
+                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors disabled:opacity-40"
+                                  >
+                                    <Icon name="sms" className="text-[18px]" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Enviar SMS</p></TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
