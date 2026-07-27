@@ -1048,159 +1048,144 @@ export default function ClientPortalDashboard() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-10">
-      {/* Header/Controls */}
-      <div className="flex items-center justify-between gap-2 sm:gap-3">
-        <div className="flex-1 w-full sm:max-w-md flex items-center gap-2">
-          {/* Search bar is more visual here */}
-          {!loading && (
-            <div className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <>
+      {/* ── Barra de acciones (sticky en desktop) ──────────────────────────── */}
+      <div className="bg-surface-container-lowest border-b border-hairline md:sticky md:top-0 z-30 shadow-sm">
+        <div className="max-w-[1440px] mx-auto px-container-margin py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Buscador */}
+            <div className="relative flex-1 max-w-xl">
+              <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
               <input
                 type="text"
                 value={activeView === "devices" ? deviceSearch : simSearch}
                 onChange={(e) => activeView === "devices" ? setDeviceSearch(e.target.value) : setSimSearch(e.target.value)}
                 placeholder={activeView === "devices" ? "Buscar dispositivo, ICCID o IMEI…" : "Buscar SIM (ICCID, MSISDN)…"}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-10 py-2 border border-hairline rounded-lg bg-white font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {(activeView === "devices" ? deviceSearch : simSearch) && (
-                <button 
-                  onClick={() => activeView === "devices" ? setDeviceSearch("") : setSimSearch("")} 
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                <button
+                  onClick={() => activeView === "devices" ? setDeviceSearch("") : setSimSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+                  aria-label="Limpiar búsqueda"
                 >
-                  <X className="w-4 h-4" />
+                  <Icon name="close" className="text-[18px]" />
                 </button>
               )}
             </div>
-          )}
-          
-          <button
-            onClick={load}
-            disabled={loading}
-            className="sm:hidden flex items-center justify-center w-11 h-11 shrink-0 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 sm:gap-3 shrink-0">
-          <p className="text-xs font-semibold text-gray-500 mr-2">
-            {loading ? "Cargando..." : `${sims.length} SIM${sims.length !== 1 ? "s" : ""}`}
-          </p>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            <span>Actualizar</span>
-          </button>
+
+            {/* Conteo + actualizar */}
+            <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+              <div className="flex items-center gap-2 text-on-surface-variant">
+                <Icon name="sim_card" />
+                <span className="font-label-md text-label-md whitespace-nowrap">
+                  {loading ? "Cargando…" : `${sims.length} SIM${sims.length !== 1 ? "s" : ""}`}
+                </span>
+              </div>
+              <button
+                onClick={load}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-surface border border-hairline rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md disabled:opacity-50"
+              >
+                <Icon name="refresh" className={`text-[18px] ${loading ? "animate-spin" : ""}`} />
+                Actualizar
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Summary cards — Total es el número hero (marca); el resto son estados excluyentes */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {/* ── Contenido ──────────────────────────────────────────────────────── */}
+      <div className="max-w-[1440px] mx-auto px-container-margin py-section-gap pb-10">
+      {/* Tarjetas de resumen — clicables, filtran la lista */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {[
-          { label: "Total SIMs",   value: sims.length, tone: BRAND,                 icon: CreditCard,   filter: null },
-          { label: "Activas",      value: active,      tone: STATUS_TOKENS.good,     icon: CheckCircle2, filter: 1 },
-          { label: "Suspendidas",  value: suspended,   tone: STATUS_TOKENS.warning,  icon: PauseCircle,  filter: 2 },
-          { label: "Disponibles",  value: available,   tone: STATUS_TOKENS.muted,    icon: Circle,       filter: 0 },
-          { label: "Desactivadas", value: deactivated, tone: STATUS_TOKENS.danger,   icon: WifiOff,      filter: 3 },
-        ].map(({ label, value, tone, icon: Icon, filter }) => {
-          const isActive = statusFilter === filter;
+          { label: "Total SIMs",   value: sims.length, filter: null, icon: null,            border: "border-hairline",            hover: "hover:bg-row-hover",            labelColor: "text-on-surface-variant", ring: "ring-primary" },
+          { label: "Activas",      value: active,      filter: 1,    icon: "check_circle",  border: "border-primary-container/40", hover: "hover:bg-surface-container-low", labelColor: "text-primary",            ring: "ring-primary" },
+          { label: "Suspendidas",  value: suspended,   filter: 2,    icon: "warning",       border: "border-warning/40",           hover: "hover:bg-amber-50/60",           labelColor: "text-on-warning",         ring: "ring-warning" },
+          { label: "Disponibles",  value: available,   filter: 0,    icon: "inventory_2",   border: "border-hairline",             hover: "hover:bg-row-hover",             labelColor: "text-tertiary",           ring: "ring-tertiary" },
+          { label: "Desactivadas", value: deactivated, filter: 3,    icon: "cancel",        border: "border-error-container",      hover: "hover:bg-error-container/20",    labelColor: "text-error",              ring: "ring-error" },
+        ].map(({ label, value, filter, icon, border, hover, labelColor, ring }) => {
+          const isSelected = statusFilter === filter;
           return (
             <button
               key={label}
               onClick={() => {
                 setStatusFilter(filter);
-                setActiveView("sims"); // Switch to SIMs tab when clicking a filter
+                setActiveView("sims"); // al filtrar por estado, la vista útil es Mis SIMs
               }}
-              className="group bg-white rounded-2xl p-4 shadow-sm border transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] flex items-center gap-3 text-left"
-              style={{
-                borderColor: isActive ? tone.solid : "#eef0f2",
-                background: isActive ? tone.tint : "#ffffff",
-              }}
+              className={`group relative overflow-hidden text-left bg-surface-container-lowest border ${border} ${hover} ${isSelected ? `ring-2 ${ring}` : ""} rounded-xl p-card-padding transition-colors`}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105" style={{ background: tone.tint }}>
-                <Icon className="w-5 h-5" style={{ color: tone.text }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-2xl font-bold leading-none tracking-tight" style={{ color: loading ? "#cbd5e1" : "#0f172a" }}>
-                  {loading ? "—" : value}
-                </p>
-                <p className="text-[11px] font-medium text-gray-500 truncate mt-1">{label}</p>
-              </div>
+              {/* Acento decorativo de la tarjeta destacada */}
+              {filter === 1 && (
+                <div className="absolute right-0 top-0 w-16 h-16 bg-primary-container opacity-10 rounded-bl-full" />
+              )}
+              <p className={`font-body-sm text-body-sm ${labelColor} uppercase tracking-wider mb-2 flex items-center gap-1`}>
+                {icon && <Icon name={icon} className="text-[14px]" />}
+                {label}
+              </p>
+              <p className="font-display-lg text-display-lg text-on-surface group-hover:text-primary transition-colors">
+                {loading ? "—" : value}
+              </p>
             </button>
           );
         })}
       </div>
 
-      {/* Tabs & Export */}
-      <div className="flex items-center justify-between border-b border-gray-200">
-        <div className="flex items-center gap-1">
+      {/* Tabs & Exportar — encabezado de la tarjeta de contenido */}
+      <div className="bg-surface-container-lowest border border-hairline border-b-0 rounded-t-xl px-card-padding flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+        <div className="flex gap-6">
           {[
-            { id: "devices", label: "Dispositivos", icon: Cpu },
-            { id: "sims",    label: "Mis SIMs",    icon: CreditCard },
-          ].map(({ id, label, icon: Icon }) => (
+            { id: "devices", label: "Dispositivos" },
+            { id: "sims",    label: "Mis SIMs" },
+          ].map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setActiveView(id as any)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors relative"
-              style={{ color: activeView === id ? "#3ECF8E" : "#6b7280" }}
+              className={`py-3 font-label-md text-label-md transition-colors relative top-[1px] ${
+                activeView === id
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
             >
-              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {label}
-              {activeView === id && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full" style={{ background: "#3ECF8E" }} />
-              )}
             </button>
           ))}
         </div>
         {!loading && devicesOnly.length > 0 && activeView === "devices" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={exportDevicesToCSV}
-                className="flex items-center justify-center w-7 h-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 mb-1 rounded-lg border border-gray-200 bg-white text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors shrink-0"
-              >
-                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: "#059669" }} />
-                <span className="hidden sm:inline sm:ml-2">Exportar</span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Exportar a Excel</p>
-            </TooltipContent>
-          </Tooltip>
+          <button
+            onClick={exportDevicesToCSV}
+            className="flex items-center gap-2 px-4 py-2 mb-2 sm:mb-0 bg-white border border-hairline rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md shrink-0"
+          >
+            <Icon name="download" className="text-[18px]" />
+            Exportar
+          </button>
         )}
       </div>
 
       {/* ── Mis SIMs tab ── */}
       {activeView === "sims" && (
         <>
-          {/* Active filters */}
-          {!loading && sims.length > 0 && (
-            <div className="space-y-3">
-              {/* Active filter badge */}
-              {statusFilter !== null && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Filtro activo:</span>
-                  <button
-                    onClick={() => setStatusFilter(null)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors"
-                    style={{
-                      background: FILTER_META[statusFilter]?.tone.tint,
-                      color: FILTER_META[statusFilter]?.tone.text,
-                    }}
-                  >
-                    {FILTER_META[statusFilter]?.label ?? "Filtro"}
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
+          {/* Filtro activo — franja dentro de la tarjeta */}
+          {!loading && sims.length > 0 && statusFilter !== null && (
+            <div className="bg-surface-container-lowest border-x border-hairline px-card-padding py-3 flex items-center gap-2">
+              <span className="font-body-sm text-body-sm text-on-surface-variant">Filtro activo:</span>
+              <button
+                onClick={() => setStatusFilter(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-xs text-label-xs transition-colors"
+                style={{
+                  background: FILTER_META[statusFilter]?.tone.tint,
+                  color: FILTER_META[statusFilter]?.tone.text,
+                }}
+              >
+                {FILTER_META[statusFilter]?.label ?? "Filtro"}
+                <Icon name="close" className="text-[14px]" />
+              </button>
             </div>
           )}
 
           {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl overflow-hidden">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 last:border-0 animate-pulse">
                   <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0" />
@@ -1214,19 +1199,19 @@ export default function ClientPortalDashboard() {
               ))}
             </div>
           ) : sims.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 py-20 text-center">
+            <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl py-20 text-center">
               <CreditCard className="w-12 h-12 text-gray-200 mx-auto mb-3" />
               <p className="font-semibold text-gray-500">Sin SIMs asignadas</p>
               <p className="text-sm text-gray-400 mt-1 max-w-xs mx-auto">Contacta a tu administrador para que te asigne SIMs a tu cuenta.</p>
             </div>
           ) : sortedSims.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 py-12 text-center">
+            <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl py-12 text-center">
               <Search className="w-10 h-10 text-gray-200 mx-auto mb-3" />
               <p className="font-semibold text-gray-500">Sin resultados</p>
               <p className="text-sm text-gray-400 mt-1">No se encontraron SIMs para "{simSearch}"</p>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl shadow-sm overflow-hidden">
               {/* Table header with sort */}
               <div className="grid items-center px-4 py-2.5 bg-gray-50/80 border-b border-gray-100"
                 style={{ gridTemplateColumns: "1fr auto auto auto" }}>
@@ -1347,7 +1332,7 @@ export default function ClientPortalDashboard() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl shadow-sm overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-6 h-6 animate-spin text-teal-500" />
@@ -1729,6 +1714,7 @@ export default function ClientPortalDashboard() {
         </div>
       )}
     </div>
+    </>
     </TooltipProvider>
   );
 }
