@@ -1145,26 +1145,39 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
     if (!session) return c.json({ error: "Unauthorized" }, 401);
     const epId = c.req.param("id");
 
-    const [epRes, connRes] = await Promise.allSettled([
+    // `connectivity_info` es una consulta ACTIVA a la red (no caché) y es el único
+    // sitio donde emnify expone el cell_global_id (mcc/mnc/lac/cid). Puede devolver
+    // 200 con `state: "not_provided_from_vlr"` —típico en 4G/LTE, donde el VLR no
+    // aplica—, así que se trata como "puede no venir" y nunca como error.
+    const [epRes, connRes, infoRes] = await Promise.allSettled([
       emnifyFetch(`/endpoint/${epId}`),
       emnifyFetch(`/endpoint/${epId}/connectivity`),
+      emnifyFetch(`/endpoint/${epId}/connectivity_info`),
     ]);
 
     const ep   = epRes.status   === "fulfilled" ? epRes.value.data   : null;
     const conn = connRes.status === "fulfilled" ? connRes.value.data : null;
+    const info = infoRes.status === "fulfilled" ? infoRes.value.data : null;
 
-    console.log(`[location] ep.location=${JSON.stringify(ep?.location)} conn.location=${JSON.stringify(conn?.location)} conn.country=${JSON.stringify(conn?.country)}`);
+    // El país y el operador viven DENTRO de conn.location, no en conn.country
+    const cellCountry  = conn?.location?.country  ?? null;
+    const cellOperator = conn?.location?.operator ?? null;
 
-    // Cell tower data lives in conn.location
-    const cell    = conn?.location ?? null;
-    const mcc     = cell?.mcc     ?? null;
-    const mnc     = cell?.mnc     ?? null;
-    const lac     = cell?.lac     ?? null;
-    const cell_id = cell?.cell_id ?? null;
+    // Datos de antena: solo de connectivity_info
+    const subLoc  = info?.subscriber_info?.location ?? null;
+    const cgi     = subLoc?.cell_global_id ?? null;
+    const mcc     = cgi?.mcc ?? cellCountry?.mcc ?? null;
+    const mnc     = cgi?.mnc ?? null;
+    const lac     = cgi?.lac ?? null;
+    const cell_id = cgi?.cid ?? null;
+    const locationState = info?.subscriber_info?.state ?? null;
+    const ageOfLocation = subLoc?.age_of_location ?? null;
 
-    const country     = conn?.country?.name      ?? ep?.location?.name ?? "";
-    const operator    = conn?.mno?.name ?? conn?.operator?.name ?? ep?.operator?.name ?? "";
-    const lastUpdated = conn?.last_updated ?? ep?.last_updated ?? "";
+    console.log(`[location] cgi=${JSON.stringify(cgi)} state=${locationState} country=${cellCountry?.iso_code}`);
+
+    const country     = cellCountry?.name  ?? conn?.country?.name  ?? ep?.location?.name  ?? "";
+    const operator    = cellOperator?.name ?? conn?.mno?.name ?? conn?.operator?.name ?? ep?.operator?.name ?? "";
+    const lastUpdated = conn?.location?.last_updated_gprs ?? conn?.location?.last_updated ?? conn?.last_updated ?? ep?.last_updated ?? "";
 
     let lat: number | null = null;
     let lng: number | null = null;
@@ -1194,9 +1207,22 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
       }
     }
 
-    // Step 2: fallback — country centroid via OpenStreetMap Nominatim
-    if (!lat && (conn?.country?.country_code || ep?.location?.country_code)) {
-      const cc = conn?.country?.country_code ?? ep?.location?.country_code;
+    // Paso 2: respaldo — centroide del país. emnify YA devuelve esas coordenadas
+    // dentro de conn.location.country, así que no hace falta consultar a nadie.
+    if (!lat && cellCountry?.latitude && cellCountry?.longitude) {
+      const cLat = parseFloat(cellCountry.latitude);
+      const cLng = parseFloat(cellCountry.longitude);
+      if (!Number.isNaN(cLat) && !Number.isNaN(cLng)) {
+        lat = cLat;
+        lng = cLng;
+        accuracy = null;
+        locationSource = "country_centroid";
+      }
+    }
+
+    // Paso 3: último recurso — geocodificar el país por su código ISO
+    if (!lat && (cellCountry?.iso_code || ep?.location?.country_code)) {
+      const cc = cellCountry?.iso_code ?? ep?.location?.country_code;
       try {
         const nomRes = await fetch(
           `https://nominatim.openstreetmap.org/search?country=${cc}&format=json&limit=1`,
@@ -1222,6 +1248,9 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
       mcc, mnc, lac, cell_id,
       location_source: locationSource,
       last_updated: lastUpdated,
+      // Contexto para que la UI pueda explicar POR QUÉ la precisión es la que es
+      location_state: locationState,
+      age_of_location: ageOfLocation,
     });
   } catch (e: any) {
     console.log("Error getting endpoint location:", e);
