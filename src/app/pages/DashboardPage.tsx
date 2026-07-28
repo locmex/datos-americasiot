@@ -269,7 +269,7 @@ export default function DashboardPage() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-label-md text-on-primary shadow-sm transition-colors hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg btn-primary px-4 py-2 text-label-md shadow-sm transition-colors disabled:opacity-50"
         >
           <Icon name="refresh" className={`text-[18px] ${refreshing ? "animate-spin" : ""}`} />
           Actualizar

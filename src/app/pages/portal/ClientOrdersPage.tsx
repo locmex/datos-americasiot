@@ -218,7 +218,7 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:bg-on-primary-container transition-colors whitespace-nowrap flex items-center gap-2 disabled:opacity-60"
+                className="btn-primary px-6 py-2 rounded-lg font-label-md text-label-md transition-colors whitespace-nowrap flex items-center gap-2 disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon name="send" className="text-[18px]" />}
                 {submitting ? "Enviando…" : "Realizar Pedido"}
@@ -385,7 +385,7 @@ function HistoryTab() {
                     <button
                       onClick={() => handleReceived(order)}
                       disabled={busyId === order.id}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-on-primary-container transition-colors disabled:opacity-60"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg btn-primary font-label-md text-label-md transition-colors disabled:opacity-60"
                     >
                       {busyId === order.id
                         ? <Loader2 className="w-4 h-4 animate-spin" />

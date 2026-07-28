@@ -256,7 +256,7 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
               <Icon name="error" className="text-[32px] text-error" />
               <p className="font-label-md text-label-md text-on-surface">Error al cargar historial</p>
               <p className="font-body-sm text-body-sm text-error break-words">{historyError}</p>
-              <button onClick={loadHistory} className="mt-1 px-4 py-1.5 rounded-lg font-label-md text-label-md bg-primary text-on-primary hover:bg-on-primary-container transition-colors">
+              <button onClick={loadHistory} className="mt-1 px-4 py-1.5 rounded-lg font-label-md text-label-md btn-primary transition-colors">
                 Reintentar
               </button>
             </div>
@@ -361,7 +361,7 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
               {160 - message.length}
             </span>
             <button onClick={handleSend} disabled={!message.trim() || !sourceValid || sending}
-              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary text-on-primary hover:bg-on-primary-container transition-all disabled:opacity-40 active:scale-95">
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 btn-primary transition-all disabled:opacity-40 active:scale-95">
               {sending
                 ? <Loader2 className="w-4 h-4 animate-spin" />
                 : <Icon name="send" className="text-[18px]" />}
@@ -465,7 +465,7 @@ function RenameModal({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-on-primary-container transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg btn-primary font-label-md text-label-md transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon name="check_circle" className="text-[18px]" />}
             {saving ? "Guardando…" : "Guardar"}
@@ -1821,7 +1821,7 @@ export default function ClientPortalDashboard() {
                   className={`px-3 py-1.5 rounded-lg font-label-md text-label-xs transition-colors ${
                     popoverConfirm.sim.status?.id === 1
                       ? "bg-error text-on-error hover:opacity-90"
-                      : "bg-primary text-on-primary hover:bg-on-primary-container"
+                      : "btn-primary"
                   }`}
                 >
                   {popoverConfirm.sim.status?.id === 1 ? "Suspender" : "Activar"}

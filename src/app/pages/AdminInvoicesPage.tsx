@@ -131,7 +131,7 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-label-md text-on-primary shadow-sm transition-colors hover:bg-primary-container hover:text-on-primary-container"
+          className="flex items-center gap-2 rounded-lg btn-primary px-4 py-2 text-label-md shadow-sm transition-colors"
         >
           <Icon name="receipt_long" className="text-[18px]" />
           Generar Facturas
@@ -176,7 +176,7 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
       <button
         onClick={handleGenerate}
         disabled={generating}
-        className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-label-md text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg btn-primary px-3 py-1.5 text-label-md transition-colors disabled:opacity-50"
       >
         <Icon name={generating ? "progress_activity" : "receipt_long"} className={`text-[16px] ${generating ? "animate-spin" : ""}`} />
         {generating ? "Generando…" : `Generar ${formatPeriod(year, month)}`}
@@ -266,7 +266,7 @@ function PaymentForm({
         <button
           onClick={handleConfirm}
           disabled={saving}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-label-md text-on-primary transition-colors hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg btn-primary px-3 py-2 text-label-md transition-colors disabled:opacity-50"
         >
           {saving && <Icon name="progress_activity" className="animate-spin text-[16px]" />}
           {saving ? "Guardando…" : "Confirmar abono"}
@@ -477,7 +477,7 @@ function InvoiceDetailPanel({
 
         <div className="grid grid-cols-2 gap-2">
           {canIssue && (
-            <button onClick={handleIssue} disabled={busy} className={`${actionBtn} bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container`}>
+            <button onClick={handleIssue} disabled={busy} className={`${actionBtn} btn-primary`}>
               <Icon name="send" className="text-[16px]" /> Emitir
             </button>
           )}
