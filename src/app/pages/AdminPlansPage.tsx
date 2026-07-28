@@ -4,7 +4,7 @@ import { formatCurrency } from "../lib/invoice-status";
 import { Icon } from "../components/ui/icon";
 import {
   PageHeader, IconButton, SearchField, ErrorBanner, TableCard, TableHead, TableSkeleton,
-  EmptyState, ActiveChip, RowAction, Modal, Field, FormActions, fieldClass,
+  EmptyState, StatusSwitch, RowAction, Modal, Field, FormActions, fieldClass,
 } from "../components/admin/AdminUI";
 import { toast } from "sonner";
 
@@ -229,10 +229,10 @@ export default function AdminPlansPage() {
                     {formatCurrency(plan.unit_price, plan.currency)}
                   </td>
                   <td className="px-4 py-3">
-                    <ActiveChip
+                    <StatusSwitch
                       active={plan.active}
                       busy={togglingId === plan.id}
-                      onClick={() => handleToggleStatus(plan)}
+                      onToggle={() => handleToggleStatus(plan)}
                     />
                   </td>
                   <td className="px-4 py-3">

@@ -4,7 +4,7 @@ import { formatCurrency } from "../lib/order-status";
 import { Icon } from "../components/ui/icon";
 import {
   PageHeader, IconButton, SearchField, ErrorBanner, TableCard, TableHead, TableSkeleton,
-  EmptyState, ActiveChip, RowAction, Modal, Field, FormActions, fieldClass,
+  EmptyState, StatusSwitch, RowAction, Modal, Field, FormActions, fieldClass,
 } from "../components/admin/AdminUI";
 import { toast } from "sonner";
 
@@ -260,10 +260,10 @@ export default function AdminProductsPage() {
                     {formatCurrency(product.price, product.currency)}
                   </td>
                   <td className="px-4 py-3">
-                    <ActiveChip
+                    <StatusSwitch
                       active={product.status === "active"}
                       busy={togglingId === product.id}
-                      onClick={() => handleToggleStatus(product)}
+                      onToggle={() => handleToggleStatus(product)}
                     />
                   </td>
                   <td className="px-4 py-3">

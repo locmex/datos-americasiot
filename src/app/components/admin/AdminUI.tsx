@@ -194,42 +194,50 @@ export function EmptyState({
   );
 }
 
-// ─── Chip de estado activo / inactivo ────────────────────────────────────────
-export function ActiveChip({
-  active, onClick, busy,
+// ─── Switch de estado (control) ──────────────────────────────────────────────
+// Una badge comunica "esto es un dato", no "esto se toca". Cuando el estado se
+// puede cambiar, el control tiene que PARECER un control antes de que el mouse
+// llegue: de ahí el switch en vez de una badge clickeable.
+export function StatusSwitch({
+  active, onToggle, busy, labels = ["Activo", "Inactivo"],
 }: {
   active: boolean;
-  onClick?: () => void;
+  onToggle: () => void;
   busy?: boolean;
+  labels?: [string, string];
 }) {
-  const cls = active
-    ? "bg-primary/10 text-primary"
-    : "bg-on-surface-variant/10 text-on-surface-variant";
-  const content = (
-    <>
-      <Icon
-        name={busy ? "progress_activity" : active ? "check_circle" : "pause_circle"}
-        className={`text-[14px] ${busy ? "animate-spin" : ""}`}
-      />
-      {active ? "Activo" : "Inactivo"}
-    </>
-  );
-
-  if (!onClick) {
-    return (
-      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-xs ${cls}`}>
-        {content}
-      </span>
-    );
-  }
+  const label = active ? labels[0] : labels[1];
   return (
     <button
-      onClick={onClick}
+      role="switch"
+      aria-checked={active}
+      aria-label={`${label} — click para ${active ? "desactivar" : "activar"}`}
+      title={`Click para ${active ? "desactivar" : "activar"}`}
+      onClick={onToggle}
       disabled={busy}
-      title={active ? "Desactivar" : "Activar"}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-xs transition-opacity hover:opacity-80 disabled:opacity-50 ${cls}`}
+      className="group inline-flex items-center gap-2 rounded-lg py-1 pr-2 pl-1 transition-colors hover:bg-surface-container disabled:opacity-50"
     >
-      {content}
+      <span
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+          active ? "bg-primary-container" : "bg-outline-variant"
+        }`}
+      >
+        {busy ? (
+          <Icon
+            name="progress_activity"
+            className="absolute left-1/2 -translate-x-1/2 animate-spin text-[14px] text-on-surface"
+          />
+        ) : (
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-surface-container-lowest shadow transition-transform ${
+              active ? "translate-x-4" : "translate-x-0.5"
+            }`}
+          />
+        )}
+      </span>
+      <span className={`text-label-md ${active ? "text-on-surface" : "text-on-surface-variant"}`}>
+        {label}
+      </span>
     </button>
   );
 }
