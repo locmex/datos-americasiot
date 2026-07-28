@@ -18,6 +18,12 @@ import { DeviceDetailModal, EmnifyEndpoint } from "../../components/DeviceDetail
 import { BRAND, STATUS_TOKENS, type Tone } from "../../lib/status-tokens";
 import { Icon } from "../../components/ui/icon";
 
+// Colores de las dos series del gráfico de tráfico.
+// Se eligen con contraste de tono Y de luminosidad para que sigan siendo
+// distinguibles en daltonismo; además el gráfico siempre lleva leyenda.
+const TX_COLOR = "#3ECF8E"; // verde de marca — enviado
+const RX_COLOR = "#3b82f6"; // azul — recibido
+
 // Ventana de páginas con elipsis: 1 … 4 5 6 … 20
 function pageWindow(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -209,58 +215,60 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="w-full sm:max-w-md sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden" style={{ height: "min(680px, 95dvh)", background: "#fff" }}>
+      <div className="w-full sm:max-w-md sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden bg-surface-container-lowest" style={{ height: "min(680px, 95dvh)" }}>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 shrink-0" style={{ background: "#0f766e" }}>
-          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: "#3ECF8E" }}>
+        <div className="flex items-center gap-3 px-4 py-3 shrink-0 bg-primary">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-primary-container text-on-primary-container font-label-md text-label-md">
             IoT
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm leading-tight truncate">
+            <p className="text-on-primary font-label-md text-label-md leading-tight truncate">
               {sim.endpoint?.name || `SIM …${iccid.slice(-8)}`}
             </p>
-            <p className="text-white/60 text-[10px] font-mono truncate leading-tight">{iccid}</p>
+            <p className="text-on-primary/70 font-body-sm text-[10px] font-mono truncate leading-tight">{iccid}</p>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={loadHistory} disabled={loadingHistory}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/15 transition-colors shrink-0">
-                <RefreshCw className={`w-4 h-4 text-white/80 ${loadingHistory ? "animate-spin" : ""}`} />
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/15 transition-colors shrink-0 text-on-primary/80">
+                <Icon name="refresh" className={`text-[18px] ${loadingHistory ? "animate-spin" : ""}`} />
               </button>
             </TooltipTrigger>
             <TooltipContent>
               <p>Recargar historial</p>
             </TooltipContent>
           </Tooltip>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/15 transition-colors shrink-0">
-            <X className="w-4 h-4 text-white/80" />
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/15 transition-colors shrink-0 text-on-primary/80">
+            <Icon name="close" className="text-[18px]" />
           </button>
         </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1" style={{ background: "#e8ede9" }}>
+        {/* Mensajes */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1 bg-surface-container-low">
           {loadingHistory ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
-              <RefreshCw className="w-7 h-7 animate-spin" style={{ color: "#3ECF8E" }} />
-              <p className="text-xs text-gray-500">Cargando historial SMS…</p>
+              <Loader2 className="w-7 h-7 animate-spin text-primary" />
+              <p className="font-body-sm text-body-sm text-on-surface-variant">Cargando historial SMS…</p>
             </div>
           ) : historyError ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center px-4">
-              <AlertTriangle className="w-8 h-8 text-red-300" />
-              <p className="text-sm font-semibold text-gray-500">Error al cargar historial</p>
-              <p className="text-xs text-red-400 break-words">{historyError}</p>
-              <button onClick={loadHistory} className="mt-1 px-4 py-1.5 rounded-full text-xs font-semibold text-white" style={{ background: "#3ECF8E" }}>
+              <Icon name="error" className="text-[32px] text-error" />
+              <p className="font-label-md text-label-md text-on-surface">Error al cargar historial</p>
+              <p className="font-body-sm text-body-sm text-error break-words">{historyError}</p>
+              <button onClick={loadHistory} className="mt-1 px-4 py-1.5 rounded-lg font-label-md text-label-md bg-primary text-on-primary hover:bg-on-primary-container transition-colors">
                 Reintentar
               </button>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(62,207,142,0.15)" }}>
-                <MessageSquare className="w-7 h-7" style={{ color: "#3ECF8E" }} />
+              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-primary-container/20">
+                <Icon name="sms" className="text-[28px] text-primary" />
               </div>
-              <p className="text-sm font-semibold text-gray-500">Sin mensajes aún</p>
-              <p className="text-xs text-gray-400 -mt-2">Los SMS enviados y recibidos aparecerán aquí</p>
+              <p className="font-label-md text-label-md text-on-surface">Sin mensajes aún</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant -mt-2">
+                Los SMS enviados y recibidos aparecerán aquí
+              </p>
             </div>
           ) : (
             <>
@@ -270,26 +278,35 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
                 return (
                   <div key={m.id ?? i} className={`flex ${isMT ? "justify-end" : "justify-start"} mb-0.5`}>
                     <div style={{ maxWidth: "78%", minWidth: 80 }}>
-                      <div className="px-3 pt-2 pb-1 text-sm leading-snug shadow-sm"
+                      <div
+                        className={`px-3 pt-2 pb-1 font-body-md text-body-md leading-snug shadow-sm ${
+                          isMT
+                            ? m.status === "err"
+                              ? "bg-error text-on-error"
+                              : m.status === "pending"
+                                ? "bg-outline-variant text-on-surface"
+                                : "bg-primary-container text-on-primary-container"
+                            : "bg-surface-container-lowest text-on-surface"
+                        }`}
                         style={{
-                          background: isMT ? (m.status === "err" ? "#ef4444" : m.status === "pending" ? "#a3b8a4" : "#3ECF8E") : "#ffffff",
-                          color: isMT ? "#ffffff" : "#111827",
                           borderRadius: isMT ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
                           wordBreak: "break-word", overflowWrap: "break-word", whiteSpace: "pre-wrap",
                         }}
                       >
-                        {!isMT && <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#0f766e" }}>{m.src}</p>}
+                        {!isMT && (
+                          <p className="font-label-xs text-label-xs text-primary mb-0.5">{m.src}</p>
+                        )}
                         <span>{m.text}</span>
                         <span className="flex items-center gap-0.5 justify-end mt-0.5">
-                          <span className="text-[10px] leading-none select-none" style={{ color: isMT ? "rgba(255,255,255,0.72)" : "#9ca3af", whiteSpace: "nowrap" }}>
+                          <span className={`text-[10px] leading-none select-none whitespace-nowrap ${isMT ? "opacity-70" : "text-on-surface-variant"}`}>
                             {m.time}
                           </span>
                           {isMT && (
                             <>
-                              {m.status === "delivered" && <CheckCheck className="w-3 h-3 shrink-0" style={{ color: "rgba(255,255,255,0.9)" }} />}
-                              {m.status === "ok"        && <CheckCheck className="w-3 h-3 shrink-0" style={{ color: "rgba(255,255,255,0.7)" }} />}
-                              {m.status === "pending"   && <RefreshCw  className="w-3 h-3 shrink-0 animate-spin" style={{ color: "rgba(255,255,255,0.7)" }} />}
-                              {m.status === "err"       && <AlertTriangle className="w-3 h-3 shrink-0" style={{ color: "rgba(255,255,255,0.9)" }} />}
+                              {m.status === "delivered" && <Icon name="done_all" className="text-[14px] shrink-0" />}
+                              {m.status === "ok"        && <Icon name="done_all" className="text-[14px] shrink-0 opacity-70" />}
+                              {m.status === "pending"   && <Icon name="schedule" className="text-[14px] shrink-0 opacity-70" />}
+                              {m.status === "err"       && <Icon name="error" className="text-[14px] shrink-0" />}
                             </>
                           )}
                         </span>
@@ -303,23 +320,24 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
           )}
         </div>
 
-        {/* Error banner */}
+        {/* Aviso de error */}
         {error && (
-          <div className="mx-3 mb-1 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 flex items-start gap-2 shrink-0">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /><span className="break-words">{error}</span>
+          <div className="mx-3 mb-1 font-body-sm text-body-sm text-on-error-container bg-error-container border border-error-container rounded-xl px-3 py-2 flex items-start gap-2 shrink-0">
+            <Icon name="error" className="text-[16px] shrink-0 mt-0.5" />
+            <span className="break-words">{error}</span>
           </div>
         )}
 
-        {/* Input bar */}
-        <div className="shrink-0 bg-white border-t border-gray-100 px-3 pt-2 pb-3">
+        {/* Barra de envío */}
+        <div className="shrink-0 bg-surface-container-lowest border-t border-hairline px-3 pt-2 pb-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] text-gray-400 shrink-0 font-medium">Origen:</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant shrink-0">Origen:</span>
             <input
               type="text" value={source} onChange={(e) => setSource(e.target.value)} maxLength={17}
-              className="flex-1 text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-teal-300 min-w-0"
+              className="flex-1 font-body-sm text-body-sm text-on-surface bg-surface border border-hairline rounded-lg px-2.5 py-1 focus:outline-none focus:border-primary min-w-0"
               placeholder="AmericasIoT"
             />
-            <span className="text-[10px] shrink-0" style={{ color: !sourceValid && source.length > 0 ? "#ef4444" : "#9ca3af" }}>
+            <span className={`font-body-sm text-body-sm shrink-0 ${!sourceValid && source.length > 0 ? "text-error" : "text-on-surface-variant"}`}>
               {sourceHint}
             </span>
           </div>
@@ -329,7 +347,7 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && e.shiftKey) { e.preventDefault(); handleSend(); } }}
               rows={1} maxLength={160} placeholder="Escribe un mensaje"
-              className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200 resize-none leading-snug"
+              className="flex-1 font-body-md text-body-md bg-surface border border-hairline rounded-2xl px-4 py-2.5 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none leading-snug"
               style={{ minHeight: 40, maxHeight: 96, overflowY: "auto" }}
               onInput={(e) => {
                 const el = e.currentTarget;
@@ -337,17 +355,19 @@ function SmsConsoleModal({ sim, onClose }: { sim: ClientSIM; onClose: () => void
                 el.style.height = Math.min(el.scrollHeight, 96) + "px";
               }}
             />
-            <span className="text-[10px] font-bold shrink-0 mb-1.5"
-              style={{ color: message.length > 140 ? "#ef4444" : message.length > 110 ? "#f59e0b" : "#9ca3af" }}>
+            <span className={`font-label-xs text-label-xs shrink-0 mb-1.5 ${
+              message.length > 140 ? "text-error" : message.length > 110 ? "text-on-warning" : "text-on-surface-variant"
+            }`}>
               {160 - message.length}
             </span>
             <button onClick={handleSend} disabled={!message.trim() || !sourceValid || sending}
-              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-40 active:scale-95"
-              style={{ background: "#3ECF8E" }}>
-              {sending ? <RefreshCw className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary text-on-primary hover:bg-on-primary-container transition-all disabled:opacity-40 active:scale-95">
+              {sending
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Icon name="send" className="text-[18px]" />}
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1 px-1">Shift+Enter para enviar</p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 px-1">Shift+Enter para enviar</p>
         </div>
       </div>
     </div>
@@ -392,32 +412,34 @@ function RenameModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "80dvh" }}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "80dvh" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+        <div className="flex items-center justify-between px-card-padding py-4 border-b border-hairline shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(62,207,142,0.12)" }}>
-              <Pencil className="w-4 h-4" style={{ color: "#059669" }} />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-surface-container-low text-primary">
+              <Icon name="edit" className="text-[18px]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">Renombrar dispositivos</p>
-              <p className="text-[10px] text-gray-400">{devices.length} dispositivo{devices.length !== 1 ? "s" : ""} seleccionado{devices.length !== 1 ? "s" : ""}</p>
+              <p className="font-label-md text-label-md text-on-surface">Renombrar dispositivos</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                {devices.length} dispositivo{devices.length !== 1 ? "s" : ""} seleccionado{devices.length !== 1 ? "s" : ""}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-            <X className="w-4 h-4 text-gray-500" />
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors">
+            <Icon name="close" className="text-[18px]" />
           </button>
         </div>
 
-        {/* Device list */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        {/* Lista de dispositivos */}
+        <div className="flex-1 overflow-y-auto px-card-padding py-4 space-y-3">
           {devices.map((d) => {
             const iccid = d.iccid_with_luhn || d.iccid;
             return (
               <div key={d.iccid}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                  <span className="text-[10px] text-gray-400 font-mono truncate">…{iccid.slice(-12)}</span>
+                  <Icon name="router" className="text-[14px] text-tertiary shrink-0" />
+                  <span className="font-mono font-body-sm text-body-sm text-on-surface-variant truncate">{iccid}</span>
                 </div>
                 <input
                   type="text"
@@ -425,7 +447,7 @@ function RenameModal({
                   onChange={(e) => setNames((prev) => ({ ...prev, [d.iccid]: e.target.value }))}
                   maxLength={100}
                   placeholder="Nombre del dispositivo"
-                  className="w-full text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-300"
+                  className="w-full font-body-md text-body-md text-on-surface bg-surface border border-hairline rounded-lg px-3 py-2.5 placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             );
@@ -433,20 +455,19 @@ function RenameModal({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex items-center gap-3 px-5 py-4 border-t border-gray-100">
+        <div className="shrink-0 flex items-center gap-3 px-card-padding py-4 border-t border-hairline">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex-1 py-2.5 rounded-lg border border-hairline font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ background: "#059669" }}
+            className="flex-1 py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-on-primary-container transition-colors active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon name="check_circle" className="text-[18px]" />}
             {saving ? "Guardando…" : "Guardar"}
           </button>
         </div>
@@ -527,7 +548,7 @@ function SimDetailSheet({
         {/* Drag handle (solo en la hoja móvil) */}
         {!inline && (
           <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-            <div className="w-10 h-1 rounded-full bg-gray-200" />
+            <div className="w-10 h-1 rounded-full bg-outline-variant" />
           </div>
         )}
 
@@ -587,39 +608,42 @@ function SimDetailSheet({
             {/* ── Información General tab ── */}
             {activeTab === "info" && (
               <>
-                {/* Device name */}
+                {/* Dispositivo */}
                 {sim.endpoint?.name && (
-                  <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                    <Wifi className="w-4 h-4 shrink-0" style={{ color: "#3ECF8E" }} />
+                  <div className="flex items-center gap-2.5 p-3 rounded-xl bg-surface-container-low border border-hairline">
+                    <Icon name="router" className="text-[18px] text-primary shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wider">Dispositivo</p>
-                      <p className="text-sm font-semibold text-gray-800 truncate">{sim.endpoint.name}</p>
+                      <p className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant">Dispositivo</p>
+                      <p className="font-label-md text-label-md text-on-surface truncate">{sim.endpoint.name}</p>
                     </div>
                   </div>
                 )}
 
-                {/* Connectivity */}
-                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: conn.color }} />
+                {/* Conexión */}
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-surface-container-low border border-hairline">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${conn.online ? "pulse-dot" : ""}`}
+                    style={{ background: conn.color }}
+                  />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Conexión</p>
-                    <p className="text-sm font-semibold" style={{ color: conn.color }}>{conn.label}</p>
+                    <p className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant">Conexión</p>
+                    <p className="font-label-md text-label-md" style={{ color: conn.color }}>{conn.label}</p>
                   </div>
                 </div>
 
-                {/* SIM info fields */}
+                {/* Datos del SIM */}
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Datos del SIM</p>
-                  <div className="divide-y divide-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+                  <p className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant">Datos del SIM</p>
+                  <div className="divide-y divide-hairline rounded-xl border border-hairline overflow-hidden">
                     {[
                       { label: "ICCID", value: iccid, mono: true },
                       ...(sim.imsi ? [{ label: "IMSI", value: sim.imsi, mono: true }] : []),
                       { label: "ID SIM", value: String(sim.simId ?? "—"), mono: false },
                       { label: "Estado", value: statusCfg.label, mono: false },
                     ].map(({ label, value, mono }) => (
-                      <div key={label} className="flex items-center justify-between gap-3 px-3 py-2.5 bg-white">
-                        <span className="text-xs text-gray-400 shrink-0">{label}</span>
-                        <span className={`text-xs text-gray-700 truncate text-right ${mono ? "font-mono" : "font-medium"}`}>
+                      <div key={label} className="flex items-center justify-between gap-3 px-3 py-2.5 bg-surface-container-lowest">
+                        <span className="font-body-sm text-body-sm text-on-surface-variant shrink-0">{label}</span>
+                        <span className={`font-body-sm text-body-sm text-on-surface truncate text-right ${mono ? "font-mono" : ""}`}>
                           {value}
                         </span>
                       </div>
@@ -632,69 +656,73 @@ function SimDetailSheet({
             {/* ── Consumo tab ── */}
             {activeTab === "usage" && (
               <div className="space-y-4">
-                {/* Monthly totals */}
+                {/* Totales del mes */}
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Consumo del mes</p>
+                  <p className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant mb-3">Consumo del mes</p>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: "Enviado (TX)", value: usage.tx, icon: Upload, color: "#3ECF8E" },
-                      { label: "Recibido (RX)", value: usage.rx, icon: Download, color: "#60a5fa" },
-                    ].map(({ label, value, icon: Icon, color }) => (
-                      <div key={label} className="p-3 rounded-xl border border-gray-100 bg-gray-50">
+                      { label: "Enviado (TX)",  value: usage.tx, iconName: "arrow_upward",   color: TX_COLOR },
+                      { label: "Recibido (RX)", value: usage.rx, iconName: "arrow_downward", color: RX_COLOR },
+                    ].map(({ label, value, iconName, color }) => (
+                      <div key={label} className="p-3 rounded-xl border border-hairline bg-surface-container-low">
                         <div className="flex items-center gap-1.5 mb-1.5">
-                          <Icon className="w-3.5 h-3.5" style={{ color }} />
-                          <span className="text-[10px] text-gray-500">{label}</span>
+                          <Icon name={iconName} className="text-[14px]" style={{ color }} />
+                          <span className="font-body-sm text-body-sm text-on-surface-variant">{label}</span>
                         </div>
-                        <p className="text-sm font-bold text-gray-900">{value > 0 ? formatMB(value) : "0 MB"}</p>
+                        <p className="font-label-md text-label-md text-on-surface">
+                          {value > 0 ? formatMB(value) : "0 MB"}
+                        </p>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 px-4 py-3 rounded-xl flex items-center justify-between"
-                    style={{ background: "rgba(62,207,142,0.07)", border: "1px solid rgba(62,207,142,0.2)" }}>
-                    <span className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                      <Activity className="w-4 h-4" style={{ color: "#3ECF8E" }} />
+                  <div className="mt-3 px-4 py-3 rounded-xl flex items-center justify-between bg-primary-container/10 border border-primary-container/30">
+                    <span className="flex items-center gap-2 font-body-md text-body-md text-on-surface-variant">
+                      <Icon name="analytics" className="text-[18px] text-primary" />
                       Total del mes
                     </span>
-                    <span className="text-sm font-bold" style={{ color: "#059669" }}>
+                    <span className="font-label-md text-label-md text-primary">
                       {usage.tx + usage.rx > 0 ? formatMB(usage.tx + usage.rx) : "Sin datos"}
                     </span>
                   </div>
                 </div>
 
-                {/* Traffic chart */}
+                {/* Gráfico de tráfico */}
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Tráfico reciente</p>
+                  <p className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant mb-3">Tráfico reciente</p>
                   {loadingUsage ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
                     </div>
                   ) : hasChart ? (
-                    <div className="bg-gray-50 rounded-xl p-3">
+                    <div className="bg-surface-container-low rounded-xl p-3">
                       <ResponsiveContainer width="100%" height={130}>
                         <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                          <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} tickFormatter={(v) => formatBytes(v)} />
+                          <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#3d4a41" }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: "#3d4a41" }} tickFormatter={(v) => formatBytes(v)} axisLine={false} tickLine={false} />
                           <RechartsTooltip
                             formatter={(v: any) => formatBytes(Number(v))}
-                            contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e5e7eb" }}
+                            contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e8e8ed" }}
                           />
-                          <Bar key="bar-tx" dataKey="tx" name="TX" fill="#3ECF8E" radius={[2, 2, 0, 0]} maxBarSize={14} isAnimationActive={false} />
-                          <Bar key="bar-rx" dataKey="rx" name="RX" fill="#60a5fa" radius={[2, 2, 0, 0]} maxBarSize={14} isAnimationActive={false} />
+                          <Bar key="bar-tx" dataKey="tx" name="TX" fill={TX_COLOR} radius={[4, 4, 0, 0]} maxBarSize={14} isAnimationActive={false} />
+                          <Bar key="bar-rx" dataKey="rx" name="RX" fill={RX_COLOR} radius={[4, 4, 0, 0]} maxBarSize={14} isAnimationActive={false} />
                         </BarChart>
                       </ResponsiveContainer>
+                      {/* Leyenda: con 2 series la identidad nunca depende solo del color */}
                       <div className="flex items-center gap-4 mt-1 justify-center">
-                        <span className="flex items-center gap-1 text-[10px] text-gray-500">
-                          <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#3ECF8E" }} />TX
+                        <span className="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant">
+                          <span className="w-2 h-2 rounded-full inline-block" style={{ background: TX_COLOR }} />
+                          TX enviado
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-gray-500">
-                          <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#60a5fa" }} />RX
+                        <span className="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant">
+                          <span className="w-2 h-2 rounded-full inline-block" style={{ background: RX_COLOR }} />
+                          RX recibido
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-8 rounded-xl border border-dashed border-gray-200 bg-gray-50">
-                      <BarChart2 className="w-8 h-8 text-gray-200 mb-2" />
-                      <p className="text-xs text-gray-400 font-medium">Sin tráfico reciente</p>
+                    <div className="flex flex-col items-center justify-center py-8 rounded-xl border border-dashed border-hairline bg-surface-container-low">
+                      <Icon name="bar_chart" className="text-[32px] text-outline-variant mb-2" />
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">Sin tráfico reciente</p>
                     </div>
                   )}
                 </div>
@@ -862,11 +890,6 @@ export default function ClientPortalDashboard() {
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("asc"); }
-  };
-
-  const SortIcon = ({ k }: { k: SortKey }) => {
-    if (sortKey !== k) return <ChevronDown className="w-3 h-3 opacity-30" />;
-    return sortDir === "asc" ? <ChevronUp className="w-3 h-3" style={{ color: "#3ECF8E" }} /> : <ChevronDown className="w-3 h-3" style={{ color: "#3ECF8E" }} />;
   };
 
   // ── Device actions ──
@@ -1775,27 +1798,31 @@ export default function ClientPortalDashboard() {
           ref={setPopperElement}
           style={popperStyles.popper}
           {...popperAttributes.popper}
-          className="z-50 bg-white rounded-xl shadow-lg border border-gray-100 p-4 w-64"
+          /* Nivel 2 de elevación: sombra difusa suave que separa del fondo */
+          className="z-50 bg-surface-container-lowest rounded-xl border border-hairline p-4 w-64 shadow-lg"
         >
           {popoverConfirm.type === "status" ? (
             <>
-              <p className="text-sm text-gray-800 font-medium mb-1">
+              <p className="font-label-md text-label-md text-on-surface mb-1">
                 {popoverConfirm.sim.status?.id === 1 ? "Suspender conexión" : "Activar conexión"}
               </p>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">
                 Dispositivo: "{popoverConfirm.sim.endpoint?.name || "Sin nombre"}"
               </p>
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setPopoverConfirm(null)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="px-3 py-1.5 rounded-lg font-label-md text-label-xs text-on-surface-variant hover:bg-surface-container-low transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={confirmToggleStatus}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-sm transition-colors"
-                  style={{ background: popoverConfirm.sim.status?.id === 1 ? "#ef4444" : "#10b981" }}
+                  className={`px-3 py-1.5 rounded-lg font-label-md text-label-xs transition-colors ${
+                    popoverConfirm.sim.status?.id === 1
+                      ? "bg-error text-on-error hover:opacity-90"
+                      : "bg-primary text-on-primary hover:bg-on-primary-container"
+                  }`}
                 >
                   {popoverConfirm.sim.status?.id === 1 ? "Suspender" : "Activar"}
                 </button>
@@ -1803,22 +1830,22 @@ export default function ClientPortalDashboard() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-800 font-medium mb-1">
+              <p className="font-label-md text-label-md text-on-surface mb-1">
                 Refrescar SIM
               </p>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">
                 El dispositivo "{popoverConfirm.sim.endpoint?.name || "Sin nombre"}" se desconectará y reconectará.
               </p>
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setPopoverConfirm(null)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="px-3 py-1.5 rounded-lg font-label-md text-label-xs text-on-surface-variant hover:bg-surface-container-low transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={confirmReset}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-sm transition-colors bg-amber-500 hover:bg-amber-600"
+                  className="px-3 py-1.5 rounded-lg font-label-md text-label-xs bg-warning text-on-surface hover:brightness-95 transition-all"
                 >
                   Refrescar
                 </button>
