@@ -1184,27 +1184,71 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
     let accuracy: number | null = null;
     let locationSource = "none";
 
-    // Step 1: cell tower geolocation via mylnikov.org (free, no key required)
+    // Paso 1: geolocalizar la antena. emnify da el cell_global_id pero NO las
+    // coordenadas, así que hay que traducirlo con una base de datos de antenas.
+    //
+    // Se intenta primero OpenCelliD (requiere OPENCELLID_API_KEY en los secrets;
+    // mucha mejor cobertura en México) y, si no está configurada o no encuentra la
+    // torre, se cae a mylnikov.org, que es gratuito y no necesita key.
+    let cellGeoSource: string | null = null;
+
     if (mcc && mnc && lac && cell_id) {
-      try {
-        console.log(`[location] mylnikov mcc=${mcc} mnc=${mnc} lac=${lac} cell_id=${cell_id}`);
-        const geoRes = await fetch(
-          `https://www.mylnikov.org/api/v1/cell?mcc=${mcc}&mnc=${mnc}&lac=${lac}&cellid=${cell_id}`,
-          { headers: { "Accept": "application/json" } }
-        );
-        if (geoRes.ok) {
-          const geo = await geoRes.json();
-          console.log(`[location] mylnikov response: ${JSON.stringify(geo)}`);
-          if (geo.result === 1 && geo.lat && geo.lon) {
-            lat = geo.lat;
-            lng = geo.lon;
-            accuracy = geo.range ?? null;
-            locationSource = "cell_tower";
+      const openCellIdKey = Deno.env.get("OPENCELLID_API_KEY");
+
+      // 1a — OpenCelliD
+      if (openCellIdKey) {
+        try {
+          const url = `https://opencellid.org/cell/get?key=${openCellIdKey}`
+            + `&mcc=${mcc}&mnc=${mnc}&lac=${lac}&cellid=${cell_id}&format=json`;
+          const res = await fetch(url, { headers: { Accept: "application/json" } });
+          if (res.ok) {
+            const geo = await res.json();
+            if (typeof geo?.lat === "number" && typeof geo?.lon === "number") {
+              lat = geo.lat;
+              lng = geo.lon;
+              accuracy = geo.range ?? null;
+              locationSource = "cell_tower";
+              cellGeoSource = "opencellid";
+            } else {
+              console.log(`[location] opencellid sin resultado: ${JSON.stringify(geo)}`);
+            }
+          } else {
+            console.log(`[location] opencellid HTTP ${res.status}`);
           }
+        } catch (e: any) {
+          console.log(`[location] opencellid error: ${e.message}`);
         }
-      } catch (geoErr: any) {
-        console.log(`[location] mylnikov error: ${geoErr.message}`);
+      } else {
+        console.log("[location] OPENCELLID_API_KEY no configurada — se usa mylnikov");
       }
+
+      // 1b — mylnikov (respaldo gratuito)
+      if (!lat) {
+        try {
+          const res = await fetch(
+            `https://www.mylnikov.org/api/v1/cell?mcc=${mcc}&mnc=${mnc}&lac=${lac}&cellid=${cell_id}`,
+            { headers: { Accept: "application/json" } }
+          );
+          if (res.ok) {
+            const geo = await res.json();
+            if (geo.result === 1 && geo.lat && geo.lon) {
+              lat = geo.lat;
+              lng = geo.lon;
+              accuracy = geo.range ?? null;
+              locationSource = "cell_tower";
+              cellGeoSource = "mylnikov";
+            } else {
+              console.log(`[location] mylnikov sin resultado: ${JSON.stringify(geo)}`);
+            }
+          } else {
+            console.log(`[location] mylnikov HTTP ${res.status}`);
+          }
+        } catch (e: any) {
+          console.log(`[location] mylnikov error: ${e.message}`);
+        }
+      }
+
+      console.log(`[location] antena mcc=${mcc} mnc=${mnc} lac=${lac} cid=${cell_id} → ${cellGeoSource ?? "no resuelta"}`);
     }
 
     // Paso 2: respaldo — centroide del país. emnify YA devuelve esas coordenadas
@@ -1251,6 +1295,7 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
       // Contexto para que la UI pueda explicar POR QUÉ la precisión es la que es
       location_state: locationState,
       age_of_location: ageOfLocation,
+      cell_geo_source: cellGeoSource,
     });
   } catch (e: any) {
     console.log("Error getting endpoint location:", e);
