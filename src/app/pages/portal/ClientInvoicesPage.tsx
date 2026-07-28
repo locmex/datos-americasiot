@@ -6,6 +6,7 @@ import {
   type InvoiceStatus,
 } from "../../lib/invoice-status";
 import { generateInvoicePdf } from "../../lib/invoice-pdf";
+import { groupCharges } from "../../lib/invoice-charges";
 import { Icon } from "../../components/ui/icon";
 import { toast } from "sonner";
 
@@ -44,41 +45,6 @@ interface Invoice {
 
 function formatDate(ts: string): string {
   return new Date(ts).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-// ─── Agrupación de cargos ─────────────────────────────────────────────────────
-// Una factura puede tener 150+ líneas idénticas ("$45.00 · Plan único · 100%").
-// Eso es ruido: se agrupa por (plan, precio, prorrateo) y el detalle línea por
-// línea queda disponible bajo demanda.
-interface ChargeGroup {
-  key: string;
-  planName: string;
-  unitPrice: number;
-  prorationFactor: number;
-  count: number;
-  total: number;
-}
-
-function groupCharges(items: InvoiceItem[]): ChargeGroup[] {
-  const map = new Map<string, ChargeGroup>();
-  for (const it of items) {
-    const key = `${it.plan_name}__${it.unit_price}__${it.proration_factor}`;
-    const g = map.get(key);
-    if (g) {
-      g.count += 1;
-      g.total += Number(it.amount);
-    } else {
-      map.set(key, {
-        key,
-        planName: it.plan_name,
-        unitPrice: Number(it.unit_price),
-        prorationFactor: Number(it.proration_factor),
-        count: 1,
-        total: Number(it.amount),
-      });
-    }
-  }
-  return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
 // ─── Tarjeta de factura (expandible) ──────────────────────────────────────────
@@ -174,7 +140,7 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-label-xs text-label-xs whitespace-nowrap"
             style={{ color: cfg.color, background: cfg.bg }}
           >
-            <cfg.icon className="w-3.5 h-3.5" />
+            <Icon name={cfg.symbol} className="text-[14px]" />
             {cfg.label}
           </span>
         </div>
