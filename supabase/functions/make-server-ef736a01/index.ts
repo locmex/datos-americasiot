@@ -1145,58 +1145,128 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
     if (!session) return c.json({ error: "Unauthorized" }, 401);
     const epId = c.req.param("id");
 
-    const [epRes, connRes] = await Promise.allSettled([
+    // `connectivity_info` es una consulta ACTIVA a la red (no caché) y es el único
+    // sitio donde emnify expone el cell_global_id (mcc/mnc/lac/cid). Puede devolver
+    // 200 con `state: "not_provided_from_vlr"` —típico en 4G/LTE, donde el VLR no
+    // aplica—, así que se trata como "puede no venir" y nunca como error.
+    const [epRes, connRes, infoRes] = await Promise.allSettled([
       emnifyFetch(`/endpoint/${epId}`),
       emnifyFetch(`/endpoint/${epId}/connectivity`),
+      emnifyFetch(`/endpoint/${epId}/connectivity_info`),
     ]);
 
     const ep   = epRes.status   === "fulfilled" ? epRes.value.data   : null;
     const conn = connRes.status === "fulfilled" ? connRes.value.data : null;
+    const info = infoRes.status === "fulfilled" ? infoRes.value.data : null;
 
-    console.log(`[location] ep.location=${JSON.stringify(ep?.location)} conn.location=${JSON.stringify(conn?.location)} conn.country=${JSON.stringify(conn?.country)}`);
+    // El país y el operador viven DENTRO de conn.location, no en conn.country
+    const cellCountry  = conn?.location?.country  ?? null;
+    const cellOperator = conn?.location?.operator ?? null;
 
-    // Cell tower data lives in conn.location
-    const cell    = conn?.location ?? null;
-    const mcc     = cell?.mcc     ?? null;
-    const mnc     = cell?.mnc     ?? null;
-    const lac     = cell?.lac     ?? null;
-    const cell_id = cell?.cell_id ?? null;
+    // Datos de antena: solo de connectivity_info
+    const subLoc  = info?.subscriber_info?.location ?? null;
+    const cgi     = subLoc?.cell_global_id ?? null;
+    const mcc     = cgi?.mcc ?? cellCountry?.mcc ?? null;
+    const mnc     = cgi?.mnc ?? null;
+    const lac     = cgi?.lac ?? null;
+    const cell_id = cgi?.cid ?? null;
+    const locationState = info?.subscriber_info?.state ?? null;
+    const ageOfLocation = subLoc?.age_of_location ?? null;
 
-    const country     = conn?.country?.name      ?? ep?.location?.name ?? "";
-    const operator    = conn?.mno?.name ?? conn?.operator?.name ?? ep?.operator?.name ?? "";
-    const lastUpdated = conn?.last_updated ?? ep?.last_updated ?? "";
+    console.log(`[location] cgi=${JSON.stringify(cgi)} state=${locationState} country=${cellCountry?.iso_code}`);
+
+    const country     = cellCountry?.name  ?? conn?.country?.name  ?? ep?.location?.name  ?? "";
+    const operator    = cellOperator?.name ?? conn?.mno?.name ?? conn?.operator?.name ?? ep?.operator?.name ?? "";
+    const lastUpdated = conn?.location?.last_updated_gprs ?? conn?.location?.last_updated ?? conn?.last_updated ?? ep?.last_updated ?? "";
 
     let lat: number | null = null;
     let lng: number | null = null;
     let accuracy: number | null = null;
     let locationSource = "none";
 
-    // Step 1: cell tower geolocation via mylnikov.org (free, no key required)
+    // Paso 1: geolocalizar la antena. emnify da el cell_global_id pero NO las
+    // coordenadas, así que hay que traducirlo con una base de datos de antenas.
+    //
+    // Se intenta primero OpenCelliD (requiere OPENCELLID_API_KEY en los secrets;
+    // mucha mejor cobertura en México) y, si no está configurada o no encuentra la
+    // torre, se cae a mylnikov.org, que es gratuito y no necesita key.
+    let cellGeoSource: string | null = null;
+
     if (mcc && mnc && lac && cell_id) {
-      try {
-        console.log(`[location] mylnikov mcc=${mcc} mnc=${mnc} lac=${lac} cell_id=${cell_id}`);
-        const geoRes = await fetch(
-          `https://www.mylnikov.org/api/v1/cell?mcc=${mcc}&mnc=${mnc}&lac=${lac}&cellid=${cell_id}`,
-          { headers: { "Accept": "application/json" } }
-        );
-        if (geoRes.ok) {
-          const geo = await geoRes.json();
-          console.log(`[location] mylnikov response: ${JSON.stringify(geo)}`);
-          if (geo.result === 1 && geo.lat && geo.lon) {
-            lat = geo.lat;
-            lng = geo.lon;
-            accuracy = geo.range ?? null;
-            locationSource = "cell_tower";
+      const openCellIdKey = Deno.env.get("OPENCELLID_API_KEY");
+
+      // 1a — OpenCelliD
+      if (openCellIdKey) {
+        try {
+          const url = `https://opencellid.org/cell/get?key=${openCellIdKey}`
+            + `&mcc=${mcc}&mnc=${mnc}&lac=${lac}&cellid=${cell_id}&format=json`;
+          const res = await fetch(url, { headers: { Accept: "application/json" } });
+          if (res.ok) {
+            const geo = await res.json();
+            if (typeof geo?.lat === "number" && typeof geo?.lon === "number") {
+              lat = geo.lat;
+              lng = geo.lon;
+              accuracy = geo.range ?? null;
+              locationSource = "cell_tower";
+              cellGeoSource = "opencellid";
+            } else {
+              console.log(`[location] opencellid sin resultado: ${JSON.stringify(geo)}`);
+            }
+          } else {
+            console.log(`[location] opencellid HTTP ${res.status}`);
           }
+        } catch (e: any) {
+          console.log(`[location] opencellid error: ${e.message}`);
         }
-      } catch (geoErr: any) {
-        console.log(`[location] mylnikov error: ${geoErr.message}`);
+      } else {
+        console.log("[location] OPENCELLID_API_KEY no configurada — se usa mylnikov");
+      }
+
+      // 1b — mylnikov (respaldo gratuito)
+      if (!lat) {
+        try {
+          const res = await fetch(
+            `https://www.mylnikov.org/api/v1/cell?mcc=${mcc}&mnc=${mnc}&lac=${lac}&cellid=${cell_id}`,
+            { headers: { Accept: "application/json" } }
+          );
+          if (res.ok) {
+            const geo = await res.json();
+            if (geo.result === 1 && geo.lat && geo.lon) {
+              lat = geo.lat;
+              lng = geo.lon;
+              accuracy = geo.range ?? null;
+              locationSource = "cell_tower";
+              cellGeoSource = "mylnikov";
+            } else {
+              console.log(`[location] mylnikov sin resultado: ${JSON.stringify(geo)}`);
+            }
+          } else {
+            console.log(`[location] mylnikov HTTP ${res.status}`);
+          }
+        } catch (e: any) {
+          console.log(`[location] mylnikov error: ${e.message}`);
+        }
+      }
+
+      console.log(`[location] antena mcc=${mcc} mnc=${mnc} lac=${lac} cid=${cell_id} → ${cellGeoSource ?? "no resuelta"}`);
+    }
+
+    // Paso 2: respaldo — centroide del país. emnify YA devuelve esas coordenadas
+    // dentro de conn.location.country, así que no hace falta consultar a nadie.
+    if (!lat && cellCountry?.latitude && cellCountry?.longitude) {
+      const cLat = parseFloat(cellCountry.latitude);
+      const cLng = parseFloat(cellCountry.longitude);
+      if (!Number.isNaN(cLat) && !Number.isNaN(cLng)) {
+        lat = cLat;
+        lng = cLng;
+        accuracy = null;
+        locationSource = "country_centroid";
       }
     }
 
-    // Step 2: fallback — country centroid via OpenStreetMap Nominatim
-    if (!lat && (conn?.country?.country_code || ep?.location?.country_code)) {
-      const cc = conn?.country?.country_code ?? ep?.location?.country_code;
+    // Paso 3: último recurso — geocodificar el país por su código ISO
+    if (!lat && (cellCountry?.iso_code || ep?.location?.country_code)) {
+      const cc = cellCountry?.iso_code ?? ep?.location?.country_code;
       try {
         const nomRes = await fetch(
           `https://nominatim.openstreetmap.org/search?country=${cc}&format=json&limit=1`,
@@ -1222,6 +1292,10 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id/location", async (c) => {
       mcc, mnc, lac, cell_id,
       location_source: locationSource,
       last_updated: lastUpdated,
+      // Contexto para que la UI pueda explicar POR QUÉ la precisión es la que es
+      location_state: locationState,
+      age_of_location: ageOfLocation,
+      cell_geo_source: cellGeoSource,
     });
   } catch (e: any) {
     console.log("Error getting endpoint location:", e);
