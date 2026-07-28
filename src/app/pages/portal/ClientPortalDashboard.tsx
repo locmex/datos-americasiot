@@ -518,7 +518,7 @@ function SimDetailSheet({
       )}
       <div
         className={inline
-          ? "flex flex-col bg-surface-container-lowest border border-hairline rounded-xl shadow-sm overflow-hidden sticky top-24"
+          ? "flex flex-col bg-surface-container-lowest border border-hairline rounded-xl shadow-sm overflow-hidden"
           : `fixed z-50 bg-white shadow-2xl flex flex-col
              bottom-0 left-0 right-0 rounded-t-3xl
              sm:bottom-0 sm:top-0 sm:left-auto sm:right-0 sm:rounded-none sm:rounded-l-2xl sm:w-96`}
@@ -1164,6 +1164,11 @@ export default function ClientPortalDashboard() {
         })}
       </div>
 
+      {/* Layout: contenido a la izquierda. En "Mis SIMs" se abre una segunda
+          columna para el panel de detalle, que es un bloque independiente. */}
+      <div className={activeView === "sims" ? "lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4" : ""}>
+      <div className="min-w-0">
+
       {/* Tabs & Exportar — encabezado de la tarjeta de contenido */}
       <div className="bg-surface-container-lowest border border-hairline border-b-0 rounded-t-xl px-card-padding flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div className="flex gap-6">
@@ -1216,9 +1221,6 @@ export default function ClientPortalDashboard() {
             </div>
           )}
 
-          {/* Master-detail: tabla a la izquierda, detalle de la SIM a la derecha */}
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:items-start">
-          <div className="min-w-0">
           {loading ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl overflow-hidden">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -1399,27 +1401,6 @@ export default function ClientPortalDashboard() {
               </div>
             </div>
           )}
-          </div>
-
-          {/* Panel de detalle — solo desktop; en móvil se abre como hoja */}
-          <aside className="hidden lg:block">
-            {selectedSim ? (
-              <SimDetailSheet
-                sim={selectedSim}
-                onClose={() => setSelectedSim(null)}
-                inline
-              />
-            ) : (
-              <div className="bg-surface-container-lowest border border-hairline rounded-xl p-8 text-center sticky top-24">
-                <Icon name="ads_click" className="text-[36px] text-outline-variant mb-2" />
-                <p className="font-label-md text-label-md text-on-surface">Selecciona una SIM</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                  Haz clic en una fila para ver su información y consumo.
-                </p>
-              </div>
-            )}
-          </aside>
-          </div>
         </>
       )}
 
@@ -1716,6 +1697,33 @@ export default function ClientPortalDashboard() {
           </div>
         </>
       )}
+
+      </div>{/* /columna de contenido */}
+
+      {/* Panel de detalle de SIM — bloque independiente, solo desktop.
+          `self-start` + `sticky` hacen que acompañe el scroll de la tabla. */}
+      {activeView === "sims" && (
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            {selectedSim ? (
+              <SimDetailSheet
+                sim={selectedSim}
+                onClose={() => setSelectedSim(null)}
+                inline
+              />
+            ) : (
+              <div className="bg-surface-container-lowest border border-hairline rounded-xl p-8 text-center">
+                <Icon name="ads_click" className="text-[36px] text-outline-variant mb-2" />
+                <p className="font-label-md text-label-md text-on-surface">Selecciona una SIM</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Haz clic en una fila para ver su información y consumo.
+                </p>
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
+      </div>{/* /grid */}
 
       {/* ── Detalle de SIM (hoja superpuesta) — solo móvil/tablet.
              En desktop el detalle vive en el panel lateral de la pestaña Mis SIMs. ── */}
