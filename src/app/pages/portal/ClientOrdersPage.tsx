@@ -1,10 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
-import {
-  ShoppingCart, Package, Plus, Minus, Loader2, RefreshCw, Search,
-  ExternalLink, Truck, CheckCircle2, XCircle,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { clientApi } from "../../lib/api";
-import { ORDER_STATUS, getOrderStatus, formatCurrency, type OrderStatus } from "../../lib/order-status";
+import { getOrderStatus, formatCurrency, type OrderStatus } from "../../lib/order-status";
+import { Icon } from "../../components/ui/icon";
 import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -35,14 +33,15 @@ interface Order {
 }
 
 function formatDate(ts: string): string {
-  return new Date(ts).toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleString("es-MX", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
 }
 
-// ─── Catalog tab (create order) ───────────────────────────────────────────────
-function CatalogTab({ onOrderCreated }: { onOrderCreated: () => void }) {
+// ─── Catálogo (crear pedido) ──────────────────────────────────────────────────
+function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated: () => void }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +60,9 @@ function CatalogTab({ onOrderCreated }: { onOrderCreated: () => void }) {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = products.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = products.filter(
+    (p) => !search || p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const setQty = (id: string, qty: number) => {
     setCart((prev) => {
@@ -73,6 +74,7 @@ function CatalogTab({ onOrderCreated }: { onOrderCreated: () => void }) {
   };
 
   const cartEntries = Object.entries(cart);
+  const cartUnits = cartEntries.reduce((sum, [, qty]) => sum + qty, 0);
   const cartTotal = cartEntries.reduce((sum, [id, qty]) => {
     const p = products.find((pr) => pr.id === id);
     return sum + (p ? p.price * qty : 0);
@@ -97,95 +99,139 @@ function CatalogTab({ onOrderCreated }: { onOrderCreated: () => void }) {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar producto..."
-          className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
-        />
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
+    );
+  }
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-2xl border border-gray-100">
-          <Package className="w-10 h-10 text-gray-200 mb-2" />
-          <p className="text-sm font-medium text-gray-400">{search ? "Sin resultados" : "No hay productos disponibles"}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {filtered.map((product) => {
-            const qty = cart[product.id] ?? 0;
-            return (
-              <div key={product.id} className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                    {product.description && <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{product.description}</p>}
-                  </div>
-                  <p className="text-sm font-bold shrink-0" style={{ color: "#059669" }}>
-                    {formatCurrency(product.price, product.currency)}
-                  </p>
+  if (filtered.length === 0) {
+    return (
+      <div className="bg-surface-container-lowest border border-hairline rounded-xl py-20 text-center">
+        <Icon name={search ? "search_off" : "inventory_2"} className="text-[44px] text-outline-variant mb-3" />
+        <p className="font-label-md text-label-md text-on-surface">
+          {search ? "Sin resultados" : "No hay productos disponibles"}
+        </p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          {search
+            ? `No encontramos productos para "${search}"`
+            : "Tu administrador todavía no publicó productos en el catálogo."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Bento grid de productos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtered.map((product) => {
+          const qty = cart[product.id] ?? 0;
+          const inCart = qty > 0;
+          return (
+            <div
+              key={product.id}
+              className={`bg-surface-container-lowest rounded-2xl border p-5 hover:bg-surface-bright transition-colors group flex flex-col h-full ${
+                inCart ? "border-primary-container" : "border-hairline"
+              }`}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+                  <Icon name="inventory_2" />
                 </div>
-                <div className="flex items-center justify-end gap-2 mt-1">
+                {inCart && (
+                  <span className="bg-primary-container/20 text-on-primary-container px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
+                    <Icon name="check_circle" className="text-[14px]" filled />
+                    En el pedido
+                  </span>
+                )}
+              </div>
+
+              <h3 className="font-headline-sm text-headline-sm text-on-surface mb-2">{product.name}</h3>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">
+                {product.description || "Sin descripción."}
+              </p>
+
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-hairline">
+                <div className="font-display-md text-display-md text-primary">
+                  {formatCurrency(product.price, product.currency)}
+                </div>
+                <div className="flex items-center bg-surface-container rounded-lg border border-hairline overflow-hidden shrink-0">
                   <button
                     onClick={() => setQty(product.id, qty - 1)}
                     disabled={qty === 0}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                    className="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors disabled:opacity-30"
+                    aria-label={`Quitar una unidad de ${product.name}`}
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    −
                   </button>
-                  <span className="w-6 text-center text-sm font-semibold text-gray-800">{qty}</span>
+                  <span className="px-2 font-label-md text-label-md w-8 text-center bg-surface-container-lowest">
+                    {qty}
+                  </span>
                   <button
                     onClick={() => setQty(product.id, qty + 1)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                    className="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors"
+                    aria-label={`Agregar una unidad de ${product.name}`}
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    +
                   </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
 
+      {/* Carrito flotante — anclado al borde inferior, dentro del área de contenido
+          (el `md:pl-64` compensa el ancho de la sidebar para que quede centrado). */}
       {cartEntries.length > 0 && (
-        <div className="sticky bottom-4 bg-white rounded-2xl border shadow-lg p-4 space-y-3" style={{ borderColor: "rgba(62,207,142,0.3)" }}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
-              <ShoppingCart className="w-4 h-4" style={{ color: "#3ECF8E" }} />
-              {cartEntries.length} producto{cartEntries.length !== 1 ? "s" : ""}
-            </span>
-            <span className="text-base font-bold text-gray-900">{formatCurrency(cartTotal)}</span>
-          </div>
-          <input
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notas para el pedido (opcional)"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full py-2.5 rounded-xl text-sm font-bold text-black transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-            style={{ background: "#3ECF8E" }}
+        <div className="fixed bottom-6 left-0 right-0 px-4 md:pl-64 z-40 pointer-events-none">
+          <div className="mx-auto max-w-2xl bg-surface-container-lowest rounded-2xl border border-hairline p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto"
+            style={{ boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.08)" }}
           >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
-            {submitting ? "Enviando..." : "Realizar Pedido"}
-          </button>
+            <div className="flex items-center gap-4 flex-1 w-full md:w-auto">
+              <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary relative shrink-0">
+                <Icon name="shopping_cart" />
+                <span className="absolute -top-1 -right-1 bg-error text-on-error font-label-xs text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
+                  {cartUnits}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="font-label-md text-label-md text-on-surface-variant">
+                  {cartEntries.length} producto{cartEntries.length !== 1 ? "s" : ""} · {cartUnits} unidad{cartUnits !== 1 ? "es" : ""}
+                </p>
+                <p className="font-display-md text-display-md text-primary">
+                  Total: {formatCurrency(cartTotal)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Notas del pedido (opcional)"
+                className="flex-1 md:w-48 bg-surface border border-hairline rounded-lg px-3 py-2 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:bg-on-primary-container transition-colors whitespace-nowrap flex items-center gap-2 disabled:opacity-60"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon name="send" className="text-[18px]" />}
+                {submitting ? "Enviando…" : "Realizar Pedido"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-// ─── History tab (own orders) ─────────────────────────────────────────────────
+// ─── Mis Pedidos (historial) ──────────────────────────────────────────────────
 function HistoryTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,140 +280,202 @@ function HistoryTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-gray-100">
-        <ShoppingCart className="w-10 h-10 text-gray-200 mb-2" />
-        <p className="text-sm font-medium text-gray-400">Aún no has realizado pedidos</p>
+      <div className="bg-surface-container-lowest border border-hairline rounded-xl py-20 text-center">
+        <Icon name="shopping_cart" className="text-[44px] text-outline-variant mb-3" />
+        <p className="font-label-md text-label-md text-on-surface">Aún no has realizado pedidos</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          Explora el catálogo y arma tu primer pedido.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={load} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors">
-          <RefreshCw className="w-3.5 h-3.5" /> Actualizar
+        <button
+          onClick={load}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-hairline bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md text-label-md"
+        >
+          <Icon name="refresh" className="text-[16px]" /> Actualizar
         </button>
       </div>
-      {orders.map((order) => {
-        const cfg = getOrderStatus(order.status);
-        const StatusIcon = cfg.icon;
-        const canCancel = order.status === "pending" || order.status === "preparing";
-        const canReceive = order.status === "shipped";
-        const items = order.items || [];
-        return (
-          <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-mono text-gray-500">#{order.id.slice(0, 8)}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{formatDate(order.created_at)}</p>
-              </div>
-              <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0" style={{ color: cfg.color, background: cfg.bg }}>
-                <StatusIcon className="w-3.5 h-3.5" />{cfg.label}
-              </span>
-            </div>
 
-            <div className="divide-y divide-gray-50 border-t border-b border-gray-50 py-1">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-1.5 text-sm">
-                  <span className="text-gray-700 truncate">{item.quantity} × {item.product_name}</span>
-                  <span className="text-gray-500 shrink-0">{formatCurrency(item.unit_price * item.quantity)}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {orders.map((order) => {
+          const cfg = getOrderStatus(order.status);
+          const canCancel = order.status === "pending" || order.status === "preparing";
+          const canReceive = order.status === "shipped";
+          const items = order.items || [];
+          const total = items.reduce((s, it) => s + it.unit_price * it.quantity, 0);
+
+          return (
+            <div key={order.id} className="bg-surface-container-lowest rounded-2xl border border-hairline p-5 flex flex-col">
+              {/* Encabezado */}
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="min-w-0">
+                  <p className="font-headline-sm text-headline-sm text-on-surface">
+                    Pedido #{order.id.slice(0, 8)}
+                  </p>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                    {formatDate(order.created_at)}
+                  </p>
                 </div>
-              ))}
+                <span
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full font-label-xs text-label-xs shrink-0 whitespace-nowrap"
+                  style={{ color: cfg.color, background: cfg.bg }}
+                >
+                  <cfg.icon className="w-3.5 h-3.5" />
+                  {cfg.label}
+                </span>
+              </div>
+
+              {/* Artículos */}
+              <div className="rounded-xl border border-hairline divide-y divide-hairline overflow-hidden mb-4">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <span className="font-body-md text-body-md text-on-surface truncate">
+                      <span className="text-on-surface-variant">{item.quantity} ×</span> {item.product_name}
+                    </span>
+                    <span className="font-label-md text-label-md text-on-surface shrink-0">
+                      {formatCurrency(item.unit_price * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5 bg-row-hover">
+                  <span className="font-label-md text-label-md text-on-surface-variant">Total</span>
+                  <span className="font-label-md text-label-md text-primary">{formatCurrency(total)}</span>
+                </div>
+              </div>
+
+              {/* Envío */}
+              {order.carrier && order.tracking_number && (
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-surface-container-low mb-4">
+                  <span className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
+                    <Icon name="local_shipping" className="text-[18px]" />
+                    {order.carrier}
+                  </span>
+                  {order.tracking_url ? (
+                    <a
+                      href={order.tracking_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 font-label-md text-label-md text-primary hover:underline"
+                    >
+                      Rastrear <Icon name="open_in_new" className="text-[14px]" />
+                    </a>
+                  ) : (
+                    <span className="font-mono font-body-sm text-body-sm text-on-surface">{order.tracking_number}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Acciones */}
+              {(canCancel || canReceive) && (
+                <div className="flex gap-2 mt-auto">
+                  {canReceive && (
+                    <button
+                      onClick={() => handleReceived(order)}
+                      disabled={busyId === order.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-on-primary-container transition-colors disabled:opacity-60"
+                    >
+                      {busyId === order.id
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Icon name="check_circle" className="text-[18px]" />}
+                      Marcar recibido
+                    </button>
+                  )}
+                  {canCancel && (
+                    <button
+                      onClick={() => handleCancel(order)}
+                      disabled={busyId === order.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-hairline text-error hover:bg-error-container/30 font-label-md text-label-md transition-colors disabled:opacity-60"
+                    >
+                      {busyId === order.id
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Icon name="cancel" className="text-[18px]" />}
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-
-            {order.carrier && order.tracking_number && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-gray-500"><Truck className="w-3.5 h-3.5" />{order.carrier}</span>
-                {order.tracking_url ? (
-                  <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-medium text-blue-600 hover:underline">
-                    Rastrear <ExternalLink className="w-3 h-3" />
-                  </a>
-                ) : (
-                  <span className="font-mono text-gray-600">{order.tracking_number}</span>
-                )}
-              </div>
-            )}
-
-            {(canCancel || canReceive) && (
-              <div className="flex gap-2 pt-1">
-                {canReceive && (
-                  <button
-                    onClick={() => handleReceived(order)}
-                    disabled={busyId === order.id}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-60"
-                    style={{ background: "#16a34a" }}
-                  >
-                    {busyId === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                    Marcar recibido
-                  </button>
-                )}
-                {canCancel && (
-                  <button
-                    onClick={() => handleCancel(order)}
-                    disabled={busyId === order.id}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all disabled:opacity-60"
-                    style={{ color: "#dc2626", borderColor: "rgba(220,38,38,0.3)" }}
-                  >
-                    {busyId === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
-                    Cancelar
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Página ───────────────────────────────────────────────────────────────────
 export default function ClientOrdersPage() {
   const [activeTab, setActiveTab] = useState<"catalog" | "history">("catalog");
+  const [search, setSearch] = useState("");
 
-  const tabs = useMemo(() => ([
-    { id: "catalog", label: "Catálogo", icon: Package },
-    { id: "history", label: "Mis Pedidos", icon: ShoppingCart },
-  ] as const), []);
+  const tabs = [
+    { id: "catalog", label: "Catálogo" },
+    { id: "history", label: "Mis Pedidos" },
+  ] as const;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-10">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5" style={{ color: "#3ECF8E" }} />
-          Pedidos
-        </h1>
-        <p className="text-sm text-gray-500 mt-0.5">Solicita productos y da seguimiento a tus pedidos</p>
-      </div>
+    <>
+      {/* Encabezado: título, buscador y pestañas */}
+      <div className="bg-surface border-b border-hairline">
+        <div className="max-w-[1280px] mx-auto px-container-margin pt-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-display-lg text-display-lg text-on-surface">Pedidos</h2>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+                Explora el catálogo y da seguimiento a tus compras de conectividad.
+              </p>
+            </div>
 
-      <div className="flex items-center gap-1 border-b border-gray-200">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors relative"
-            style={{ color: activeTab === id ? "#3ECF8E" : "#6b7280" }}
-          >
-            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            {label}
-            {activeTab === id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full" style={{ background: "#3ECF8E" }} />
+            {activeTab === "catalog" && (
+              <div className="relative w-full md:w-80">
+                <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar productos…"
+                  className="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant transition-colors"
+                />
+              </div>
             )}
-          </button>
-        ))}
+          </div>
+
+          <div className="flex gap-6 mt-6">
+            {tabs.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`pb-2 font-label-md text-label-md transition-colors border-b-2 -mb-px ${
+                  activeTab === id
+                    ? "text-primary border-primary font-bold"
+                    : "text-on-surface-variant border-transparent hover:text-primary"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {activeTab === "catalog"
-        ? <CatalogTab onOrderCreated={() => setActiveTab("history")} />
-        : <HistoryTab />}
-    </div>
+      {/* Contenido */}
+      {/* `pb-40` deja aire para que el carrito flotante no tape la última fila */}
+      <div className="max-w-[1280px] mx-auto px-container-margin py-section-gap pb-40">
+        {activeTab === "catalog"
+          ? <CatalogTab search={search} onOrderCreated={() => setActiveTab("history")} />
+          : <HistoryTab />}
+      </div>
+    </>
   );
 }

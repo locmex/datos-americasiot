@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pedidos - AmericasIoT</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#bcc7de",
+                        "secondary-container": "#82f5c1",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "secondary": "#006c4a",
+                        "primary-fixed": "#71fcb6",
+                        "secondary-fixed": "#85f8c4",
+                        "surface": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-fixed-variant": "#3c475a",
+                        "surface-bright": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#3ecf8e",
+                        "on-primary-fixed-variant": "#005233",
+                        "inverse-surface": "#213145",
+                        "on-primary-fixed": "#002112",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#d8e3fb",
+                        "on-surface-variant": "#3d4a41",
+                        "outline": "#6c7a70",
+                        "surface-dim": "#cbdbf5",
+                        "outline-variant": "#bbcabe",
+                        "on-error": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "surface-container-high": "#dce9ff",
+                        "inverse-primary": "#51df9c",
+                        "secondary-fixed-dim": "#68dba9",
+                        "on-secondary-fixed": "#002114",
+                        "tertiary": "#545f73",
+                        "primary-fixed-dim": "#51df9c",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-tertiary-container": "#3e495c",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#adb8cf",
+                        "on-secondary-container": "#00714e",
+                        "on-surface": "#0b1c30",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary": "#006c45",
+                        "on-primary-container": "#005434",
+                        "surface-variant": "#d3e4fe",
+                        "background": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#111c2d",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-tint": "#006c45",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "card-padding": "20px",
+                        "section-gap": "32px",
+                        "base": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-xs": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "display-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-xs": ["11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "display-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .filled-icon { font-variation-settings: 'FILL' 1; }
+        /* Tonal Layer 2 for floating cart */
+        .shadow-layer-2 { box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen flex overflow-hidden">
+<!-- SideNavBar (Web Only) -->
+<nav class="hidden md:flex flex-col h-full py-6 px-4 fixed left-0 top-0 w-64 bg-surface border-r border-outline-variant z-40">
+<div class="mb-8 px-4">
+<h1 class="font-display-md text-display-md font-bold text-primary">AmericasIoT</h1>
+</div>
+<div class="mb-8 px-4 flex items-center gap-4">
+<img alt="User Profile" class="w-10 h-10 rounded-full object-cover bg-surface-container-highest" data-alt="A professional headshot of a user in a modern office environment, soft corporate lighting, white collar setting, clean aesthetic, high quality photograph." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdZWG3TEPJoKMGNh7BGT9HCVhjHZqdUCRiU1U3bN6i3Cc2_YnI-2exo4IisYXBe0bdC-F72uT9wLsBCDX3re44xNtJQqhzyeMa_KCB9_4UszwxdhIA64kInhCySHm83DpKtQv2VcpBqngV3hJbYquSxcey2pdxgymquHdmOZ6zfZBvbzOPQBmn0v2vrKA2cZCfWNtzJ-jbauqq8cw7_ziIAQ7bssWTm5Q77VgyC2oCRsQNn_dzV-s4WHXPgLVKTshVkO2iJm9Alg"/>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Hola, Usuario 👋</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Portal Cliente</p>
+</div>
+</div>
+<div class="flex-1 space-y-2">
+<a class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">devices</span>
+<span class="font-label-md text-label-md">Mis Dispositivos</span>
+</a>
+<a class="bg-secondary-container text-on-secondary-container rounded-lg px-4 py-2 flex items-center gap-3 transition-all scale-[0.99] shadow-sm" href="#">
+<span class="material-symbols-outlined filled-icon">shopping_cart</span>
+<span class="font-label-md text-label-md">Pedidos</span>
+</a>
+<a class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">receipt_long</span>
+<span class="font-label-md text-label-md">Mis Facturas</span>
+</a>
+</div>
+<div class="mt-auto px-4">
+<button class="w-full text-on-surface-variant py-2 flex items-center gap-3 hover:bg-surface-container-high transition-all rounded-lg justify-center border border-outline-variant hover:border-outline">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative">
+<!-- TopAppBar (Mobile & Web Context Header) -->
+<header class="flex flex-col w-full px-container-margin mx-auto bg-surface border-b border-outline-variant z-30 pt-6 pb-4">
+<div class="flex items-center justify-between md:hidden mb-4">
+<h1 class="font-display-md text-display-md font-bold text-primary">AmericasIoT</h1>
+<img alt="User Avatar" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a user in a modern office environment, soft corporate lighting, white collar setting, clean aesthetic, high quality photograph." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi-bOhLvgjrukSmnMxj6zT7cqTjcJAbAB96nj9dJ7Qw5afuQ5kLCDvWCHHpoyME5yw83HSsv27ptBUmlkvZHRW2ibS_5jLtlFxvaA4epFyPtXWmaJa9uO9GDZk2NFu132_zCEFiKIA5SR9jG5XFFbi471dTvtZuu1QBW1VQOHBM8_gUvgmPlJKKPQjj6d7QRbO3F-XcDQFw2bpbuuDkRQl0oeX-GxulAbgSHhKaF9PRFCTz1qSvcUuIs_IiUbpfWj4l-xO20iT3A"/>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface">Pedidos</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Explora nuestro catálogo y gestiona tus compras de conectividad.</p>
+</div>
+<!-- Search Bar -->
+<div class="relative w-full md:w-80">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md text-body-md text-on-surface placeholder-on-surface-variant transition-colors" placeholder="Buscar productos..." type="text"/>
+</div>
+</div>
+<!-- Contextual Tabs -->
+<div class="flex gap-6 mt-6 border-b border-outline-variant">
+<button class="text-primary border-b-2 border-primary font-bold pb-2 font-label-md text-label-md">Catálogo</button>
+<button class="text-on-surface-variant font-medium pb-2 hover:text-primary transition-colors font-label-md text-label-md">Mis Pedidos</button>
+</div>
+</header>
+<!-- Scrollable Workspace -->
+<div class="flex-1 overflow-y-auto p-container-margin pb-32 bg-background">
+<div class="max-w-[1280px] mx-auto">
+<!-- Bento Grid for Products -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Product Card 1 -->
+<div class="bg-surface-container-lowest rounded-[16px] border border-outline-variant p-5 hover:bg-surface-bright transition-colors group flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined">sim_card</span>
+</div>
+<span class="bg-secondary-container/20 text-secondary px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                En Stock
+                            </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">SIM IoT Estándar</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">Conectividad global multi-operador ideal para dispositivos de bajo consumo y telemetría básica.</p>
+<div class="flex items-center justify-between pt-4 border-t border-surface-variant">
+<div class="font-display-md text-display-md text-primary">$90.00</div>
+<div class="flex items-center bg-surface-container rounded-lg border border-outline-variant overflow-hidden">
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">-</button>
+<span class="px-2 font-label-md text-label-md w-8 text-center bg-surface-container-lowest">2</span>
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="bg-surface-container-lowest rounded-[16px] border border-outline-variant p-5 hover:bg-surface-bright transition-colors group flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+</div>
+<span class="bg-secondary-container/20 text-secondary px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                En Stock
+                            </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">SIM Industrial</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">Diseñada para entornos extremos. Soporta vibraciones, humedad y rangos de temperatura extendidos.</p>
+<div class="flex items-center justify-between pt-4 border-t border-surface-variant">
+<div class="font-display-md text-display-md text-primary">$150.00</div>
+<div class="flex items-center bg-surface-container rounded-lg border border-outline-variant overflow-hidden">
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">-</button>
+<span class="px-2 font-label-md text-label-md w-8 text-center bg-surface-container-lowest">0</span>
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="bg-surface-container-lowest rounded-[16px] border border-outline-variant p-5 hover:bg-surface-bright transition-colors group flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined">speed</span>
+</div>
+<span class="bg-error-container text-on-error-container px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                Poco Stock
+                            </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">SIM 5G High-Bandwidth</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">Para aplicaciones críticas que requieren baja latencia y alta transmisión de datos como CCTV vehicular.</p>
+<div class="flex items-center justify-between pt-4 border-t border-surface-variant">
+<div class="font-display-md text-display-md text-primary">$280.00</div>
+<div class="flex items-center bg-surface-container rounded-lg border border-outline-variant overflow-hidden">
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">-</button>
+<span class="px-2 font-label-md text-label-md w-8 text-center bg-surface-container-lowest">0</span>
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="bg-surface-container-lowest rounded-[16px] border border-outline-variant p-5 hover:bg-surface-bright transition-colors group flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined">satellite_alt</span>
+</div>
+<span class="bg-secondary-container/20 text-secondary px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                En Stock
+                            </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Módulo Satelital Híbrido</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-1">Conectividad dual celular/satelital para zonas rurales sin cobertura de red tradicional.</p>
+<div class="flex items-center justify-between pt-4 border-t border-surface-variant">
+<div class="font-display-md text-display-md text-primary">$850.00</div>
+<div class="flex items-center bg-surface-container rounded-lg border border-outline-variant overflow-hidden">
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">-</button>
+<span class="px-2 font-label-md text-label-md w-8 text-center bg-surface-container-lowest">0</span>
+<button class="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors font-body-md">+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Cart (Tonal Layer 2) -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-surface-container-lowest rounded-[16px] shadow-layer-2 border border-outline-variant p-4 flex flex-col md:flex-row items-center justify-between gap-4 z-50">
+<div class="flex items-center gap-4 flex-1">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary relative">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="absolute -top-1 -right-1 bg-error text-on-error font-label-xs text-[10px] w-5 h-5 flex items-center justify-center rounded-full">2</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant">2 productos seleccionados</p>
+<p class="font-display-md text-display-md font-bold text-primary">Total: $180.00</p>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<input class="flex-1 md:w-48 bg-surface border border-outline-variant rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:border-primary transition-colors" placeholder="Notas del pedido (opcional)" type="text"/>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-label-md text-label-md hover:bg-on-primary-container transition-colors whitespace-nowrap flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">send</span>
+                    Realizar Pedido
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only Context) -->
+<nav class="md:hidden flex w-full h-[80px] bg-surface border-t border-outline-variant px-2 justify-around items-center fixed bottom-0 z-40">
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">devices</span>
+<span class="font-label-xs text-[10px]">Dispositivos</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-primary font-bold" href="#">
+<div class="bg-secondary-container px-4 py-1 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined filled-icon">shopping_cart</span>
+</div>
+<span class="font-label-xs text-[10px]">Pedidos</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-xs text-[10px]">Facturas</span>
+</a>
+</nav>
+</body></html>
