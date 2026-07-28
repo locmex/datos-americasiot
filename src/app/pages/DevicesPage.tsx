@@ -9,7 +9,7 @@ import {
 import { api } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
-import { PageHeader, IconButton } from "../components/admin/AdminUI";
+import { PageHeader, IconButton, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
 import { DeviceDetailModal, EmnifyEndpoint } from "../components/DeviceDetailModal";
 import { AddDeviceModal } from "../components/AddDeviceModal";
 
@@ -785,17 +785,9 @@ export default function DevicesPage() {
     });
   }, [items, sortKey, sortDir]);
 
-  const SortIcon = ({ col }: { col: string }) => {
-    if (sortKey !== col) {
-      return <Icon name="unfold_more" className="ml-0.5 inline-block align-middle text-[14px] opacity-30" />;
-    }
-    return (
-      <Icon
-        name={sortDir === "asc" ? "arrow_upward" : "arrow_downward"}
-        className="ml-0.5 inline-block align-middle text-[14px] text-primary"
-      />
-    );
-  };
+  const SortIcon = ({ col }: { col: string }) => (
+    <SharedSortIcon active={sortKey === col} dir={sortDir} />
+  );
 
   return (
     <div className="p-container-margin">

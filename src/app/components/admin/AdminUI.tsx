@@ -216,6 +216,19 @@ export function TableHead({ columns }: { columns: Column[] }) {
   );
 }
 
+/** Indicador de orden de columna. Compartido por Dispositivos, Inventario y Asignación. */
+export function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
+  if (!active) {
+    return <Icon name="unfold_more" className="ml-0.5 inline-block align-middle text-[14px] opacity-30" />;
+  }
+  return (
+    <Icon
+      name={dir === "asc" ? "arrow_upward" : "arrow_downward"}
+      className="ml-0.5 inline-block align-middle text-[14px] text-primary"
+    />
+  );
+}
+
 export function TableSkeleton({ rows = 5, cols }: { rows?: number; cols: number }) {
   return (
     <>
