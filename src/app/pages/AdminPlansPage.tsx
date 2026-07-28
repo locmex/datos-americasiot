@@ -5,6 +5,7 @@ import { Icon } from "../components/ui/icon";
 import {
   PageHeader, IconButton, SearchField, ErrorBanner, TableCard, TableHead, TableSkeleton,
   EmptyState, StatusSwitch, RowAction, Modal, Field, FormActions, fieldClass,
+  FilterPills, ResultCount,
 } from "../components/admin/AdminUI";
 import { toast } from "sonner";
 
@@ -133,6 +134,7 @@ export default function AdminPlansPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const load = async () => {
     setLoading(true);
@@ -178,7 +180,11 @@ export default function AdminPlansPage() {
   };
 
   const openNew = () => { setEditing(null); setShowModal(true); };
-  const filtered = plans.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = plans.filter((p) => {
+    if (statusFilter === "active" && !p.active) return false;
+    if (statusFilter === "inactive" && p.active) return false;
+    return !search || p.name.toLowerCase().includes(search.toLowerCase());
+  });
   const activeCount = plans.filter((p) => p.active).length;
 
   return (
@@ -208,7 +214,22 @@ export default function AdminPlansPage() {
 
       {error && <ErrorBanner message={error} onRetry={load} />}
 
-      <TableCard>
+      <TableCard
+        toolbar={
+          <>
+            <FilterPills
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: "all", label: "Todos" },
+                { value: "active", label: "Activos" },
+                { value: "inactive", label: "Inactivos" },
+              ]}
+            />
+            <ResultCount shown={filtered.length} total={plans.length} noun="planes" />
+          </>
+        }
+      >
         <table className="w-full">
           <TableHead
             columns={[
@@ -259,9 +280,13 @@ export default function AdminPlansPage() {
         {!loading && filtered.length === 0 && !error && (
           <EmptyState
             icon="layers"
-            title={search ? "Sin resultados para tu búsqueda" : "Aún no hay planes creados"}
+            title={
+              search || statusFilter !== "all"
+                ? "Sin resultados para este filtro"
+                : "Aún no hay planes creados"
+            }
             action={
-              !search && (
+              !search && statusFilter === "all" && (
                 <button
                   onClick={openNew}
                   className="btn-primary flex items-center gap-2 rounded-lg px-4 py-2 text-label-md transition-colors"

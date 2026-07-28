@@ -5,6 +5,7 @@ import { Icon } from "../components/ui/icon";
 import {
   PageHeader, IconButton, SearchField, ErrorBanner, TableCard, TableHead, TableSkeleton,
   EmptyState, StatusSwitch, RowAction, Modal, Field, FormActions, fieldClass,
+  FilterPills, ResultCount,
 } from "../components/admin/AdminUI";
 import { toast } from "sonner";
 
@@ -151,6 +152,7 @@ export default function AdminProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const load = async () => {
     setLoading(true);
@@ -197,12 +199,12 @@ export default function AdminProductsPage() {
   };
 
   const openNew = () => { setEditing(null); setShowModal(true); };
-  const filtered = products.filter(
-    (p) =>
-      !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.description || "").toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = products.filter((p) => {
+    if (statusFilter !== "all" && p.status !== statusFilter) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return p.name.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q);
+  });
   const activeCount = products.filter((p) => p.status === "active").length;
 
   return (
@@ -232,7 +234,22 @@ export default function AdminProductsPage() {
 
       {error && <ErrorBanner message={error} onRetry={load} />}
 
-      <TableCard>
+      <TableCard
+        toolbar={
+          <>
+            <FilterPills
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: "all", label: "Todos" },
+                { value: "active", label: "Activos" },
+                { value: "inactive", label: "Inactivos" },
+              ]}
+            />
+            <ResultCount shown={filtered.length} total={products.length} noun="productos" />
+          </>
+        }
+      >
         <table className="w-full">
           <TableHead
             columns={[
@@ -290,9 +307,13 @@ export default function AdminProductsPage() {
         {!loading && filtered.length === 0 && !error && (
           <EmptyState
             icon="inventory_2"
-            title={search ? "Sin resultados para tu búsqueda" : "Aún no hay productos en el catálogo"}
+            title={
+              search || statusFilter !== "all"
+                ? "Sin resultados para este filtro"
+                : "Aún no hay productos en el catálogo"
+            }
             action={
-              !search && (
+              !search && statusFilter === "all" && (
                 <button
                   onClick={openNew}
                   className="btn-primary flex items-center gap-2 rounded-lg px-4 py-2 text-label-md transition-colors"

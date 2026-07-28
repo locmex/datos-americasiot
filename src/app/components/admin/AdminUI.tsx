@@ -124,12 +124,69 @@ export function ErrorBanner({ message, onRetry }: { message: string; onRetry?: (
   );
 }
 
+// ─── Pastillas de filtro ─────────────────────────────────────────────────────
+export interface PillOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+export function FilterPills<T extends string>({
+  options, value, onChange,
+}: {
+  options: PillOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {options.map((o) => {
+        const selected = o.value === value;
+        return (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            aria-pressed={selected}
+            className={`rounded-lg px-3 py-1.5 text-label-md transition-colors ${
+              selected
+                ? "btn-primary"
+                : "border border-outline-variant bg-surface text-on-surface-variant hover:bg-surface-container"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Card con tabla ──────────────────────────────────────────────────────────
-export function TableCard({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function TableCard({
+  children, toolbar, className = "",
+}: {
+  children: ReactNode;
+  /** Barra sobre la tabla (filtros a la izquierda, conteo a la derecha). */
+  toolbar?: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest ${className}`}>
+      {toolbar && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant px-4 py-3">
+          {toolbar}
+        </div>
+      )}
       <div className="overflow-x-auto">{children}</div>
     </div>
+  );
+}
+
+/** "Mostrando 4 de 124 productos" — contexto de cuánto está filtrado. */
+export function ResultCount({ shown, total, noun }: { shown: number; total: number; noun: string }) {
+  return (
+    <p className="text-body-sm text-on-surface-variant">
+      Mostrando {shown} de {total} {noun}
+    </p>
   );
 }
 
