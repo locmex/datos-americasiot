@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-  Cpu, Search, RefreshCw, ChevronLeft, ChevronRight,
-  CheckCircle2, PauseCircle, Circle, Signal, WifiOff,
-  Filter, Plus, Globe, Shield,
+  RefreshCw, CheckCircle2, PauseCircle, Circle,
   RotateCcw, PowerOff, MessageSquare, MoreVertical,
   Lock, Unlock, Unlink, Trash2, Send, CheckCheck,
-  AlertTriangle, Power, X, ChevronsUpDown, ArrowUp, ArrowDown,
+  AlertTriangle, Power, X,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
+import { Icon } from "../components/ui/icon";
+import { PageHeader, IconButton } from "../components/admin/AdminUI";
 import { DeviceDetailModal, EmnifyEndpoint } from "../components/DeviceDetailModal";
 import { AddDeviceModal } from "../components/AddDeviceModal";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 function getStatusBadge(statusId: number) {
-  if (statusId === 1) return { label: "Habilitado",    color: "#16a34a", bg: "rgba(22,163,74,0.10)",   Icon: CheckCircle2 };
-  if (statusId === 2) return { label: "Suspendido",    color: "#d97706", bg: "rgba(217,119,6,0.10)",   Icon: PauseCircle };
-  if (statusId === 0) return { label: "Deshabilitado", color: "#94a3b8", bg: "rgba(148,163,184,0.10)", Icon: Circle };
-  return                     { label: "Inactivo",      color: "#94a3b8", bg: "rgba(148,163,184,0.10)", Icon: Circle };
+  if (statusId === 1) return { label: "Habilitado",    color: "#16a34a", bg: "rgba(22,163,74,0.10)",   Icon: CheckCircle2, symbol: "check_circle" };
+  if (statusId === 2) return { label: "Suspendido",    color: "#d97706", bg: "rgba(217,119,6,0.10)",   Icon: PauseCircle,  symbol: "pause_circle" };
+  if (statusId === 0) return { label: "Deshabilitado", color: "#94a3b8", bg: "rgba(148,163,184,0.10)", Icon: Circle,       symbol: "do_not_disturb_on" };
+  return                     { label: "Inactivo",      color: "#94a3b8", bg: "rgba(148,163,184,0.10)", Icon: Circle,       symbol: "circle" };
 }
 
 function getConnBadge(ep: EmnifyEndpoint) {
@@ -786,60 +786,48 @@ export default function DevicesPage() {
   }, [items, sortKey, sortDir]);
 
   const SortIcon = ({ col }: { col: string }) => {
-    if (sortKey !== col) return <ChevronsUpDown className="w-3 h-3 opacity-30 inline-block ml-0.5" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="w-3 h-3 inline-block ml-0.5" style={{ color: "#3ECF8E" }} />
-      : <ArrowDown className="w-3 h-3 inline-block ml-0.5" style={{ color: "#3ECF8E" }} />;
+    if (sortKey !== col) {
+      return <Icon name="unfold_more" className="ml-0.5 inline-block align-middle text-[14px] opacity-30" />;
+    }
+    return (
+      <Icon
+        name={sortDir === "asc" ? "arrow_upward" : "arrow_downward"}
+        className="ml-0.5 inline-block align-middle text-[14px] text-primary"
+      />
+    );
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Cpu className="w-6 h-6 text-teal-500" />
-            Dispositivos conectados
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Endpoints registrados en emnify · {total > 0 ? `${total.toLocaleString()} en total` : "—"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Actualizar</span>
-          </button>
-          <button
-            onClick={() => setShowAddDevice(true)}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors"
-            style={{ background: "#3ECF8E" }}
-          >
-            Agregar dispositivo
-          </button>
-        </div>
-      </div>
+    <div className="p-container-margin">
+      <PageHeader
+        title="Dispositivos"
+        subtitle={`Endpoints registrados en emnify · ${total > 0 ? `${total.toLocaleString()} en total` : "—"}`}
+      >
+        <IconButton icon="refresh" onClick={handleRefresh} title="Actualizar" spinning={refreshing} />
+        <button
+          onClick={() => setShowAddDevice(true)}
+          className="btn-primary flex items-center gap-2 rounded-lg px-4 py-2 text-label-md shadow-sm transition-colors"
+        >
+          <Icon name="add" className="text-[18px]" />
+          Agregar dispositivo
+        </button>
+      </PageHeader>
 
-      {/* Search + Filters */}
-      <form onSubmit={handleSearch} className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      {/* Buscador */}
+      <form onSubmit={handleSearch} className="mb-gutter flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px] text-on-surface-variant" />
           <input
             type="text"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
-            placeholder="Buscar por nombre, ICCID..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
+            placeholder="Buscar por nombre, ICCID…"
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest py-2 pr-4 pl-10 text-body-md outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
         <button
           type="submit"
-          className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors"
-          style={{ background: "#3ECF8E" }}
+          className="btn-primary rounded-lg px-4 py-2 text-label-md transition-colors"
         >
           Buscar
         </button>
@@ -847,32 +835,34 @@ export default function DevicesPage() {
           <button
             type="button"
             onClick={() => { setSearch(""); setSearchInput(""); setPage(0); }}
-            className="px-3 py-2 rounded-xl text-sm text-gray-500 border border-gray-200 hover:bg-gray-50"
+            className="rounded-lg border border-outline-variant bg-surface px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
           >
             Limpiar
           </button>
         )}
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 ml-1">
-          <Filter className="w-3.5 h-3.5" />
+        <div className="ml-1 flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+          <Icon name="filter_alt" className="text-[16px]" />
           <span>Nombre · ICCID · Etiqueta</span>
         </div>
       </form>
 
-      {/* Table Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+      {/* Tabla */}
+      <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest">
         {error ? (
           <div className="p-8 text-center">
-            <p className="text-sm text-red-500 mb-2">{error}</p>
-            <button onClick={handleRefresh} className="text-xs text-teal-600 hover:underline">Reintentar</button>
+            <p className="mb-2 text-body-md text-error">{error}</p>
+            <button onClick={handleRefresh} className="text-label-md text-primary hover:underline">
+              Reintentar
+            </button>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-t-2xl">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 w-10">
-                      <input type="checkbox" className="rounded border-gray-300" disabled />
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="sticky top-0 z-10 bg-surface-container-low">
+                  <tr className="border-b border-outline-variant">
+                    <th className="w-10 px-4 py-3 text-left">
+                      <input type="checkbox" className="rounded border-outline-variant" disabled />
                     </th>
                     {([
                       { label: "Nombre",    key: "name",   sortable: true },
@@ -883,12 +873,13 @@ export default function DevicesPage() {
                     ] as const).map(({ label, key, sortable }) => (
                       <th key={label}
                         onClick={sortable ? () => handleSort(key) : undefined}
-                        className={`text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap ${sortable ? "cursor-pointer select-none hover:bg-gray-100" : ""} transition-colors`}
-                        style={{ color: sortKey === key ? "#0d8f5c" : "#9ca3af" }}>
+                        className={`px-4 py-3 text-left text-label-xs tracking-wider whitespace-nowrap uppercase transition-colors ${
+                          sortable ? "cursor-pointer select-none hover:bg-surface-container" : ""
+                        } ${sortKey === key ? "text-primary" : "text-on-surface-variant"}`}>
                         {label}{sortable && <SortIcon col={key} />}
                       </th>
                     ))}
-                    <th className="py-3 px-4 text-right text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-36">
+                    <th className="w-36 px-4 py-3 text-right text-label-xs tracking-wider whitespace-nowrap text-on-surface-variant uppercase">
                       Acciones
                     </th>
                   </tr>
@@ -900,8 +891,8 @@ export default function DevicesPage() {
                     ? (
                       <tr>
                         <td colSpan={8} className="py-16 text-center">
-                          <Cpu className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                          <p className="text-sm text-gray-400">No se encontraron dispositivos</p>
+                          <Icon name="router" className="mb-3 text-[48px] text-outline-variant" />
+                          <p className="text-body-md text-on-surface-variant">No se encontraron dispositivos</p>
                         </td>
                       </tr>
                     )
@@ -926,52 +917,52 @@ export default function DevicesPage() {
                         return (
                           <tr
                             key={ep.id}
-                            className="border-b border-gray-50 hover:bg-teal-50/30 cursor-pointer transition-colors group"
+                            className="group cursor-pointer border-b border-outline-variant/50 transition-colors hover:bg-surface-container-low"
                             onClick={() => setSelected(ep)}
                           >
-                            <td className="py-4 px-4" onClick={e => e.stopPropagation()}>
-                              <input type="checkbox" className="rounded border-gray-300" />
+                            <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                              <input type="checkbox" className="rounded border-outline-variant" />
                             </td>
-                            <td className="py-4 px-4">
-                              <span className="font-medium text-gray-800 hover:text-teal-600 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="text-label-md text-on-surface transition-colors group-hover:text-primary">
                                 {ep.name || ep.imei || `Endpoint #${ep.id}`}
                               </span>
                             </td>
-                            <td className="py-4 px-4">
+                            <td className="px-4 py-3">
                               {(ep.tags || []).length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
                                   {(ep.tags || []).map(t => (
-                                    <span key={t} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{t}</span>
+                                    <span key={t} className="rounded-full bg-surface-container px-2 py-0.5 text-label-xs text-on-surface-variant">
+                                      {t}
+                                    </span>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-gray-400 text-xs">-</span>
+                                <span className="text-body-sm text-on-surface-variant">—</span>
                               )}
                             </td>
-                            <td className="py-4 px-4">
+                            <td className="px-4 py-3">
                               <span
-                                className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
+                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-xs whitespace-nowrap"
                                 style={{ background: st.bg, color: st.color }}
                               >
-                                <st.Icon className="w-3 h-3" />
+                                <Icon name={st.symbol} className="text-[14px]" />
                                 {st.label}
                               </span>
                             </td>
-                            <td className="py-4 px-4">
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+                            <td className="px-4 py-3">
+                              <span className="inline-flex items-center gap-1.5 text-label-xs whitespace-nowrap">
                                 <span
-                                  className="w-2 h-2 rounded-full shrink-0"
+                                  className={`h-2 w-2 shrink-0 rounded-full ${conn.online ? "pulse-dot" : ""}`}
                                   style={{ background: conn.color }}
                                 />
-                                <span style={{ color: conn.color }}>
-                                  {conn.label}
-                                </span>
+                                <span style={{ color: conn.color }}>{conn.label}</span>
                               </span>
                             </td>
-                            <td className="py-4 px-4 font-mono text-xs text-gray-500 max-w-[180px] truncate">
+                            <td className="max-w-[180px] truncate px-4 py-3 font-mono text-body-sm tracking-tight text-on-surface-variant">
                               {iccid}
                             </td>
-                            <td className="py-3 px-3" onClick={e => e.stopPropagation()}>
+                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
                               <RowActions
                                 ep={ep}
                                 onResetConn={() => setConfirmAction({ type: "reset-conn", device: ep })}
@@ -993,35 +984,51 @@ export default function DevicesPage() {
 
             {/* Pagination */}
             {!loading && total > 0 && (
-              <div className="border-t border-gray-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-gray-500">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant px-4 py-3">
+                <p className="text-body-sm text-on-surface-variant">
                   Mostrando {(page * perPage) + 1}–{Math.min((page + 1) * perPage, total)} de {total.toLocaleString()}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors">
-                    <ChevronLeft className="w-3.5 h-3.5 text-gray-500" />
+                  <button
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    aria-label="Página anterior"
+                    className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
+                  >
+                    <Icon name="chevron_left" className="text-[16px]" />
                   </button>
                   {visiblePages().map(p => (
                     <button
                       key={p}
                       onClick={() => setPage(p)}
-                      className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
-                      style={{ background: p === page ? "#3ECF8E" : "transparent", color: p === page ? "#fff" : "#6b7280", border: p === page ? "none" : "1px solid #e5e7eb" }}
+                      aria-current={p === page ? "page" : undefined}
+                      className={`h-8 w-8 rounded-lg text-label-md transition-colors ${
+                        p === page
+                          ? "btn-primary"
+                          : "border border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                      }`}
                     >
                       {p + 1}
                     </button>
                   ))}
-                  {totalPages > 5 && page < totalPages - 3 && <span className="text-gray-400 text-xs px-1">…{totalPages}</span>}
-                  <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors">
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+                  {totalPages > 5 && page < totalPages - 3 && (
+                    <span className="px-1 text-body-sm text-on-surface-variant">…{totalPages}</span>
+                  )}
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                    aria-label="Página siguiente"
+                    className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
+                  >
+                    <Icon name="chevron_right" className="text-[16px]" />
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">Dispositivos por página</span>
+                  <span className="text-body-sm text-on-surface-variant">Dispositivos por página</span>
                   <select
                     value={perPage}
                     onChange={e => { setPerPage(Number(e.target.value)); setPage(0); }}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-200"
+                    className="rounded-lg border border-outline-variant bg-surface-container-lowest px-2 py-1 text-body-sm outline-none focus:border-primary"
                   >
                     {PER_PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
