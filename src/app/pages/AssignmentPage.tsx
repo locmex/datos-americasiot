@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-  CreditCard, Users, Search, RefreshCw, Loader2, Link2, Unlink,
+  CreditCard, Users, Search, Loader2, Link2, Unlink,
   ChevronLeft, ChevronRight, CheckCircle2, PauseCircle, Circle,
   XCircle, CheckSquare, Square, X, ChevronDown, UserCheck,
-  ChevronsUpDown, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
+import { Icon } from "../components/ui/icon";
+import { PageHeader, IconButton, FilterPills, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
@@ -448,133 +449,110 @@ export default function AssignmentPage() {
     });
   }, [filtered, sortKey, sortDir]);
 
-  const SortIcon = ({ col }: { col: string }) => {
-    if (sortKey !== col) return <ChevronsUpDown className="w-3 h-3 opacity-30 inline-block ml-0.5" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="w-3 h-3 inline-block ml-0.5" style={{ color: "#3ECF8E" }} />
-      : <ArrowDown className="w-3 h-3 inline-block ml-0.5" style={{ color: "#3ECF8E" }} />;
-  };
+  const SortIcon = ({ col }: { col: string }) => (
+    <SharedSortIcon active={sortKey === col} dir={sortDir} />
+  );
 
 
   const selectedSims = sims.filter((s) => selected.has(s.iccid));
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 space-y-5 pb-28 md:pb-8">
+    <div className="p-container-margin pb-28 md:pb-container-margin">
+      <PageHeader
+        title="Asignación de SIMs"
+        subtitle="Vinculá SIMs con tus clientes · Selección múltiple disponible"
+      >
+        <IconButton
+          icon="refresh"
+          onClick={() => load(page, perPage, serverQuery)}
+          title="Actualizar"
+          spinning={loading}
+        />
+      </PageHeader>
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-teal-500" />
-            Asignación de SIMs
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Vincula SIMs con tus clientes · Selección múltiple disponible
-          </p>
-        </div>
-        <button onClick={() => load(page, perPage, serverQuery)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors shrink-0">
-          <RefreshCw className="w-4 h-4" />
-          <span className="hidden sm:inline">Actualizar</span>
-        </button>
-      </div>
-
-      {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* ── Métricas ── */}
+      <div className="mb-gutter grid grid-cols-1 gap-gutter sm:grid-cols-3">
         {[
-          { label: "Total SIMs",   value: loading ? null : total,      color: "#6366f1", icon: CreditCard },
-          { label: "Asignadas",    value: loading ? null : assigned,    color: "#3ECF8E", icon: Link2 },
-          { label: "Sin Asignar",  value: loading ? null : unassigned,  color: "#f59e0b", icon: CreditCard },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
-              <Icon className="w-4 h-4" style={{ color }} />
+          { label: "Total SIMs",  value: loading ? null : total,      icon: "sd_card",      tone: "neutral" },
+          { label: "Asignadas",   value: loading ? null : assigned,   icon: "link",         tone: "success" },
+          { label: "Sin Asignar", value: loading ? null : unassigned, icon: "link_off",     tone: "warning" },
+        ].map(({ label, value, icon, tone }) => {
+          const t = {
+            neutral: { v: "text-on-surface", c: "text-tertiary" },
+            success: { v: "text-primary",    c: "bg-primary/10 text-primary rounded p-1" },
+            warning: { v: "text-on-warning", c: "bg-warning/10 text-on-warning rounded p-1" },
+          }[tone as "neutral" | "success" | "warning"];
+          return (
+            <div
+              key={label}
+              className="flex flex-col justify-between rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding transition-colors hover:bg-surface-bright"
+            >
+              <div className="mb-4 flex items-start justify-between gap-2">
+                <p className="text-body-sm tracking-wider text-on-surface-variant uppercase">{label}</p>
+                <span className={t.c}><Icon name={icon} className="text-[16px]" /></span>
+              </div>
+              <h3 className={`text-display-lg ${t.v}`}>
+                {value === null ? "—" : value.toLocaleString("es-MX")}
+              </h3>
             </div>
-            <div className="min-w-0">
-              <p className="text-lg font-bold text-gray-900 leading-tight">
-                {value === null ? <span className="text-gray-300">—</span> : value.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{label}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* ── Search + Filter ── */}
-      <div className="flex flex-col gap-2">
-        {/* Row 1: search bar + mode pills + assignment filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-          {/* Search mode pills */}
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl shrink-0 self-start sm:self-auto">
-            {([
-              { key: "iccid",  label: "ICCID" },
-              { key: "device", label: "Nombre de dispositivo" },
-            ] as const).map(({ key, label }) => (
-              <button key={key} onClick={() => handleModeChange(key)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-                style={{
-                  background: searchMode === key ? "#fff" : "transparent",
-                  color:      searchMode === key ? "#111827" : "#6b7280",
-                  boxShadow:  searchMode === key ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                }}>
-                {label}
-              </button>
-            ))}
-          </div>
+      {/* ── Buscador + filtros ── */}
+      <div className="mb-gutter flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+        <FilterPills
+          value={searchMode}
+          onChange={handleModeChange}
+          options={[
+            { value: "iccid",  label: "ICCID" },
+            { value: "device", label: "Nombre de dispositivo" },
+          ]}
+        />
 
-          {/* Server-side search form */}
-          <form onSubmit={handleSearch} className="flex items-center gap-2 flex-1">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={searchMode === "iccid" ? "Buscar por ICCID…" : "Buscar por nombre de dispositivo…"}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
-              />
-            </div>
-            <button type="submit"
-              className="px-4 py-2 rounded-xl text-sm font-medium text-white shrink-0 transition-colors"
-              style={{ background: "#3ECF8E" }}>
-              Buscar
+        <form onSubmit={handleSearch} className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1">
+            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px] text-on-surface-variant" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={searchMode === "iccid" ? "Buscar por ICCID…" : "Buscar por nombre de dispositivo…"}
+              className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest py-2 pr-4 pl-10 text-body-md outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <button type="submit" className="btn-primary shrink-0 rounded-lg px-4 py-2 text-label-md transition-colors">
+            Buscar
+          </button>
+          {serverQuery && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="shrink-0 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
+            >
+              Limpiar
             </button>
-            {serverQuery && (
-              <button type="button" onClick={handleClear}
-                className="px-3 py-2 rounded-xl text-sm text-gray-500 border border-gray-200 hover:bg-gray-50 shrink-0">
-                Limpiar
-              </button>
-            )}
-          </form>
+          )}
+        </form>
 
-          {/* Assignment filter tabs */}
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl self-start sm:self-auto shrink-0">
-            {([
-              { key: "all",        label: "Todas" },
-              { key: "assigned",   label: "Asignadas" },
-              { key: "unassigned", label: "Sin asignar" },
-            ] as const).map(({ key, label }) => (
-              <button key={key} onClick={() => setFilter(key)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-                style={{
-                  background: filter === key ? "#fff" : "transparent",
-                  color:      filter === key ? "#111827" : "#6b7280",
-                  boxShadow:  filter === key ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                }}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <FilterPills
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "all",        label: "Todas" },
+            { value: "assigned",   label: "Asignadas" },
+            { value: "unassigned", label: "Sin asignar" },
+          ]}
+        />
       </div>
 
-      {/* ── Desktop Table ── */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* ── Tabla (escritorio) ── */}
+      <div className="hidden overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest md:block">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/60">
+          <table className="w-full">
+            <thead className="sticky top-0 z-10 bg-surface-container-low">
+              <tr className="border-b border-outline-variant">
                 {/* Checkbox */}
                 <th className="px-4 py-3 w-10">
                   <button onClick={toggleAll}
@@ -583,10 +561,10 @@ export default function AssignmentPage() {
                     {allVisibleSelected
                       ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
                       : someSelected
-                        ? <div className="w-4 h-4 rounded border-2 flex items-center justify-center" style={{ borderColor: "#3ECF8E" }}>
-                            <div className="w-2 h-0.5 rounded" style={{ background: "#3ECF8E" }} />
+                        ? <div className="flex h-4 w-4 items-center justify-center rounded border-2 border-primary-container">
+                            <div className="h-0.5 w-2 rounded bg-primary-container" />
                           </div>
-                        : <Square className="w-4 h-4 text-gray-300" />
+                        : <Square className="w-4 h-4 text-outline-variant" />
                     }
                   </button>
                 </th>
@@ -599,8 +577,9 @@ export default function AssignmentPage() {
                 ] as const).map(({ label, key }) => (
                   <th key={label}
                     onClick={key ? () => handleSort(key) : undefined}
-                    className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest whitespace-nowrap ${key ? "cursor-pointer select-none hover:bg-gray-100 transition-colors" : ""}`}
-                    style={{ color: sortKey === key ? "#0d8f5c" : "#9ca3af" }}>
+                    className={`px-4 py-3 text-left text-label-xs tracking-wider whitespace-nowrap uppercase ${
+                      key ? "cursor-pointer select-none transition-colors hover:bg-surface-container" : ""
+                    } ${sortKey === key ? "text-primary" : "text-on-surface-variant"}`}>
                     {label}{key && <SortIcon col={key} />}
                   </th>
                 ))}
@@ -609,9 +588,9 @@ export default function AssignmentPage() {
             <tbody>
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i} className="border-b border-gray-50">
+                    <tr key={i} className="border-b border-outline-variant/50">
                       {Array.from({ length: 6 }).map((_, j) => (
-                        <td key={j} className="px-4 py-3.5"><Skeleton className="h-4 w-full" /></td>
+                        <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                       ))}
                     </tr>
                   ))

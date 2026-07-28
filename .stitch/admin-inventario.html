@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inventario SIMs - AmericasIoT Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#002114",
+                        "surface-container-low": "#eff4ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary-container": "#3e495c",
+                        "surface-tint": "#006c45",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed-dim": "#68dba9",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-tertiary-fixed": "#111c2d",
+                        "tertiary": "#545f73",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-background": "#0b1c30",
+                        "primary-fixed-dim": "#51df9c",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-fixed": "#d8e3fb",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline": "#6c7a70",
+                        "secondary-fixed": "#85f8c4",
+                        "on-surface": "#0b1c30",
+                        "background": "#f8f9ff",
+                        "on-primary-fixed-variant": "#005233",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#002112",
+                        "on-surface-variant": "#3d4a41",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#005434",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "primary": "#006c45",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#3ecf8e",
+                        "outline-variant": "#bbcabe",
+                        "primary-fixed": "#71fcb6",
+                        "surface-variant": "#d3e4fe",
+                        "inverse-primary": "#51df9c",
+                        "tertiary-fixed-dim": "#bcc7de",
+                        "on-secondary-container": "#00714e",
+                        "tertiary-container": "#adb8cf",
+                        "secondary": "#006c4a",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "surface-dim": "#cbdbf5",
+                        "secondary-container": "#82f5c1",
+                        "on-tertiary-fixed-variant": "#3c475a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "32px",
+                        "container-margin": "24px",
+                        "card-padding": "20px",
+                        "gutter": "16px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-xs": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-xs": ["11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "display-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #bbcabe;
+            border-radius: 20px;
+        }
+        .table-row-hover:hover {
+            background-color: #f8f9ff; /* surface */
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen w-screen overflow-hidden flex antialiased">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 border-r border-outline-variant bg-surface flex flex-col h-full py-container-margin px-base z-50">
+<div class="mb-section-gap px-4 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold">A</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">AmericasIoT</span>
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Admin Console</span>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">router</span>
+<span class="font-label-md text-label-md">Dispositivos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-surface-container-high transition-transform duration-150 scale-[0.99]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">sd_card</span>
+<span class="font-label-md text-label-md">Inventario SIMs</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">assignment_ind</span>
+<span class="font-label-md text-label-md">Asignación</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">group</span>
+<span class="font-label-md text-label-md">Clientes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shopping_cart</span>
+<span class="font-label-md text-label-md">Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+<span class="font-label-md text-label-md">Productos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+<span class="font-label-md text-label-md">Facturación</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">layers</span>
+<span class="font-label-md text-label-md">Planes</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-1 border-t border-outline-variant pt-4">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-label-md text-label-md">Ajustes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">logout</span>
+<span class="font-label-md text-label-md">Cerrar Sesión</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-64 flex flex-col h-full bg-surface-container-low relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-256px)] z-40 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center h-16 px-6">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface hidden md:block">AmericasIoT Admin Panel</h1>
+</div>
+<div class="flex flex-1 max-w-md mx-6">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-body-sm text-body-sm text-on-surface transition-all" placeholder="Search SIMs, ICCIDs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help_outline</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">apps</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container border border-outline-variant ml-2 overflow-hidden shrink-0 cursor-pointer">
+<img alt="Administrator Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate IT administrator, smiling slightly, set against a clean, bright minimalist office background with a modern, high-key light mode aesthetic. Colors are subtle with a touch of primary green." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWuxYooCJhIFw6o2VmxjHadmE4Ua_tyeKpeQeUlDb1OSlsTgEIZthVWLC_BRNPuRVuzQkA1M3-hgPQmFAmZNedYTd5rsgpRrJVSgUWXtiR_x7Vc7LA4KwRkxuqnyGUUiBdfN-9ZZmdNB-a9ur4Dn1_BGdJikvv7HFLKUHjUCtFswczThkCF03GbG2m94RCZ59A5had2XD1-IWgYIoW1p3I1VuGn_0fTovwLYY3okb7l5RYrL8AQ9jdEuxH0CAXcs1oswo1DOxAFg"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 mt-16 p-container-margin overflow-y-auto custom-scrollbar flex gap-container-margin">
+<!-- Left Data Area -->
+<div class="flex-1 flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-display-md text-display-md text-on-surface">Inventario SIMs</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Manage and monitor SIM card connectivity and statuses.</p>
+</div>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">add</span>
+                        Agregar SIM
+                    </button>
+</div>
+<!-- Filters -->
+<div class="flex gap-2">
+<button class="px-4 py-1.5 rounded-full border border-primary bg-primary-container text-on-primary-container font-label-md text-label-md transition-colors shadow-sm">Todas</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant bg-surface text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md transition-colors">Activa</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant bg-surface text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md transition-colors">Suspendida</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant bg-surface text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md transition-colors">Emitida</button>
+</div>
+<!-- Data Table Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col flex-1 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container border-b border-outline-variant">
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase">ICCID</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase">IMSI</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase">Estado</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase text-right">Consumo Mes</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase text-right">Última Actividad</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 - Active / Selected -->
+<tr class="border-b border-outline-variant table-row-hover bg-surface cursor-pointer" onclick="document.getElementById('sim-detail-panel').classList.remove('hidden')">
+<td class="py-3 px-4 font-label-md">8901234567890123456</td>
+<td class="py-3 px-4 text-on-surface-variant">310150123456789</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                            Activa
+                                        </span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex flex-col items-end">
+<span>450 MB</span>
+<div class="w-16 h-1 bg-surface-container rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-primary w-[45%]"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">Hace 2 min</td>
+</tr>
+<!-- Row 2 - Suspended -->
+<tr class="border-b border-outline-variant table-row-hover cursor-pointer">
+<td class="py-3 px-4 font-label-md">8901234567890123457</td>
+<td class="py-3 px-4 text-on-surface-variant">310150123456790</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error/10 text-error font-label-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">error</span>
+                                            Suspendida
+                                        </span>
+</td>
+<td class="py-3 px-4 text-right">0 MB</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">Hace 3 días</td>
+</tr>
+<!-- Row 3 - Issued -->
+<tr class="border-b border-outline-variant table-row-hover cursor-pointer">
+<td class="py-3 px-4 font-label-md">8901234567890123458</td>
+<td class="py-3 px-4 text-on-surface-variant">310150123456791</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+                                            Emitida
+                                        </span>
+</td>
+<td class="py-3 px-4 text-right">-</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">-</td>
+</tr>
+<!-- Row 4 - Warning Usage -->
+<tr class="border-b border-outline-variant table-row-hover cursor-pointer">
+<td class="py-3 px-4 font-label-md">8901234567890123459</td>
+<td class="py-3 px-4 text-on-surface-variant">310150123456792</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                            Activa
+                                        </span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex flex-col items-end">
+<span class="text-[#b45309]">850 MB</span>
+<div class="w-16 h-1 bg-surface-container rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-[#f59e0b] w-[85%]"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 text-right text-on-surface-variant">Hace 15 min</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-outline-variant bg-surface-container-lowest flex justify-between items-center text-on-surface-variant font-body-sm">
+<span>Showing 1-4 of 1,245 SIMs</span>
+<div class="flex gap-1">
+<button class="p-1 rounded hover:bg-surface-container"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+<button class="p-1 rounded hover:bg-surface-container"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Detail Panel (SIM Detail) -->
+<div class="w-[400px] bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col shadow-[0_10px_15px_-3px_rgba(0,0,0,0.05)] overflow-hidden transition-all duration-300" id="sim-detail-panel">
+<!-- Header -->
+<div class="p-card-padding border-b border-outline-variant flex justify-between items-start bg-surface">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Detalle de SIM</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">8901234567890123456</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors" onclick="document.getElementById('sim-detail-panel').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Tabs -->
+<div class="flex border-b border-outline-variant">
+<button class="flex-1 py-3 text-center font-label-md text-label-md text-primary border-b-2 border-primary bg-surface-container-lowest">Información</button>
+<button class="flex-1 py-3 text-center font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low border-b-2 border-transparent transition-colors">Estadísticas</button>
+</div>
+<!-- Tab Content: Información -->
+<div class="flex-1 overflow-y-auto p-card-padding flex flex-col gap-6 custom-scrollbar">
+<!-- SIM Illustration Area (Placeholder for tech visual) -->
+<div class="w-full h-40 bg-surface-container rounded-lg border border-outline-variant flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center opacity-80" data-alt="A highly detailed 3D render of an industrial IoT micro SIM card hovering slightly above a clean white surface. The lighting is studio-quality, high-key, casting soft diffused shadows to create depth. The aesthetic is extremely precise, technical, and modern corporate, utilizing subtle silver metallic textures and a touch of vibrant primary green on the circuitry." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDwRMR70UO66zCGxKhQXmOE92HCg5bj6JE7VHGRNbtP1IEEwnKr4_fUB-JCNSsFpSeb3wFAYHoJqfjvFOC2yqERJFM13dnWtV8SHK7TzMrOSkotQhF7jwkqjgQz8_-ELB4I_SbVKeKjZlmDek-U9LcaPnEC2_j3cYrnoZETbd9kVaMwix_5B0Yso7QeR3pFmppQZ-hG1BtLpcp2dBHHuZFAlIV8ssF0fb7kUFOWfi14cBxcN4UEO6fFYAMPntnyY2ydYedg9rEmyg')"></div>
+<div class="absolute bottom-2 right-2 px-2 py-1 bg-surface-container-lowest/90 backdrop-blur rounded text-[10px] font-bold text-primary shadow-sm border border-outline-variant">ACTIVA</div>
+</div>
+<!-- Details List -->
+<div class="flex flex-col gap-4">
+<div class="grid grid-cols-3 gap-2 border-b border-outline-variant pb-3">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase col-span-1">ICCID</span>
+<span class="font-body-md text-body-md text-on-surface font-medium col-span-2 text-right">8901234567890123456</span>
+</div>
+<div class="grid grid-cols-3 gap-2 border-b border-outline-variant pb-3">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase col-span-1">IMSI</span>
+<span class="font-body-md text-body-md text-on-surface font-medium col-span-2 text-right">310150123456789</span>
+</div>
+<div class="grid grid-cols-3 gap-2 border-b border-outline-variant pb-3">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase col-span-1">Modelo</span>
+<span class="font-body-md text-body-md text-on-surface font-medium col-span-2 text-right">Multi-form (Mini/Micro/Nano)</span>
+</div>
+<div class="grid grid-cols-3 gap-2 pb-3">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase col-span-1">Plan Actual</span>
+<span class="font-body-md text-body-md text-primary font-medium col-span-2 text-right">IoT Global 1GB</span>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="p-4 border-t border-outline-variant bg-surface-container-lowest flex gap-3">
+<button class="flex-1 py-2 rounded-lg border border-outline-variant bg-surface text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors text-center">Suspender</button>
+<button class="flex-1 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container hover:text-on-primary-container transition-colors text-center shadow-sm">Editar</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

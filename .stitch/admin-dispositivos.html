@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dispositivos - AmericasIoT Admin Panel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed": "#002114",
+                    "surface-container-low": "#eff4ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-tertiary-container": "#3e495c",
+                    "surface-tint": "#006c45",
+                    "surface": "#f8f9ff",
+                    "secondary-fixed-dim": "#68dba9",
+                    "on-secondary-fixed-variant": "#005137",
+                    "on-tertiary-fixed": "#111c2d",
+                    "tertiary": "#545f73",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-background": "#0b1c30",
+                    "primary-fixed-dim": "#51df9c",
+                    "surface-container-high": "#dce9ff",
+                    "tertiary-fixed": "#d8e3fb",
+                    "inverse-on-surface": "#eaf1ff",
+                    "outline": "#6c7a70",
+                    "secondary-fixed": "#85f8c4",
+                    "on-surface": "#0b1c30",
+                    "background": "#f8f9ff",
+                    "on-primary-fixed-variant": "#005233",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#002112",
+                    "on-surface-variant": "#3d4a41",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#005434",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "primary": "#006c45",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#3ecf8e",
+                    "outline-variant": "#bbcabe",
+                    "primary-fixed": "#71fcb6",
+                    "surface-variant": "#d3e4fe",
+                    "inverse-primary": "#51df9c",
+                    "tertiary-fixed-dim": "#bcc7de",
+                    "on-secondary-container": "#00714e",
+                    "tertiary-container": "#adb8cf",
+                    "secondary": "#006c4a",
+                    "on-error": "#ffffff",
+                    "surface-container": "#e5eeff",
+                    "surface-dim": "#cbdbf5",
+                    "secondary-container": "#82f5c1",
+                    "on-tertiary-fixed-variant": "#3c475a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "32px",
+                    "container-margin": "24px",
+                    "card-padding": "20px",
+                    "gutter": "16px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "headline-sm": [
+                            "Inter"
+                    ],
+                    "display-lg": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "label-xs": [
+                            "Inter"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "display-md": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "headline-sm": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-xs": [
+                            "11px",
+                            {
+                                    "lineHeight": "14px",
+                                    "letterSpacing": "0.03em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-md": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 108, 69, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(0, 108, 69, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 108, 69, 0); }
+        }
+        /* Custom Scrollbar for dense tables */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8f9ff; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bbcabe; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6c7a70; 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface dark:bg-surface-dim fixed left-0 top-0 h-full w-64 border-r border-outline-variant dark:border-outline flat no shadows flex-col py-container-margin px-base z-50">
+<div class="px-4 mb-8">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">AmericasIoT</h1>
+<p class="font-label-xs text-label-xs text-on-surface-variant uppercase mt-1">Admin Console</p>
+</div>
+<div class="flex-1 overflow-y-auto">
+<ul class="space-y-1 font-body-md text-body-md">
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">dashboard</span>
+                        Dashboard
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-surface-container-high dark:bg-surface-container-highest transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" style="font-variation-settings: 'FILL' 1;">router</span>
+                        Dispositivos
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">sd_card</span>
+                        Inventario SIMs
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">assignment_ind</span>
+                        Asignación
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">group</span>
+                        Clientes
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">shopping_cart</span>
+                        Pedidos
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">inventory_2</span>
+                        Productos
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">receipt_long</span>
+                        Facturación
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">layers</span>
+                        Planes
+                    </a>
+</li>
+</ul>
+</div>
+<div class="mt-auto border-t border-outline-variant pt-4">
+<ul class="space-y-1 font-body-md text-body-md">
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">settings</span>
+                        Ajustes
+                    </a>
+</li>
+<li>
+<a class="flex items-center px-4 py-3 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200 Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]">logout</span>
+                        Cerrar Sesión
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="hidden md:flex bg-surface-container-lowest dark:bg-surface-container-low fixed top-0 right-0 w-[calc(100%-256px)] z-40 border-b border-outline-variant dark:border-outline flat no shadows justify-between items-center h-16 px-6 font-label-md text-label-md">
+<div class="flex items-center flex-1">
+<div class="font-headline-sm text-headline-sm font-black text-on-surface hidden">AmericasIoT Admin Panel</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full focus:outline-none focus:ring-2 focus:ring-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full focus:outline-none focus:ring-2 focus:ring-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="p-2 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full focus:outline-none focus:ring-2 focus:ring-primary transition-colors">
+<span class="material-symbols-outlined">apps</span>
+</button>
+<div class="ml-4 flex items-center gap-3 border-l border-outline-variant pl-4">
+<div class="text-right hidden lg:block">
+<p class="font-label-md text-label-md text-on-surface">Admin User</p>
+<p class="font-label-xs text-label-xs text-on-surface-variant">System Admin</p>
+</div>
+<img class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a corporate administrator in a modern office environment. High resolution, bright lighting, representing a system admin for an IoT platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhluLZVXpnchYQxA4DYz03GKLsTwFD115Undz2kvxgcLeLYMsvglWZbEQyYPU1OoLiPhPNGnCMKh4PJwULZj8NsHeqR0oGIqjFKv-na7k6axAXl7NZuAXnJBeuNj7Pkr_ZbP1MpCN3MezWsAjB6NBCxCUQQeZiJp7IXVA4rVTQWMwKoxADF0cRI5uHH6ZSFKObSQ3NvQ4lfpGUQeZz2rCLiHHeL_enClC3bUhI0yQY5O53hRSEnqLERBrFDbzwxu1McfzrHycOGw"/>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<main class="flex-1 md:ml-64 mt-16 p-container-margin overflow-y-auto h-[calc(100vh-64px)] bg-background">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-section-gap">
+<div>
+<h2 class="font-display-md text-display-md text-on-background">Dispositivos</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Endpoints registrados en emnify · 1,574 en total</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                    Actualizar
+                </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg font-label-md hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Agregar dispositivo
+                </button>
+</div>
+</div>
+<!-- Search & Filter Bar -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding mb-gutter flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+<div class="w-full lg:max-w-2xl">
+<div class="relative flex items-center w-full">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-24 py-2 bg-background border border-outline-variant rounded-lg text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Buscar por nombre, ICCID…" type="text"/>
+<button class="absolute right-2 px-3 py-1 bg-surface-container-low text-primary rounded-md font-label-md hover:bg-surface-container transition-colors">
+                        Buscar
+                    </button>
+</div>
+<p class="font-label-xs text-label-xs text-on-surface-variant mt-2">Campos buscables: Nombre · ICCID · Etiqueta</p>
+</div>
+<div class="flex items-center gap-2 w-full lg:w-auto">
+<button class="flex items-center gap-2 px-3 py-2 bg-background border border-outline-variant rounded-lg text-on-surface font-label-md hover:bg-surface-container-low transition-colors flex-1 lg:flex-none justify-center">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                    Filtros
+                </button>
+<button class="flex items-center gap-2 px-3 py-2 bg-background border border-outline-variant rounded-lg text-on-surface font-label-md hover:bg-surface-container-low transition-colors flex-1 lg:flex-none justify-center">
+<span class="material-symbols-outlined text-[18px]">view_column</span>
+                    Columnas
+                </button>
+</div>
+</div>
+<!-- Data Table Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col h-[calc(100vh-280px)]">
+<div class="overflow-x-auto flex-1">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low sticky top-0 z-10 border-b border-outline-variant">
+<tr>
+<th class="py-3 px-4 w-12">
+<input class="rounded border-outline-variant text-primary focus:ring-primary bg-background" type="checkbox"/>
+</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Nombre</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Etiquetas</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Estado</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Conexión</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">ICCID</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant font-body-sm text-body-sm text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface transition-colors group cursor-pointer">
+<td class="py-3 px-4">
+<input class="rounded border-outline-variant text-primary focus:ring-primary bg-background" type="checkbox"/>
+</td>
+<td class="py-3 px-4">
+<a class="font-label-md text-primary hover:underline" href="#">GPS-Tracker-MX-001</a>
+</td>
+<td class="py-3 px-4">
+<div class="flex gap-1 flex-wrap">
+<span class="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-on-surface-variant text-[10px] font-semibold">Flota Norte</span>
+<span class="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-on-surface-variant text-[10px] font-semibold">VIP</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="font-label-xs">Habilitado</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary pulse-dot"></div>
+<span class="text-on-surface-variant">4G Online</span>
+</div>
+</td>
+<td class="py-3 px-4 font-mono text-on-surface-variant">8952140000001234567</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">refresh</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded"><span class="material-symbols-outlined text-[18px]">pause_circle</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface transition-colors group cursor-pointer">
+<td class="py-3 px-4">
+<input class="rounded border-outline-variant text-primary focus:ring-primary bg-background" type="checkbox"/>
+</td>
+<td class="py-3 px-4">
+<a class="font-label-md text-primary hover:underline" href="#">Sensor-Temp-Cold-42</a>
+</td>
+<td class="py-3 px-4">
+<div class="flex gap-1 flex-wrap">
+<span class="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-on-surface-variant text-[10px] font-semibold">Almacén</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-tertiary/10 text-tertiary border border-tertiary/20">
+<span class="material-symbols-outlined text-[14px]">pause_circle</span>
+<span class="font-label-xs">Suspendido</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="text-on-surface-variant">Registrado</span>
+</div>
+</td>
+<td class="py-3 px-4 font-mono text-on-surface-variant">8952140000001234568</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">refresh</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">play_circle</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface transition-colors group cursor-pointer">
+<td class="py-3 px-4">
+<input class="rounded border-outline-variant text-primary focus:ring-primary bg-background" type="checkbox"/>
+</td>
+<td class="py-3 px-4">
+<a class="font-label-md text-primary hover:underline" href="#">POS-Terminal-BOG-09</a>
+</td>
+<td class="py-3 px-4">
+<div class="flex gap-1 flex-wrap">
+<span class="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-on-surface-variant text-[10px] font-semibold">Retail</span>
+<span class="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-on-surface-variant text-[10px] font-semibold">Bogotá</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-error/10 text-error border border-error/20">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+<span class="font-label-xs">Deshabilitado</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="text-on-surface-variant">Sin conexión</span>
+</div>
+</td>
+<td class="py-3 px-4 font-mono text-on-surface-variant">8952140000001234569</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">refresh</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">play_circle</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</div>
+</td>
+</tr>
+<!-- Repeat more rows for density -->
+<tr class="hover:bg-surface transition-colors group cursor-pointer">
+<td class="py-3 px-4">
+<input class="rounded border-outline-variant text-primary focus:ring-primary bg-background" type="checkbox"/>
+</td>
+<td class="py-3 px-4">
+<a class="font-label-md text-primary hover:underline" href="#">Smart-Meter-A-102</a>
+</td>
+<td class="py-3 px-4">
+<div class="flex gap-1 flex-wrap">
+<span class="px-2 py-0.5 bg-surface-container border border-outline-variant rounded text-on-surface-variant text-[10px] font-semibold">Utilities</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="font-label-xs">Habilitado</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary pulse-dot"></div>
+<span class="text-on-surface-variant">LTE-M Online</span>
+</div>
+</td>
+<td class="py-3 px-4 font-mono text-on-surface-variant">8952140000001234570</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">refresh</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded"><span class="material-symbols-outlined text-[18px]">pause_circle</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">sms</span></button>
+<button class="p-1.5 text-on-surface-variant hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="border-t border-outline-variant bg-surface-container-lowest p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mostrando 1-25 de 1,574</span>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Filas por página:</span>
+<select class="bg-background border border-outline-variant rounded text-on-surface text-sm py-1 pl-2 pr-8 focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer">
+<option>25</option>
+<option>50</option>
+<option>100</option>
+</select>
+</div>
+<div class="flex gap-1">
+<button class="p-1 text-outline hover:text-on-surface transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low rounded transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
