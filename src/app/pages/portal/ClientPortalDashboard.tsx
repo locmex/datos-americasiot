@@ -1233,10 +1233,9 @@ export default function ClientPortalDashboard() {
                   <thead>
                     <tr className="border-b border-hairline bg-row-hover">
                       {([
-                        { label: "ICCID",           key: "iccid"  as SortKey },
-                        { label: "Dispositivo",     key: null },
-                        { label: "Consumo del mes", key: "usage"  as SortKey },
-                        { label: "Estado",          key: "status" as SortKey },
+                        { label: "ICCID",       key: "iccid"  as SortKey },
+                        { label: "Dispositivo", key: null },
+                        { label: "Estado",      key: "status" as SortKey },
                       ] as const).map(({ label, key }) => (
                         <th key={label} className="p-4 text-left whitespace-nowrap">
                           {key ? (
@@ -1263,7 +1262,6 @@ export default function ClientPortalDashboard() {
                     {pagedSims.map((sim) => {
                       const iccid = sim.iccid_with_luhn || sim.iccid;
                       const st = getStatus(sim.status?.id ?? 0);
-                      const u = getUsageMB(sim.usage);
                       const isSelected = selectedSim?.iccid === sim.iccid;
 
                       return (
@@ -1287,20 +1285,6 @@ export default function ClientPortalDashboard() {
                             ) : (
                               <span className="italic font-body-sm text-body-sm text-outline-variant">Sin dispositivo</span>
                             )}
-                          </td>
-
-                          {/* Consumo del mes */}
-                          <td className="p-4 whitespace-nowrap">
-                            <span className="flex items-center gap-3 font-body-sm text-body-sm text-on-surface-variant">
-                              <span className="flex items-center gap-1" title="Enviado (TX)">
-                                <Icon name="arrow_upward" className="text-[14px]" />
-                                {u.tx > 0 ? formatMB(u.tx) : "—"}
-                              </span>
-                              <span className="flex items-center gap-1" title="Recibido (RX)">
-                                <Icon name="arrow_downward" className="text-[14px]" />
-                                {u.rx > 0 ? formatMB(u.rx) : "—"}
-                              </span>
-                            </span>
                           </td>
 
                           {/* Estado — pastilla clicable */}
