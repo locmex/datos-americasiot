@@ -3822,13 +3822,32 @@ app.get("/make-server-ef736a01/client/invoices", async (c) => {
     const session = await requireClientSession(c);
     if (!session) return c.json({ error: "Unauthorized" }, 401);
 
+    // Se traen los abonos embebidos para poder devolver saldo y último pago por
+    // factura: el portal los usa en las tarjetas de resumen y evita pedir el
+    // detalle de cada factura solo para calcular totales.
     const { data, error } = await db()
-      .from("invoices").select("*")
+      .from("invoices").select("*, payments(amount, paid_at)")
       .eq("client_id", session.clientId)
       .order("period_year", { ascending: false })
       .order("period_month", { ascending: false });
     if (error) return c.json({ error: error.message }, 500);
-    return c.json({ invoices: data ?? [] });
+
+    const invoices = (data ?? []).map((inv: any) => {
+      const { payments, ...rest } = inv;
+      const list = payments ?? [];
+      const paid = list.reduce((s: number, p: any) => s + Number(p.amount), 0);
+      const lastPaidAt = list.length
+        ? list.map((p: any) => p.paid_at).sort().slice(-1)[0]
+        : null;
+      return {
+        ...rest,
+        paid: Math.round(paid * 100) / 100,
+        balance: Math.round((Number(rest.total) - paid) * 100) / 100,
+        last_payment_at: lastPaidAt,
+      };
+    });
+
+    return c.json({ invoices });
   } catch (e: any) {
     console.log("List client invoices error:", e);
     return c.json({ error: `Error listando facturas: ${e.message}` }, 500);

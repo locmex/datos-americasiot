@@ -1,0 +1,452 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AmericasIoT - Mis Facturas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed-dim": "#bcc7de",
+                      "secondary-container": "#82f5c1",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-low": "#eff4ff",
+                      "secondary": "#006c4a",
+                      "primary-fixed": "#71fcb6",
+                      "secondary-fixed": "#85f8c4",
+                      "surface": "#f8f9ff",
+                      "surface-container": "#e5eeff",
+                      "on-tertiary-fixed-variant": "#3c475a",
+                      "surface-bright": "#f8f9ff",
+                      "on-error-container": "#93000a",
+                      "error-container": "#ffdad6",
+                      "primary-container": "#3ecf8e",
+                      "on-primary-fixed-variant": "#005233",
+                      "inverse-surface": "#213145",
+                      "on-primary-fixed": "#002112",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#d8e3fb",
+                      "on-surface-variant": "#3d4a41",
+                      "outline": "#6c7a70",
+                      "surface-dim": "#cbdbf5",
+                      "outline-variant": "#bbcabe",
+                      "on-error": "#ffffff",
+                      "on-background": "#0b1c30",
+                      "surface-container-high": "#dce9ff",
+                      "inverse-primary": "#51df9c",
+                      "secondary-fixed-dim": "#68dba9",
+                      "on-secondary-fixed": "#002114",
+                      "tertiary": "#545f73",
+                      "primary-fixed-dim": "#51df9c",
+                      "on-secondary-fixed-variant": "#005137",
+                      "on-tertiary-container": "#3e495c",
+                      "on-primary": "#ffffff",
+                      "tertiary-container": "#adb8cf",
+                      "on-secondary-container": "#00714e",
+                      "on-surface": "#0b1c30",
+                      "inverse-on-surface": "#eaf1ff",
+                      "primary": "#006c45",
+                      "on-primary-container": "#005434",
+                      "surface-variant": "#d3e4fe",
+                      "background": "#f8f9ff",
+                      "on-tertiary": "#ffffff",
+                      "on-tertiary-fixed": "#111c2d",
+                      "surface-container-highest": "#d3e4fe",
+                      "surface-tint": "#006c45",
+                      "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-margin": "24px",
+                      "card-padding": "20px",
+                      "section-gap": "32px",
+                      "base": "4px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "label-xs": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-md": ["Inter"],
+                      "headline-sm": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "display-md": ["Inter"]
+              },
+              "fontSize": {
+                      "label-xs": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "display-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Smooth transitions for expandable cards */
+        .invoice-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+            opacity: 0;
+        }
+        .invoice-card.expanded .invoice-details {
+            max-height: 500px; /* Arbitrary large value to allow content expansion */
+            opacity: 1;
+            transition: max-height 0.4s ease-in, opacity 0.3s ease-in 0.1s;
+        }
+        .invoice-card.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        .expand-icon {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row">
+<!-- Mobile TopNavBar (visible on mobile, hidden on md) -->
+<header class="md:hidden flex flex-col w-full h-[100px] px-container-margin max-w-[1280px] mx-auto bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline flat no shadows sticky top-0 z-50">
+<div class="flex items-center justify-between py-4">
+<div class="font-display-md text-display-md font-bold text-primary dark:text-primary-fixed">AmericasIoT</div>
+<button class="text-on-surface-variant p-2"><span class="material-symbols-outlined">menu</span></button>
+</div>
+<nav class="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
+<a class="text-on-surface-variant dark:text-outline-variant font-medium pb-2 hover:text-primary dark:hover:text-primary-fixed transition-colors whitespace-nowrap" href="#">Mis Dispositivos</a>
+<a class="text-on-surface-variant dark:text-outline-variant font-medium pb-2 hover:text-primary dark:hover:text-primary-fixed transition-colors whitespace-nowrap" href="#">Pedidos</a>
+<a class="text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed font-bold pb-2 hover:text-primary dark:hover:text-primary-fixed transition-colors whitespace-nowrap opacity-80 transition-opacity" href="#">Mis Facturas</a>
+</nav>
+</header>
+<!-- Desktop SideNavBar (hidden on mobile, visible on md) -->
+<aside class="hidden md:flex flex-col h-full py-6 px-4 bg-surface dark:bg-on-background border-r border-outline-variant dark:border-outline fixed left-0 top-0 w-64 z-40">
+<div class="mb-8 px-4">
+<div class="font-display-md text-display-md font-bold text-primary dark:text-primary-fixed mb-6">AmericasIoT</div>
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A close-up, professional studio portrait of a corporate user looking confident, set against a neutral light grey background. Soft, diffused lighting highlights modern business attire, conveying trust and reliability within a high-tech ecosystem." src="https://lh3.googleusercontent.com/aida-public/AB6AXuComZ9287Nm17U8_S_PBLJ3bv0P8jHbK_hyejQMbn20qlFlFFaVLLwnQgU8Hccr6-WgLxXYyljIgfJME_6PSu-kZ23lh7b7oJAr-IiawTPP0ZVHljOnMpp3UnOAMk9Xkx1OS_xtr_sWVNdRrr72_wdUFEZYqy06IyotaKkuJMWPhc1DfLJdDX8gWI0pb2gtsbxrsRrdmHDz48xjcXNp-pYeoSGrF_oEFhGyx_g615kp0dEVjQXy_hsheQvNsrMa8uo6mmL7bDWPbw">
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Hola, Usuario 👋</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Portal Cliente</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="text-on-surface-variant dark:text-outline-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container-low dark:hover:bg-surface-variant rounded-lg transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">devices</span>
+                Mis Dispositivos
+             </a>
+<a class="text-on-surface-variant dark:text-outline-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container-low dark:hover:bg-surface-variant rounded-lg transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+                Pedidos
+             </a>
+<a class="bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high dark:hover:bg-surface-dim transition-all scale-[0.99] duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined fill">receipt_long</span>
+                Mis Facturas
+             </a>
+</nav>
+<div class="mt-auto px-4">
+<button class="w-full text-on-surface-variant dark:text-outline-variant py-2 flex items-center gap-3 hover:bg-surface-container-low rounded-lg transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined">logout</span>
+                Logout
+             </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 p-container-margin w-full max-w-[1200px] mx-auto fluid">
+<header class="mb-section-gap">
+<h1 class="font-display-lg text-display-lg text-on-background mb-2">Mis Facturas</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Gestiona y consulta el historial de facturación de tu flota IoT.</p>
+</header>
+<!-- Summary Cards Row (Bento-style metrics) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-section-gap">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding">
+<div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Saldo Pendiente</span>
+</div>
+<div class="font-display-md text-display-md text-on-background">$12,450.00</div>
+<div class="font-body-sm text-body-sm text-on-error-container mt-1">2 facturas vencidas</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding">
+<div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary">history</span>
+<span class="font-label-md text-label-md">Último Pago</span>
+</div>
+<div class="font-display-md text-display-md text-on-background">$7,020.00</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Realizado el 15 Jul 2026</div>
+</div>
+
+</div>
+<!-- Invoices List Section -->
+<section>
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+<h2 class="font-headline-sm text-headline-sm text-on-background">Historial de Facturación</h2>
+<div class="flex gap-2 w-full sm:w-auto">
+<div class="relative w-full sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="Buscar por N° o Mes..." type="text">
+</div>
+<button class="bg-surface-container-lowest border border-outline-variant px-4 py-2 rounded-lg font-label-md text-label-md text-on-surface flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+                        Filtros
+                    </button>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Invoice Card 1: Emitida (Blue/Neutral tone for Issued, let's use Surface Container High for subtle emphasis) -->
+<article class="invoice-card bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-[#F9FAFB] transition-colors cursor-pointer expanded" onclick="this.classList.toggle('expanded')">
+<!-- Main Header Row -->
+<div class="p-card-padding flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="bg-surface-container-high w-12 h-12 rounded-lg flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-background">Agosto 2026</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Factura #INV-2026-08</p>
+</div>
+</div>
+<div class="w-1/2 sm:w-1/4">
+<div class="font-body-md text-body-md font-semibold text-on-background">$12,450.00</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Vence en 5 días</p>
+</div>
+<div class="w-1/2 sm:w-1/4 flex justify-end sm:justify-start">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-xs bg-surface-container-high text-on-surface font-semibold border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                                Emitida
+                            </span>
+</div>
+<div class="w-full sm:w-auto flex justify-end gap-2 items-center">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation();">
+<span class="material-symbols-outlined">download</span>
+</button>
+<span class="material-symbols-outlined text-outline-variant expand-icon">expand_more</span>
+</div>
+</div>
+<!-- Expandable Details -->
+<div class="invoice-details bg-surface border-t border-outline-variant">
+<div class="p-card-padding">
+<h4 class="font-label-md text-label-md text-on-surface mb-4">Resumen de Cargos</h4>
+<div class="space-y-3 mb-6">
+<!-- Grouped Summary Item -->
+<div class="flex justify-between items-center py-2 border-b border-outline-variant border-opacity-50">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div>
+<div class="font-body-md text-body-md text-on-background">Plan Único Global</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">250 SIMs × $45.00</div>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-background font-medium">$11,250.00</div>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant border-opacity-50">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div>
+<div class="font-body-md text-body-md text-on-background">Cargos por Excedentes de Datos</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Zona LatAm (24 SIMs)</div>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-background font-medium">$1,200.00</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-surface-container-lowest p-4 rounded-lg border border-outline-variant">
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center sm:text-left w-full sm:w-2/3">
+                                    Para ver el consumo línea por línea y exportar los datos crudos, accede al buscador detallado.
+                                </p>
+<button class="w-full sm:w-auto bg-surface-container-lowest border border-outline-variant px-4 py-2 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors whitespace-nowrap" onclick="event.stopPropagation(); alert('Abrir modal de buscador interno para INV-2026-08');">
+                                    Ver detalle completo
+                                </button>
+</div>
+<!-- Abonos Section -->
+<div class="mt-6">
+<h4 class="font-label-md text-label-md text-on-surface mb-2">Abonos Aplicados</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">No hay abonos registrados para esta factura.</p>
+</div>
+<div class="mt-6 flex justify-end">
+
+</div>
+</div>
+</div>
+</article>
+<!-- Invoice Card 2: Pagada (Green) -->
+<article class="invoice-card bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-[#F9FAFB] transition-colors cursor-pointer" onclick="this.classList.toggle('expanded')">
+<div class="p-card-padding flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="bg-surface-container-low w-12 h-12 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-background">Julio 2026</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Factura #INV-2026-07</p>
+</div>
+</div>
+<div class="w-1/2 sm:w-1/4">
+<div class="font-body-md text-body-md font-semibold text-on-background">$7,020.00</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pagado el 15 Jul</p>
+</div>
+<div class="w-1/2 sm:w-1/4 flex justify-end sm:justify-start">
+<!-- Status Chip - 10% opacity semantic color background logic handled via classes -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-xs bg-primary/10 text-primary font-semibold border border-primary/20">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                Pagada
+                            </span>
+</div>
+<div class="w-full sm:w-auto flex justify-end gap-2 items-center">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation();">
+<span class="material-symbols-outlined">download</span>
+</button>
+<span class="material-symbols-outlined text-outline-variant expand-icon">expand_more</span>
+</div>
+</div>
+<!-- Expandable Details -->
+<div class="invoice-details bg-surface border-t border-outline-variant">
+<div class="p-card-padding">
+<h4 class="font-label-md text-label-md text-on-surface mb-4">Resumen de Cargos</h4>
+<div class="space-y-3 mb-6">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant border-opacity-50">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div>
+<div class="font-body-md text-body-md text-on-background">Plan Único Global</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">156 SIMs × $45.00</div>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-background font-medium">$7,020.00</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-surface-container-lowest p-4 rounded-lg border border-outline-variant">
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center sm:text-left w-full sm:w-2/3">
+                                    Consulte los detalles de conectividad por cada línea SIM asociada a esta facturación.
+                                </p>
+<button class="w-full sm:w-auto bg-surface-container-lowest border border-outline-variant px-4 py-2 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors whitespace-nowrap" onclick="event.stopPropagation();">
+                                    Ver detalle completo
+                                </button>
+</div>
+<div class="mt-6">
+<h4 class="font-label-md text-label-md text-on-surface mb-2">Abonos Aplicados</h4>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">credit_card</span>
+<span class="font-body-sm text-body-sm text-on-background">Pago con Tarjeta **** 4242</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">15 Jul 2026</span>
+<span class="font-body-sm text-body-sm font-medium text-on-background">-$7,020.00</span>
+</div>
+</div>
+</div>
+</div>
+</article>
+<!-- Invoice Card 3: Parcial (Amber/Warning - using secondary/tertiary colors as stand-in for amber in this palette, or standard tailwind amber if permitted, but sticking to config colors where possible. Since we need 'Amber', and it's not strictly in the custom palette, I'll use a standard warning-like color combination or construct it from existing tokens. The prompt says 'ámbar', I will use standard standard tailwind amber for the chip as an exception for status color, or use primary-container for distinction if strict. I will use a custom style for the amber chip to match the design system rules of 10% opacity) -->
+<article class="invoice-card bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-[#F9FAFB] transition-colors cursor-pointer" onclick="this.classList.toggle('expanded')">
+<div class="p-card-padding flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="bg-surface-container-high w-12 h-12 rounded-lg flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-background">Junio 2026</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Factura #INV-2026-06</p>
+</div>
+</div>
+<div class="w-1/2 sm:w-1/4">
+<div class="font-body-md text-body-md font-semibold text-on-background">$6,800.00</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Restan: $3,400.00</p>
+</div>
+<div class="w-1/2 sm:w-1/4 flex justify-end sm:justify-start">
+<!-- Status Chip - Parcial (Amber-ish, utilizing a custom class combination inline to achieve the requested look while attempting to respect the spirit of the palette, but since 'Amber' is requested specifically for state: -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-xs bg-orange-100 text-orange-700 font-semibold border border-orange-200">
+<span class="material-symbols-outlined text-[14px]">timelapse</span>
+                                Parcial
+                            </span>
+</div>
+<div class="w-full sm:w-auto flex justify-end gap-2 items-center">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation();">
+<span class="material-symbols-outlined">download</span>
+</button>
+<span class="material-symbols-outlined text-outline-variant expand-icon">expand_more</span>
+</div>
+</div>
+<!-- Expandable Details -->
+<div class="invoice-details bg-surface border-t border-outline-variant">
+<div class="p-card-padding">
+<h4 class="font-label-md text-label-md text-on-surface mb-4">Resumen de Cargos</h4>
+<div class="space-y-3 mb-6">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant border-opacity-50">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div>
+<div class="font-body-md text-body-md text-on-background">Plan Único Global</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">151 SIMs × $45.00</div>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-background font-medium">$6,795.00</div>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant border-opacity-50">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div>
+<div class="font-body-md text-body-md text-on-background">Ajustes / Otros</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Servicio técnico ad-hoc</div>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-background font-medium">$5.00</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-surface-container-lowest p-4 rounded-lg border border-outline-variant mb-6">
+<button class="w-full bg-surface-container-lowest border border-outline-variant px-4 py-2 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors whitespace-nowrap" onclick="event.stopPropagation();">
+                                    Ver detalle completo en buscador
+                                </button>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-2">Abonos Aplicados</h4>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex justify-between items-center mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">account_balance</span>
+<span class="font-body-sm text-body-sm text-on-background">Transferencia Bancaria</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">02 Jun 2026</span>
+<span class="font-body-sm text-body-sm font-medium text-on-background">-$3,400.00</span>
+</div>
+<div class="flex justify-between items-center mt-2 p-2 bg-error-container/20 rounded">
+<span class="font-body-sm text-body-sm text-on-background font-medium">Restante por Pagar:</span>
+<span class="font-body-sm text-body-sm text-on-background font-bold">$3,400.00</span>
+</div>
+</div>
+<div class="mt-6 flex justify-end">
+
+</div>
+</div>
+</div>
+</article>
+</div>
+<div class="mt-8 flex justify-center">
+<button class="text-on-surface-variant font-label-md text-label-md flex items-center gap-2 hover:text-primary transition-colors">
+                    Cargar más facturas
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+</button>
+</div>
+</section>
+</main>
+
+
+</body></html>
