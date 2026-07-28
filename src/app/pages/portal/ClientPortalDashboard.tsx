@@ -459,9 +459,12 @@ function RenameModal({
 function SimDetailSheet({
   sim,
   onClose,
+  inline = false,
 }: {
   sim: ClientSIM;
   onClose: () => void;
+  /** `true` = panel fijo junto a la tabla (desktop). `false` = hoja superpuesta (móvil). */
+  inline?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<"info" | "usage">("info");
   const [usageDetail, setUsageDetail] = useState<any>(null);
@@ -510,55 +513,68 @@ function SimDetailSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+      {!inline && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+      )}
       <div
-        className="fixed z-50 bg-white shadow-2xl flex flex-col
-          bottom-0 left-0 right-0 rounded-t-3xl
-          sm:bottom-0 sm:top-0 sm:left-auto sm:right-0 sm:rounded-none sm:rounded-l-2xl sm:w-96"
-        style={{ maxHeight: "92dvh" }}
+        className={inline
+          ? "flex flex-col bg-surface-container-lowest border border-hairline rounded-xl shadow-sm overflow-hidden sticky top-24"
+          : `fixed z-50 bg-white shadow-2xl flex flex-col
+             bottom-0 left-0 right-0 rounded-t-3xl
+             sm:bottom-0 sm:top-0 sm:left-auto sm:right-0 sm:rounded-none sm:rounded-l-2xl sm:w-96`}
+        style={{ maxHeight: inline ? "calc(100dvh - 8rem)" : "92dvh" }}
       >
-        {/* Drag handle (mobile) */}
-        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-gray-200" />
-        </div>
+        {/* Drag handle (solo en la hoja móvil) */}
+        {!inline && (
+          <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-gray-200" />
+          </div>
+        )}
 
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between px-5 pt-3 pb-4 sm:pt-5 border-b border-gray-100">
+        <div className="shrink-0 flex items-center justify-between gap-2 px-card-padding pt-3 pb-4 sm:pt-5 border-b border-hairline">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: statusCfg.bg }}>
               <StatusIcon className="w-5 h-5" style={{ color: statusCfg.color }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-gray-400 font-mono">ICCID</p>
-              <code className="text-sm font-bold text-gray-800 block truncate">…{iccid.slice(-12)}</code>
+              <p className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant">ICCID</p>
+              <code className="font-mono font-body-sm text-body-sm text-on-surface block truncate">{iccid}</code>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: statusCfg.bg, color: statusCfg.color }}>
+          <div className="flex items-center gap-1 shrink-0">
+            <span
+              className="font-label-xs text-label-xs px-2.5 py-1 rounded-full whitespace-nowrap"
+              style={{ background: statusCfg.bg, color: statusCfg.color }}
+            >
               {statusCfg.label}
             </span>
-            <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <X className="w-4 h-4 text-gray-500" />
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors"
+              aria-label="Cerrar detalle"
+            >
+              <Icon name="close" className="text-[18px]" />
             </button>
           </div>
         </div>
 
-        {/* Tab navigation */}
-        <div className="shrink-0 flex border-b border-gray-100 px-5 gap-1">
+        {/* Navegación de pestañas */}
+        <div className="shrink-0 flex border-b border-hairline px-card-padding gap-4">
           {([
-            { id: "info",  label: "Información General del SIM", icon: Info },
-            { id: "usage", label: "Consumo", icon: BarChart2 },
-          ] as const).map(({ id, label, icon: Icon }) => (
+            { id: "info",  label: "Información", iconName: "info" },
+            { id: "usage", label: "Consumo",     iconName: "bar_chart" },
+          ] as const).map(({ id, label, iconName }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className="flex items-center gap-1.5 py-3 text-xs font-semibold border-b-2 transition-colors relative -mb-px"
-              style={{
-                borderColor: activeTab === id ? "#3ECF8E" : "transparent",
-                color: activeTab === id ? "#059669" : "#9ca3af",
-              }}
+              className={`flex items-center gap-1.5 py-3 font-label-md text-label-md border-b-2 transition-colors relative -mb-px ${
+                activeTab === id
+                  ? "border-primary text-primary"
+                  : "border-transparent text-on-surface-variant hover:text-on-surface"
+              }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon name={iconName} className="text-[16px]" />
               {label}
             </button>
           ))}
@@ -1200,6 +1216,9 @@ export default function ClientPortalDashboard() {
             </div>
           )}
 
+          {/* Master-detail: tabla a la izquierda, detalle de la SIM a la derecha */}
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:items-start">
+          <div className="min-w-0">
           {loading ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl overflow-hidden">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -1380,6 +1399,27 @@ export default function ClientPortalDashboard() {
               </div>
             </div>
           )}
+          </div>
+
+          {/* Panel de detalle — solo desktop; en móvil se abre como hoja */}
+          <aside className="hidden lg:block">
+            {selectedSim ? (
+              <SimDetailSheet
+                sim={selectedSim}
+                onClose={() => setSelectedSim(null)}
+                inline
+              />
+            ) : (
+              <div className="bg-surface-container-lowest border border-hairline rounded-xl p-8 text-center sticky top-24">
+                <Icon name="ads_click" className="text-[36px] text-outline-variant mb-2" />
+                <p className="font-label-md text-label-md text-on-surface">Selecciona una SIM</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Haz clic en una fila para ver su información y consumo.
+                </p>
+              </div>
+            )}
+          </aside>
+          </div>
         </>
       )}
 
@@ -1677,12 +1717,15 @@ export default function ClientPortalDashboard() {
         </>
       )}
 
-      {/* ── SIM Detail Sheet ── */}
+      {/* ── Detalle de SIM (hoja superpuesta) — solo móvil/tablet.
+             En desktop el detalle vive en el panel lateral de la pestaña Mis SIMs. ── */}
       {selectedSim && (
-        <SimDetailSheet
-          sim={selectedSim}
-          onClose={() => setSelectedSim(null)}
-        />
+        <div className="lg:hidden">
+          <SimDetailSheet
+            sim={selectedSim}
+            onClose={() => setSelectedSim(null)}
+          />
+        </div>
       )}
 
       {/* ── SMS Modal (z-70, above sheet) ── */}
