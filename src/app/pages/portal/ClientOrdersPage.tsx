@@ -184,10 +184,11 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
         })}
       </div>
 
-      {/* Carrito flotante */}
+      {/* Carrito flotante — anclado al borde inferior, dentro del área de contenido
+          (el `md:pl-64` compensa el ancho de la sidebar para que quede centrado). */}
       {cartEntries.length > 0 && (
-        <div className="sticky bottom-6 mt-8 z-40">
-          <div className="mx-auto max-w-2xl bg-surface-container-lowest rounded-2xl border border-hairline p-4 flex flex-col md:flex-row items-center justify-between gap-4"
+        <div className="fixed bottom-6 left-0 right-0 px-4 md:pl-64 z-40 pointer-events-none">
+          <div className="mx-auto max-w-2xl bg-surface-container-lowest rounded-2xl border border-hairline p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto"
             style={{ boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.08)" }}
           >
             <div className="flex items-center gap-4 flex-1 w-full md:w-auto">
@@ -469,7 +470,8 @@ export default function ClientOrdersPage() {
       </div>
 
       {/* Contenido */}
-      <div className="max-w-[1280px] mx-auto px-container-margin py-section-gap pb-16">
+      {/* `pb-40` deja aire para que el carrito flotante no tape la última fila */}
+      <div className="max-w-[1280px] mx-auto px-container-margin py-section-gap pb-40">
         {activeTab === "catalog"
           ? <CatalogTab search={search} onOrderCreated={() => setActiveTab("history")} />
           : <HistoryTab />}
