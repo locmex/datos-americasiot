@@ -1,14 +1,16 @@
 import { useEffect, useState, useCallback, useRef, Fragment, useMemo } from "react";
 import {
-  Search, Plus, RefreshCw, X, Loader2,
+  Search, Plus, X, Loader2,
   ChevronLeft, ChevronRight, CheckCircle2, XCircle,
   PauseCircle, Circle, CreditCard, Wifi, WifiOff,
-  ChevronDown, ChevronUp, Filter, AlertCircle, Download,
-  UserCheck, Users, Link2, ChevronsUpDown, ArrowUp, ArrowDown,
+  ChevronDown, ChevronUp, AlertCircle, Download,
+  UserCheck, Users, Link2,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
+import { Icon } from "../components/ui/icon";
+import { PageHeader, IconButton, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
@@ -38,12 +40,12 @@ interface SIM {
 }
 
 // ── Status config ─────────────────────────────────────────────────
-const STATUS_CFG: Record<number, { label: string; color: string; icon: React.FC<any> }> = {
-  0: { label: "Emitida",      color: "#94a3b8", icon: Circle },
-  1: { label: "Activada",     color: "#22c55e", icon: CheckCircle2 },
-  2: { label: "Suspendida",   color: "#f59e0b", icon: PauseCircle },
-  3: { label: "Desactivada",  color: "#ef4444", icon: XCircle },
-  5: { label: "Modo Prueba",  color: "#8b5cf6", icon: AlertCircle },
+const STATUS_CFG: Record<number, { label: string; color: string; icon: React.FC<any>; symbol: string }> = {
+  0: { label: "Emitida",      color: "#94a3b8", icon: Circle,       symbol: "circle" },
+  1: { label: "Activada",     color: "#22c55e", icon: CheckCircle2, symbol: "check_circle" },
+  2: { label: "Suspendida",   color: "#f59e0b", icon: PauseCircle,  symbol: "pause_circle" },
+  3: { label: "Desactivada",  color: "#ef4444", icon: XCircle,      symbol: "cancel" },
+  5: { label: "Modo Prueba",  color: "#8b5cf6", icon: AlertCircle,  symbol: "science" },
 };
 
 // Status filter options shown as pills
@@ -57,10 +59,9 @@ const STATUS_FILTERS = [
 
 function StatusBadge({ statusId }: { statusId: number }) {
   const cfg = STATUS_CFG[statusId] ?? STATUS_CFG[0];
-  const Icon = cfg.icon;
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: cfg.color }}>
-      <Icon className="w-4 h-4" />
+    <span className="inline-flex items-center gap-1.5 text-label-md" style={{ color: cfg.color }}>
+      <Icon name={cfg.symbol} className="text-[16px]" />
       {cfg.label}
     </span>
   );
@@ -1090,12 +1091,9 @@ export default function InventoryPage() {
     });
   }, [sims, sortKey, sortDir]);
 
-  const SortIcon = ({ col }: { col: string }) => {
-    if (sortKey !== col) return <ChevronsUpDown className="w-3 h-3 opacity-30 inline-block ml-0.5" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="w-3 h-3 inline-block ml-0.5" style={{ color: "#3ECF8E" }} />
-      : <ArrowDown className="w-3 h-3 inline-block ml-0.5" style={{ color: "#3ECF8E" }} />;
-  };
+  const SortIcon = ({ col }: { col: string }) => (
+    <SharedSortIcon active={sortKey === col} dir={sortDir} />
+  );
 
   const COLS: { label: string; key: string | null }[] = [
     { label: "ICCID",                key: "iccid" },
@@ -1107,91 +1105,83 @@ export default function InventoryPage() {
   ];
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-teal-500" />
-            Inventario de SIM
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            SIMs emnify + inventario local · {total > 0 ? `${total.toLocaleString()} en total` : "—"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => load(page, search)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Actualizar</span>
-          </button>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors"
-            style={{ background: "#3ECF8E" }}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Registrar SIMs</span>
-            <span className="sm:hidden">Agregar</span>
-          </button>
-        </div>
-      </div>
+    <div className="p-container-margin">
+      <PageHeader
+        title="Inventario de SIMs"
+        subtitle={`SIMs emnify + inventario local · ${total > 0 ? `${total.toLocaleString()} en total` : "—"}`}
+      >
+        <IconButton icon="refresh" onClick={() => load(page, search)} title="Actualizar" spinning={loading} />
+        <button
+          onClick={() => setShowAdd(true)}
+          className="btn-primary flex items-center gap-2 rounded-lg px-4 py-2 text-label-md shadow-sm transition-colors"
+        >
+          <Icon name="add" className="text-[18px]" />
+          Registrar SIMs
+        </button>
+      </PageHeader>
 
-      {/* Filters bar */}
-      <div className="space-y-2">
-        <form onSubmit={handleSearch} className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      {/* Buscador + filtros */}
+      <div className="mb-gutter space-y-3">
+        <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[200px] flex-1">
+            <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px] text-on-surface-variant" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar ICCID, MSISDN..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
+              placeholder="Buscar ICCID, MSISDN…"
+              className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest py-2 pr-4 pl-10 text-body-md outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors"
-            style={{ background: "#3ECF8E" }}
-          >
+          <button type="submit" className="btn-primary rounded-lg px-4 py-2 text-label-md transition-colors">
             Buscar
           </button>
           {(search || statusFilter !== null) && (
             <button
               type="button"
               onClick={handleClear}
-              className="px-3 py-2 rounded-xl text-sm text-gray-500 border border-gray-200 hover:bg-gray-50"
+              className="rounded-lg border border-outline-variant bg-surface px-3 py-2 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
             >
               Limpiar
             </button>
           )}
         </form>
 
-        {/* Status filter pills */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
-            <Filter className="w-3 h-3" /> Estado:
+        {/* Pastillas de estado — conservan el color semántico de cada estado */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex shrink-0 items-center gap-1 text-body-sm text-on-surface-variant">
+            <Icon name="filter_alt" className="text-[16px]" /> Estado:
           </span>
           {STATUS_FILTERS.map((sf) => {
             const isActive = statusFilter === sf.id;
             const cfg = sf.id != null ? STATUS_CFG[sf.id] : null;
+            if (!isActive) {
+              return (
+                <button
+                  key={String(sf.id)}
+                  type="button"
+                  onClick={() => handleStatusPill(sf.id)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface px-3 py-1 text-label-xs text-on-surface-variant transition-colors hover:bg-surface-container"
+                >
+                  {cfg && <Icon name={cfg.symbol} className="text-[14px]" />}
+                  {sf.label}
+                </button>
+              );
+            }
             return (
               <button
                 key={String(sf.id)}
                 type="button"
                 onClick={() => handleStatusPill(sf.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all"
+                aria-pressed
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-label-xs transition-colors"
                 style={{
-                  background: isActive ? (cfg?.color ?? "#3ECF8E") + "20" : "white",
-                  borderColor: isActive ? (cfg?.color ?? "#3ECF8E") : "#e5e7eb",
-                  color: isActive ? (cfg?.color ?? "#059669") : "#6b7280",
-                  fontWeight: isActive ? 600 : 400,
+                  background: `${cfg?.color ?? "#3ECF8E"}20`,
+                  borderColor: cfg?.color ?? "#3ECF8E",
+                  color: cfg?.color ?? "#006c45",
                 }}
               >
-                {cfg && <cfg.icon className="w-3 h-3" />}
+                {cfg && <Icon name={cfg.symbol} className="text-[14px]" />}
                 {sf.label}
               </button>
             );
@@ -1312,20 +1302,21 @@ export default function InventoryPage() {
       </div>
 
       {/* ── DESKTOP: Table ─────────────────────────────────────────────���──── */}
-      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+      <div className="hidden overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest md:block">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e5e7eb" }}>
+          <table className="w-full">
+            <thead className="sticky top-0 z-10 bg-surface-container-low">
+              <tr className="border-b border-outline-variant">
                 <th className="w-10 px-4 py-3">
-                  <input type="checkbox" className="rounded" />
+                  <input type="checkbox" className="rounded border-outline-variant" />
                 </th>
                 {COLS.map((col) => (
                   <th
                     key={col.label}
                     onClick={col.key ? () => handleSort(col.key!) : undefined}
-                    className={`px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider whitespace-nowrap ${col.key ? "cursor-pointer select-none hover:bg-gray-100 transition-colors" : ""}`}
-                    style={{ color: sortKey === col.key ? "#0d8f5c" : "#6b7280" }}
+                    className={`px-4 py-3 text-left text-label-xs tracking-wider whitespace-nowrap uppercase ${
+                      col.key ? "cursor-pointer select-none transition-colors hover:bg-surface-container" : ""
+                    } ${sortKey === col.key ? "text-primary" : "text-on-surface-variant"}`}
                   >
                     {col.label}
                     {col.key && <SortIcon col={col.key} />}
@@ -1336,7 +1327,7 @@ export default function InventoryPage() {
             <tbody>
               {loading
                 ? Array.from({ length: 10 }).map((_, i) => (
-                    <tr key={i} className="border-b border-gray-50">
+                    <tr key={i} className="border-b border-outline-variant/50">
                       <td className="px-4 py-3"><Skeleton className="h-4 w-4" /></td>
                       {COLS.map((col, j) => (
                         <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
