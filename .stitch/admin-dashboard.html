@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AmericasIoT Admin Console - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-fixed": "#002114",
+                      "surface-container-low": "#eff4ff",
+                      "surface-bright": "#f8f9ff",
+                      "on-tertiary-container": "#3e495c",
+                      "surface-tint": "#006c45",
+                      "surface": "#f8f9ff",
+                      "secondary-fixed-dim": "#68dba9",
+                      "on-secondary-fixed-variant": "#005137",
+                      "on-tertiary-fixed": "#111c2d",
+                      "tertiary": "#545f73",
+                      "on-error-container": "#93000a",
+                      "surface-container-highest": "#d3e4fe",
+                      "on-background": "#0b1c30",
+                      "primary-fixed-dim": "#51df9c",
+                      "surface-container-high": "#dce9ff",
+                      "tertiary-fixed": "#d8e3fb",
+                      "inverse-on-surface": "#eaf1ff",
+                      "outline": "#6c7a70",
+                      "secondary-fixed": "#85f8c4",
+                      "on-surface": "#0b1c30",
+                      "background": "#f8f9ff",
+                      "on-primary-fixed-variant": "#005233",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed": "#002112",
+                      "on-surface-variant": "#3d4a41",
+                      "error": "#ba1a1a",
+                      "on-primary-container": "#005434",
+                      "on-tertiary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "inverse-surface": "#213145",
+                      "primary": "#006c45",
+                      "surface-container-lowest": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "primary-container": "#3ecf8e",
+                      "outline-variant": "#bbcabe",
+                      "primary-fixed": "#71fcb6",
+                      "surface-variant": "#d3e4fe",
+                      "inverse-primary": "#51df9c",
+                      "tertiary-fixed-dim": "#bcc7de",
+                      "on-secondary-container": "#00714e",
+                      "tertiary-container": "#adb8cf",
+                      "secondary": "#006c4a",
+                      "on-error": "#ffffff",
+                      "surface-container": "#e5eeff",
+                      "surface-dim": "#cbdbf5",
+                      "secondary-container": "#82f5c1",
+                      "on-tertiary-fixed-variant": "#3c475a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-gap": "32px",
+                      "container-margin": "24px",
+                      "card-padding": "20px",
+                      "gutter": "16px",
+                      "base": "4px"
+              },
+              "fontFamily": {
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-xs": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "display-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-sm": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-xs": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.03em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background h-full font-body-md text-body-md overflow-hidden flex">
+<!-- SideNavBar -->
+<aside class="bg-surface dark:bg-surface-dim font-body-md text-body-md fixed left-0 top-0 h-full w-64 border-r border-outline-variant dark:border-outline flat no shadows flex flex-col h-full py-container-margin px-base z-50">
+<div class="px-4 mb-8">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">AmericasIoT</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Admin Console</p>
+</div>
+<nav class="flex-1 overflow-y-auto space-y-1 px-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-surface-container-high dark:bg-surface-container-highest Active: scale-[0.99] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="router">router</span>
+<span>Dispositivos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="sd_card">sd_card</span>
+<span>Inventario SIMs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+<span>Asignación</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Clientes</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span>Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Productos</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span>Facturación</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span>Planes</span>
+</a>
+</nav>
+<div class="mt-auto px-2 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Ajustes</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container hover:bg-surface-container-low dark:hover:bg-surface-container transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Cerrar Sesión</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="flex-1 ml-64 flex flex-col h-full bg-background overflow-hidden relative z-0">
+<!-- TopAppBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-low font-label-md text-label-md fixed top-0 right-0 w-[calc(100%-256px)] z-40 border-b border-outline-variant dark:border-outline flat no shadows flex justify-between items-center h-16 px-6">
+<div class="flex-1 flex items-center gap-4">
+<h2 class="font-headline-sm text-headline-sm font-black text-on-surface">AmericasIoT Admin Panel</h2>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<button class="p-2 text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" data-icon="apps">apps</span>
+</button>
+<div class="ml-4 flex-shrink-0">
+<img alt="Administrator Profile" class="h-8 w-8 rounded-full object-cover bg-surface-container" data-alt="A professional headshot of a corporate administrator, bright lighting, high quality, realistic, modern office background, soft focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAU_Um7aAPLX4iWDN4JwrcgSamdQtXgPIiMKBQ4i8iuQS1rvxb1GsglLhdgLPp7U4KGI1V5-B3hBYAvN2kVtPWUSPb1b8UdpAHJfxDee7qE4zv0PnnGwgZJHdgim3BlSN1AH0Y1SC94ehwt9kKrJj4UvKd2fl-606b0PtjSVtI-_nyJIJYqTBbkChNCIsr6Qy_Ex_og7cI6rDR0CipaZBuBZ48b_0MEyPS1lSkk0fiIVoJ1oYD0NkE6I5VnZA_65Qm7LJ2ZtBsdZw"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="flex-1 overflow-y-auto mt-16 p-container-margin">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-section-gap">
+<div>
+<h1 class="font-display-md text-display-md text-on-background mb-1">Buenos días, Administrador 👋</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Resumen de conectividad IoT · emnify</p>
+</div>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                    Actualizar
+                </button>
+</div>
+<!-- Cache Banner -->
+<div class="bg-surface-variant border border-outline-variant rounded-lg p-4 mb-section-gap flex items-start sm:items-center justify-between gap-4">
+<div class="flex items-start sm:items-center gap-3">
+<span class="material-symbols-outlined text-outline">info</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Mostrando datos del caché (5 min). El recálculo completo puede tardar ~30 segundos.</p>
+</div>
+</div>
+<button class="bg-surface text-on-surface font-label-md text-label-md px-3 py-1.5 rounded border border-outline-variant hover:bg-surface-container transition-colors whitespace-nowrap">
+                    Recalcular ahora
+                </button>
+</div>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter mb-section-gap">
+<!-- Metric 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Total SIMs en emnify</p>
+<span class="material-symbols-outlined text-tertiary">sim_card</span>
+</div>
+<div>
+<h3 class="font-display-lg text-display-lg text-on-surface">1,574</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Chips en inventario emnify</p>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">SIMs Activas</p>
+<div class="bg-primary/10 text-primary p-1 rounded">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+</div>
+</div>
+<div>
+<h3 class="font-display-lg text-display-lg text-primary">1,150</h3>
+<p class="font-body-sm text-body-sm text-primary mt-1">Con datos activos</p>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">SIMs Suspendidas</p>
+<div class="bg-error/10 text-error p-1 rounded">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+</div>
+</div>
+<div>
+<h3 class="font-display-lg text-display-lg text-error">42</h3>
+<p class="font-body-sm text-body-sm text-error mt-1">Temporalmente inactivas</p>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant uppercase tracking-wider">Clientes Registrados</p>
+<span class="material-symbols-outlined text-tertiary">groups</span>
+</div>
+<div>
+<h3 class="font-display-lg text-display-lg text-on-surface">8</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">En este portal</p>
+</div>
+</div>
+</div>
+<!-- Complex Data Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Data Consumption -->
+<div class="lg:col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-6">Consumo de Datos</h3>
+<div class="flex-1 flex flex-col justify-center items-center text-center">
+<div class="relative w-48 h-48 rounded-full border-[8px] border-surface-container flex items-center justify-center mb-6">
+<div class="absolute inset-0 rounded-full border-[8px] border-primary" style="clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 0 100%, 0 50%); transform: rotate(45deg);"></div>
+<div class="text-center z-10">
+<span class="font-display-lg text-display-lg text-on-surface block leading-tight">631.41</span>
+<span class="font-body-md text-body-md text-on-surface-variant">MB Totales</span>
+</div>
+</div>
+<div class="flex justify-around w-full mt-4 bg-surface-container-low rounded-lg p-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">arrow_upward</span>
+<div>
+<p class="font-label-xs text-label-xs text-on-surface-variant uppercase">TX</p>
+<p class="font-label-md text-label-md text-on-surface">240.1 MB</p>
+</div>
+</div>
+<div class="w-px bg-outline-variant"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">arrow_downward</span>
+<div>
+<p class="font-label-xs text-label-xs text-on-surface-variant uppercase">RX</p>
+<p class="font-label-md text-label-md text-on-surface">391.3 MB</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant text-center">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Endpoints con datos: <strong class="text-on-surface">116 / 1574</strong></p>
+</div>
+</div>
+<!-- Device Status & Traffic Chart -->
+<div class="lg:col-span-2 flex flex-col gap-gutter">
+<!-- Device Status -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">Estado de Dispositivos</h3>
+<div class="h-4 w-full bg-surface-container rounded-full overflow-hidden flex mb-3">
+<div class="bg-primary h-full" style="width: 73%"></div>
+<div class="bg-outline h-full" style="width: 25%"></div>
+<div class="bg-error h-full" style="width: 2%"></div>
+</div>
+<div class="flex gap-6">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Online (73%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-outline"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Offline (25%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Deshabilitado (2%)</span>
+</div>
+</div>
+</div>
+<!-- Traffic Chart -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex-1 flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Tráfico (últimas 6 h)</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 bg-primary rounded-sm"></div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">TX</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 bg-secondary rounded-sm"></div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">RX</span>
+</div>
+</div>
+</div>
+<!-- Pseudo Chart Area -->
+<div class="flex-1 flex items-end gap-2 h-48 relative border-b border-outline-variant pb-2">
+<!-- Y-axis labels -->
+<div class="absolute left-0 top-0 h-full flex flex-col justify-between text-label-xs text-on-surface-variant pr-2 bg-surface-container-lowest">
+<span>150M</span>
+<span>100M</span>
+<span>50M</span>
+<span>0</span>
+</div>
+<div class="w-8 flex-shrink-0"></div> <!-- Spacer for Y-axis -->
+<!-- Chart Bars (Representative) -->
+<div class="flex-1 flex items-end justify-between px-2 h-full pt-4">
+<div class="w-8 flex flex-col gap-1 items-center justify-end h-full group">
+<div class="w-4 bg-primary rounded-t-sm h-[40%] group-hover:bg-primary-container transition-colors"></div>
+<div class="w-4 bg-secondary rounded-t-sm h-[60%] group-hover:bg-secondary-container transition-colors"></div>
+<span class="font-label-xs text-label-xs text-on-surface-variant mt-2">-6h</span>
+</div>
+<div class="w-8 flex flex-col gap-1 items-center justify-end h-full group">
+<div class="w-4 bg-primary rounded-t-sm h-[35%] group-hover:bg-primary-container transition-colors"></div>
+<div class="w-4 bg-secondary rounded-t-sm h-[45%] group-hover:bg-secondary-container transition-colors"></div>
+<span class="font-label-xs text-label-xs text-on-surface-variant mt-2">-5h</span>
+</div>
+<div class="w-8 flex flex-col gap-1 items-center justify-end h-full group">
+<div class="w-4 bg-primary rounded-t-sm h-[50%] group-hover:bg-primary-container transition-colors"></div>
+<div class="w-4 bg-secondary rounded-t-sm h-[70%] group-hover:bg-secondary-container transition-colors"></div>
+<span class="font-label-xs text-label-xs text-on-surface-variant mt-2">-4h</span>
+</div>
+<div class="w-8 flex flex-col gap-1 items-center justify-end h-full group">
+<div class="w-4 bg-primary rounded-t-sm h-[20%] group-hover:bg-primary-container transition-colors"></div>
+<div class="w-4 bg-secondary rounded-t-sm h-[30%] group-hover:bg-secondary-container transition-colors"></div>
+<span class="font-label-xs text-label-xs text-on-surface-variant mt-2">-3h</span>
+</div>
+<div class="w-8 flex flex-col gap-1 items-center justify-end h-full group">
+<div class="w-4 bg-primary rounded-t-sm h-[80%] group-hover:bg-primary-container transition-colors"></div>
+<div class="w-4 bg-secondary rounded-t-sm h-[90%] group-hover:bg-secondary-container transition-colors"></div>
+<span class="font-label-xs text-label-xs text-on-surface-variant mt-2">-2h</span>
+</div>
+<div class="w-8 flex flex-col gap-1 items-center justify-end h-full group">
+<div class="w-4 bg-primary rounded-t-sm h-[65%] group-hover:bg-primary-container transition-colors"></div>
+<div class="w-4 bg-secondary rounded-t-sm h-[55%] group-hover:bg-secondary-container transition-colors"></div>
+<span class="font-label-xs text-label-xs text-on-surface-variant mt-2">-1h</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

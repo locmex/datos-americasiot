@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import {
-  CreditCard, Users, Wifi, Activity, TrendingUp, CheckCircle2, PauseCircle, AlertCircle,
-  RefreshCw, Clock, ArrowUp, ArrowDown, Database, Circle,
-} from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { Skeleton } from "../components/ui/skeleton";
-import { Button } from "../components/ui/button";
+import { Icon } from "../components/ui/icon";
 
-// ─── Types ────────────────────────────────────────────────────────
+// Mismos roles de color que el portal del cliente: TX verde de marca, RX azul.
+const TX_COLOR = "#3ECF8E";
+const RX_COLOR = "#3b82f6";
+
+// ─── Tipos ────────────────────────────────────────────────────────
 interface Stats {
   totalSims: number;
   activeSims: number;
@@ -26,6 +26,7 @@ interface DataUsage {
   rxMB: number;
   totalMB: number;
   totalEndpoints: number;
+  endpointsWithStats?: number;
   statusCount: Record<string | number, number> & {
     online?: number;
     disabled?: number;
@@ -38,13 +39,7 @@ interface DataUsage {
   stale?: boolean;
 }
 
-interface Log {
-  type: string;
-  message: string;
-  timestamp: string;
-}
-
-// ─── Helpers ────────────────��─────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────
 function formatBytes(b: number): string {
   if (!b || b === 0) return "0 B";
   const k = 1024;
@@ -53,93 +48,123 @@ function formatBytes(b: number): string {
   return `${parseFloat((b / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-function timeAgo(ts: string) {
-  const diff = Date.now() - new Date(ts).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "ahora mismo";
-  if (mins < 60) return `hace ${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `hace ${hrs}h`;
-  return `hace ${Math.floor(hrs / 24)}d`;
-}
-
-const typeConfig: Record<string, { icon: typeof Activity; color: string; bg: string; label: string }> = {
-  login:           { icon: CheckCircle2, color: "#3ECF8E", bg: "rgba(62,207,142,0.1)",  label: "Login" },
-  sim_status:      { icon: CreditCard,   color: "#60a5fa", bg: "rgba(96,165,250,0.1)",  label: "SIM" },
-  endpoint_update: { icon: Wifi,         color: "#a78bfa", bg: "rgba(167,139,250,0.1)", label: "Endpoint" },
-  chip_assigned:   { icon: Users,        color: "#f59e0b", bg: "rgba(245,158,11,0.1)",  label: "Asignación" },
-  chips_added:     { icon: CreditCard,   color: "#3ECF8E", bg: "rgba(62,207,142,0.1)",  label: "Chips" },
-  client_created:  { icon: Users,        color: "#34d399", bg: "rgba(52,211,153,0.1)",  label: "Cliente" },
-  user_created:    { icon: Users,        color: "#60a5fa", bg: "rgba(96,165,250,0.1)",  label: "Usuario" },
-};
-
-// ─── Sub-components ───────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, subtitle, color, loading }: {
-  icon: typeof CreditCard; label: string; value: string | number;
-  subtitle: string; color: string; loading: boolean;
+// ─── Tarjeta de métrica ───────────────────────────────────────────
+function MetricCard({
+  label, value, subtitle, icon, tone = "neutral", loading,
+}: {
+  label: string;
+  value: string | number;
+  subtitle: string;
+  icon: string;
+  tone?: "neutral" | "success" | "warning";
+  loading: boolean;
 }) {
+  const toneClasses = {
+    neutral: { value: "text-on-surface",  note: "text-on-surface-variant", chip: "text-tertiary" },
+    success: { value: "text-primary",     note: "text-primary",            chip: "bg-primary/10 text-primary rounded p-1" },
+    warning: { value: "text-on-warning",  note: "text-on-warning",         chip: "bg-warning/10 text-on-warning rounded p-1" },
+  }[tone];
+
   return (
-    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100">
-      <div className="flex items-start justify-between mb-3 md:mb-4">
-        <div className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-xl" style={{ background: `${color}18` }}>
-          <Icon className="w-4 h-4 md:w-5 md:h-5" style={{ color }} />
-        </div>
-        <TrendingUp className="w-4 h-4 text-gray-300" />
+    <div className="flex flex-col justify-between rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding transition-colors hover:bg-surface-bright">
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <p className="text-body-sm tracking-wider text-on-surface-variant uppercase">
+          {label}
+        </p>
+        <span className={toneClasses.chip}>
+          <Icon name={icon} className="text-[16px]" />
+        </span>
       </div>
       {loading ? (
-        <div className="space-y-2"><Skeleton className="h-7 w-20" /><Skeleton className="h-3 w-28" /></div>
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-4 w-32" />
+        </div>
       ) : (
-        <>
-          <p className="text-2xl md:text-3xl font-bold text-gray-900">{value}</p>
-          <p className="text-xs text-gray-500 mt-1">{label}</p>
-          <p className="text-xs font-medium mt-1.5" style={{ color }}>{subtitle}</p>
-        </>
+        <div>
+          <h3 className={`text-display-lg ${toneClasses.value}`}>{value}</h3>
+          <p className={`mt-1 text-body-sm ${toneClasses.note}`}>{subtitle}</p>
+        </div>
       )}
     </div>
   );
 }
 
-// ─── Traffic Bar Chart (CSS flexbox, no SVG distorsión) ──────────
-function TrafficBarChart({ data }: { data: { label: string; tx: number; rx: number }[] }) {
+// ─── Dona TX / RX ─────────────────────────────────────────────────
+function UsageDonut({ tx, rx, total }: { tx: number; rx: number; total: number }) {
+  const R = 70;
+  const C = 2 * Math.PI * R;
+  const txFrac = total > 0 ? tx / total : 0;
+  const rxFrac = total > 0 ? rx / total : 0;
+
+  return (
+    <div className="relative mx-auto h-48 w-48">
+      <svg viewBox="0 0 176 176" className="h-full w-full -rotate-90">
+        <circle cx="88" cy="88" r={R} fill="none" strokeWidth="16" className="stroke-surface-container" />
+        {total > 0 && (
+          <>
+            <circle
+              cx="88" cy="88" r={R} fill="none" strokeWidth="16" stroke={TX_COLOR}
+              strokeDasharray={`${txFrac * C} ${C}`} strokeLinecap="butt"
+            />
+            <circle
+              cx="88" cy="88" r={R} fill="none" strokeWidth="16" stroke={RX_COLOR}
+              strokeDasharray={`${rxFrac * C} ${C}`} strokeDashoffset={-txFrac * C} strokeLinecap="butt"
+            />
+          </>
+        )}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        {total > 0 ? (
+          <>
+            <span className="text-display-md leading-tight text-on-surface">
+              {formatBytes(total).split(" ")[0]}
+            </span>
+            <span className="text-body-md text-on-surface-variant">
+              {formatBytes(total).split(" ")[1]} totales
+            </span>
+          </>
+        ) : (
+          <span className="text-body-md text-on-surface-variant">Sin datos</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Gráfico de tráfico ───────────────────────────────────────────
+function TrafficChart({ data }: { data: { label: string; tx: number; rx: number }[] }) {
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-28 text-xs text-gray-400">
+      <div className="flex h-48 items-center justify-center text-body-sm text-on-surface-variant">
         Sin datos de tráfico disponibles
       </div>
     );
   }
 
-  const maxVal = Math.max(...data.map((d) => d.tx + d.rx), 1);
-  const allZero = maxVal === 0 || data.every((d) => d.tx === 0 && d.rx === 0);
+  const maxVal = Math.max(...data.map((d) => Math.max(d.tx, d.rx)), 1);
+  const allZero = data.every((d) => d.tx === 0 && d.rx === 0);
 
   return (
-    <div className="flex items-end gap-1.5 h-28 w-full">
+    <div className="flex h-48 items-end justify-between gap-2 border-b border-outline-variant pb-2">
       {data.map((d, i) => {
-        // Si todos son 0, mostrar barras decorativas mínimas
-        const txPct = allZero ? 30 : Math.max(4, ((d.tx) / maxVal) * 100);
-        const rxPct = allZero ? 20 : Math.max(4, ((d.rx) / maxVal) * 100);
-
+        const txPct = allZero ? 0 : Math.max(2, (d.tx / maxVal) * 100);
+        const rxPct = allZero ? 0 : Math.max(2, (d.rx / maxVal) * 100);
         return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-            {/* Bars group */}
-            <div className="flex items-end gap-0.5 w-full" style={{ height: 96 }}>
-              {/* TX bar */}
-              <div className="flex-1 rounded-t-sm transition-all" style={{
-                height: `${txPct}%`,
-                background: allZero ? "#e0e7ff" : "#6366f1",
-                opacity: allZero ? 0.5 : 0.85,
-                minHeight: 3,
-              }} />
-              {/* RX bar */}
-              <div className="flex-1 rounded-t-sm transition-all" style={{
-                height: `${rxPct}%`,
-                background: allZero ? "#d1fae5" : "#3ECF8E",
-                opacity: allZero ? 0.5 : 0.85,
-                minHeight: 3,
-              }} />
+          <div key={i} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+            <div className="flex h-full w-full items-end justify-center gap-1">
+              <div
+                className="w-3 rounded-t-sm transition-opacity group-hover:opacity-80"
+                style={{ height: `${txPct}%`, background: TX_COLOR }}
+                title={`TX ${formatBytes(d.tx)}`}
+              />
+              <div
+                className="w-3 rounded-t-sm transition-opacity group-hover:opacity-80"
+                style={{ height: `${rxPct}%`, background: RX_COLOR }}
+                title={`RX ${formatBytes(d.rx)}`}
+              />
             </div>
-            {/* Label */}
-            <span className="text-[9px] md:text-[10px] text-gray-400 truncate w-full text-center leading-none">
+            <span className="mt-2 w-full truncate text-center text-label-xs text-on-surface-variant">
               {d.label}
             </span>
           </div>
@@ -149,226 +174,26 @@ function TrafficBarChart({ data }: { data: { label: string; tx: number; rx: numb
   );
 }
 
-// ─── Device State Stacked Bar ─────────────────────────────────────
-function DeviceStateBar({ online, suspended, offline }: { online: number; suspended: number; offline: number }) {
-  const total = online + suspended + offline || 1;
-  const onlineP = (online / total) * 100;
-  const suspP = (suspended / total) * 100;
-  const offlineP = (offline / total) * 100;
-
-  return (
-    <div className="w-full h-5 rounded-full overflow-hidden flex">
-      <div style={{ width: `${onlineP}%`, background: "#22c55e" }} className="transition-all" />
-      <div style={{ width: `${suspP}%`, background: "#374151" }} className="transition-all" />
-      <div style={{ width: `${offlineP}%`, background: "#d1d5db" }} className="transition-all" />
-    </div>
-  );
-}
-
-// ─── Data Usage Widget ────────────────────────────────────────────
-function DataUsageWidget({ usage, loading, onRefresh }: { usage: DataUsage | null; loading: boolean; onRefresh: () => void }) {
-  const now = new Date();
-  const monthLabel = now.toLocaleString("es-MX", { month: "long", year: "numeric" });
-  const cachedMins = usage?.cachedAt
-    ? Math.round((Date.now() - new Date(usage.cachedAt).getTime()) / 60000)
-    : null;
-
-  // Soporte para claves nombradas (nueva API) y numéricas (compatibilidad)
-  const online    = usage?.statusCount?.online    ?? usage?.statusCount?.[1] ?? 0;
-  const suspended = usage?.statusCount?.disabled  ?? usage?.statusCount?.[2] ?? 0;
-  const offline   = usage?.statusCount?.offline   ?? (usage?.statusCount?.[0] ?? 0) + (usage?.statusCount?.[3] ?? 0);
-
-  const hasData = (usage?.totalBytes ?? 0) > 0;
-  const isStale = usage?.stale === true;
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  const handleForceRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await api.cacheClear();
-      await onRefresh();
-    } catch (e) {
-      console.error("Error al refrescar:", e);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Banner stale */}
-      {isStale && !loading && (
-        <div className="flex items-center justify-between bg-amber-50 border-b border-amber-100 px-5 py-2.5">
-          <p className="text-xs text-amber-700 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            Mostrando datos del caché ({cachedMins}m). El recálculo completo puede tardar ~30 segundos.
-          </p>
-          <button
-            onClick={handleForceRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Recalculando..." : "Recalcular ahora"}
-          </button>
-        </div>
-      )}
-
-      {/* Main data row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-        {/* Left: Volume */}
-        <div className="p-5 md:p-6">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Volumen de Datos · {monthLabel}
-            </p>
-            {cachedMins !== null && !isStale && (
-              <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
-                cache {cachedMins}m
-              </span>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="space-y-2 mt-3">
-              <Skeleton className="h-9 w-36" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-          ) : (
-            <>
-              <p className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 tracking-tight">
-                {hasData ? formatBytes(usage?.totalBytes ?? 0) : (
-                  <span className="text-gray-300">—</span>
-                )}
-              </p>
-              <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "rgba(99,102,241,0.1)" }}>
-                    <ArrowUp className="w-3.5 h-3.5" style={{ color: "#6366f1" }} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 leading-none">TX Enviado</p>
-                    <p className="text-sm font-semibold text-gray-800">{formatBytes(usage?.txBytes ?? 0)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "rgba(62,207,142,0.1)" }}>
-                    <ArrowDown className="w-3.5 h-3.5" style={{ color: "#3ECF8E" }} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 leading-none">RX Recibido</p>
-                    <p className="text-sm font-semibold text-gray-800">{formatBytes(usage?.rxBytes ?? 0)}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Database className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="text-xs text-gray-500">Endpoints con datos</span>
-                </div>
-                <span className="text-xs font-semibold text-gray-700">
-                  {(usage as any)?.endpointsWithStats ?? usage?.totalEndpoints ?? "—"}
-                  {" / "}
-                  {usage?.totalEndpoints ?? "—"}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Right: Device state */}
-        <div className="p-5 md:p-6">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-            Estado de los Dispositivos
-          </p>
-
-          {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-5 w-full rounded-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ) : (
-            <>
-              <DeviceStateBar online={online} suspended={suspended} offline={offline} />
-              <div className="mt-4 space-y-2.5">
-                {[
-                  { label: "Online",        count: online,    color: "#22c55e", icon: CheckCircle2 },
-                  { label: "Deshabilitado", count: suspended, color: "#f59e0b", icon: PauseCircle },
-                  { label: "Offline",       count: offline,   color: "#9ca3af", icon: Circle },
-                ].map(({ label, count, color, icon: Icon }) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-3.5 h-3.5" style={{ color }} />
-                      <span className="text-sm text-gray-600">{label}</span>
-                    </div>
-                    <span
-                      className="text-xs font-bold px-2.5 py-0.5 rounded-full"
-                      style={{ background: `${color}18`, color }}
-                    >
-                      {count.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Traffic chart */}
-      <div className="border-t border-gray-100 p-5 md:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tráfico (últimas 6h)</p>
-          <div className="flex items-center gap-4 text-xs text-gray-400">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#6366f1", opacity: 0.85 }} />
-              TX enviado
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ background: "#3ECF8E", opacity: 0.85 }} />
-              RX recibido
-            </span>
-          </div>
-        </div>
-        {loading ? (
-          <div className="flex items-end gap-2 h-28">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton key={i} className="flex-1 rounded" style={{ height: `${40 + Math.random() * 60}%` }} />
-            ))}
-          </div>
-        ) : (
-          <TrafficBarChart data={usage?.trafficHourly ?? []} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────
+// ─── Página ───────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [usage, setUsage] = useState<DataUsage | null>(null);
-  const [logs, setLogs] = useState<Log[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [usageLoading, setUsageLoading] = useState(true);
-  const [logsLoading, setLogsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
 
   const load = async () => {
     setStatsLoading(true);
-    setLogsLoading(true);
     try {
-      const [s, a] = await Promise.allSettled([api.getStats(), api.getActivity()]);
-      if (s.status === "fulfilled") setStats(s.value);
-      if (a.status === "fulfilled") setLogs(a.value.logs || []);
+      const s = await api.getStats();
+      setStats(s);
+    } catch (e) {
+      console.error("Error cargando estadísticas:", e);
     } finally {
       setStatsLoading(false);
-      setLogsLoading(false);
     }
   };
 
@@ -376,8 +201,7 @@ export default function DashboardPage() {
     setUsageLoading(true);
     setUsageError(null);
     try {
-      const d = await api.getDataUsage();
-      setUsage(d);
+      setUsage(await api.getDataUsage());
     } catch (e: any) {
       console.error("Error cargando consumo de datos:", e);
       setUsageError(e.message || "Error obteniendo consumo de datos");
@@ -397,140 +221,237 @@ export default function DashboardPage() {
     setRefreshing(false);
   };
 
+  const handleRecalculate = async () => {
+    setRecalculating(true);
+    try {
+      await api.cacheClear();
+      await loadUsage();
+    } catch (e) {
+      console.error("Error al recalcular:", e);
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 18 ? "Buenas tardes" : "Buenas noches";
 
-  // ── Usar statusCount del escaneo completo (data-usage) cuando esté disponible
-  // ya que emnify no soporta filtro ?status= para el conteo total confiablemente
-  const accurateActive    = usage?.statusCount?.[1];
+  // El escaneo completo (data-usage) da el conteo confiable; emnify no filtra
+  // por ?status= de forma consistente para el total.
+  const accurateActive = usage?.statusCount?.[1];
   const accurateSuspended = usage?.statusCount?.[2];
-  const displayActive    = (!usageLoading && accurateActive    != null) ? accurateActive    : stats?.activeSims;
-  const displaySuspended = (!usageLoading && accurateSuspended != null) ? accurateSuspended : stats?.suspendedSims;
+  const displayActive = !usageLoading && accurateActive != null ? accurateActive : stats?.activeSims;
+  const displaySuspended = !usageLoading && accurateSuspended != null ? accurateSuspended : stats?.suspendedSims;
   const kpiLoading = statsLoading && usageLoading;
 
+  const online = usage?.statusCount?.online ?? usage?.statusCount?.[1] ?? 0;
+  const disabled = usage?.statusCount?.disabled ?? usage?.statusCount?.[2] ?? 0;
+  const offline =
+    usage?.statusCount?.offline ?? (usage?.statusCount?.[0] ?? 0) + (usage?.statusCount?.[3] ?? 0);
+  const deviceTotal = online + disabled + offline || 1;
+
+  const cachedMins = usage?.cachedAt
+    ? Math.round((Date.now() - new Date(usage.cachedAt).getTime()) / 60000)
+    : null;
+
   return (
-    <div className="p-4 md:p-8 space-y-5 md:space-y-7">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+    <div className="p-container-margin">
+      {/* ── Encabezado ────────────────────────────────────── */}
+      <div className="mb-section-gap flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+          <h1 className="mb-1 text-display-md text-on-background">
             {greeting}, {user?.name?.split(" ")[0] || "Admin"} 👋
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-body-lg text-on-surface-variant">
             Resumen de conectividad IoT · {user?.organisation || "emnify"}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 shrink-0"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-label-md text-on-primary shadow-sm transition-colors hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          <span className="hidden sm:inline">Actualizar</span>
+          <Icon name="refresh" className={`text-[18px] ${refreshing ? "animate-spin" : ""}`} />
+          Actualizar
         </button>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard icon={CreditCard}   label="Total SIMs en emnify"   value={stats?.totalSims ?? "—"}      subtitle="Chips en inventario emnify"  color="#3ECF8E" loading={statsLoading} />
-        <StatCard icon={CheckCircle2} label="SIMs Activas"           value={displayActive    ?? "—"}      subtitle="Con datos activos"           color="#10b981" loading={kpiLoading} />
-        <StatCard icon={PauseCircle}  label="SIMs Suspendidas"       value={displaySuspended ?? "—"}      subtitle="Temporalmente inactivas"     color="#f59e0b" loading={kpiLoading} />
-        <StatCard icon={Users}        label="Clientes Registrados"   value={stats?.totalClients ?? "—"}   subtitle="En este portal"              color="#60a5fa" loading={statsLoading} />
+      {/* ── Banner de caché ───────────────────────────────── */}
+      {usage?.stale && !usageLoading && (
+        <div className="mb-section-gap flex flex-wrap items-center justify-between gap-4 rounded-lg border border-outline-variant bg-surface-variant p-4">
+          <div className="flex items-center gap-3">
+            <Icon name="info" className="text-outline" />
+            <p className="text-body-md text-on-surface">
+              Mostrando datos del caché ({cachedMins}m). El recálculo completo puede tardar ~30 segundos.
+            </p>
+          </div>
+          <button
+            onClick={handleRecalculate}
+            disabled={recalculating}
+            className="rounded border border-outline-variant bg-surface px-3 py-1.5 text-label-md whitespace-nowrap text-on-surface transition-colors hover:bg-surface-container disabled:opacity-50"
+          >
+            {recalculating ? "Recalculando…" : "Recalcular ahora"}
+          </button>
+        </div>
+      )}
+
+      {/* ── Métricas ──────────────────────────────────────── */}
+      <div className="mb-section-gap grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Total SIMs en emnify" icon="sim_card"
+          value={stats?.totalSims?.toLocaleString("es-MX") ?? "—"}
+          subtitle="Chips en inventario emnify" loading={statsLoading}
+        />
+        <MetricCard
+          label="SIMs Activas" icon="check_circle" tone="success"
+          value={displayActive?.toLocaleString("es-MX") ?? "—"}
+          subtitle="Con datos activos" loading={kpiLoading}
+        />
+        <MetricCard
+          label="SIMs Suspendidas" icon="pause_circle" tone="warning"
+          value={displaySuspended?.toLocaleString("es-MX") ?? "—"}
+          subtitle="Temporalmente inactivas" loading={kpiLoading}
+        />
+        <MetricCard
+          label="Clientes Registrados" icon="groups"
+          value={stats?.totalClients?.toLocaleString("es-MX") ?? "—"}
+          subtitle="En este portal" loading={statsLoading}
+        />
       </div>
 
-      {/* ── DATA USAGE + DEVICE STATE ── */}
-      <div className="grid grid-cols-1 gap-4 md:gap-6">
-        {/* Data usage (full width) */}
-        <div>
-          {usageError ? (
-            <div
-              className="flex items-center justify-between gap-4 p-4 rounded-2xl border h-full"
-              style={{ background: "#fff1f2", borderColor: "#fecdd3" }}
-            >
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 shrink-0" style={{ color: "#e11d48" }} />
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "#e11d48" }}>
-                    Error cargando consumo de datos
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "#be123c" }}>{usageError}</p>
+      {/* ── Error de consumo ──────────────────────────────── */}
+      {usageError ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-error bg-error-container p-card-padding">
+          <div className="flex items-center gap-3">
+            <Icon name="error" className="text-error" />
+            <div>
+              <p className="text-label-md text-on-error-container">
+                Error cargando consumo de datos
+              </p>
+              <p className="mt-0.5 text-body-sm text-on-error-container">{usageError}</p>
+            </div>
+          </div>
+          <button
+            onClick={loadUsage}
+            disabled={usageLoading}
+            className="flex items-center gap-2 rounded-lg bg-error px-3 py-2 text-label-md text-on-error transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Icon name="refresh" className={`text-[18px] ${usageLoading ? "animate-spin" : ""}`} />
+            Reintentar
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-gutter lg:grid-cols-3">
+          {/* Consumo de datos */}
+          <div className="flex flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding lg:col-span-1">
+            <h3 className="mb-6 text-headline-sm text-on-surface">Consumo de Datos</h3>
+
+            {usageLoading ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-6">
+                <Skeleton className="h-48 w-48 rounded-full" />
+                <Skeleton className="h-16 w-full rounded-lg" />
+              </div>
+            ) : (
+              <div className="flex flex-1 flex-col justify-center">
+                <UsageDonut
+                  tx={usage?.txBytes ?? 0}
+                  rx={usage?.rxBytes ?? 0}
+                  total={usage?.totalBytes ?? 0}
+                />
+                <div className="mt-6 flex justify-around rounded-lg bg-surface-container-low p-3">
+                  <div className="flex items-center gap-2">
+                    <Icon name="arrow_upward" style={{ color: TX_COLOR }} />
+                    <div>
+                      <p className="text-label-xs text-on-surface-variant uppercase">TX enviado</p>
+                      <p className="text-label-md text-on-surface">{formatBytes(usage?.txBytes ?? 0)}</p>
+                    </div>
+                  </div>
+                  <div className="w-px bg-outline-variant" />
+                  <div className="flex items-center gap-2">
+                    <Icon name="arrow_downward" style={{ color: RX_COLOR }} />
+                    <div>
+                      <p className="text-label-xs text-on-surface-variant uppercase">RX recibido</p>
+                      <p className="text-label-md text-on-surface">{formatBytes(usage?.rxBytes ?? 0)}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={loadUsage}
-                disabled={usageLoading}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all shrink-0"
-                style={{ background: "#e11d48", color: "#fff", opacity: usageLoading ? 0.6 : 1 }}
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${usageLoading ? "animate-spin" : ""}`} />
-                Reintentar
-              </button>
+            )}
+
+            <div className="mt-6 border-t border-outline-variant pt-4 text-center">
+              <p className="text-body-sm text-on-surface-variant">
+                Endpoints con datos:{" "}
+                <strong className="text-on-surface">
+                  {usage?.endpointsWithStats ?? "—"} / {usage?.totalEndpoints ?? "—"}
+                </strong>
+              </p>
             </div>
-          ) : (
-            <DataUsageWidget usage={usage} loading={usageLoading} onRefresh={loadUsage} />
-          )}
+          </div>
+
+          {/* Estado + tráfico */}
+          <div className="flex flex-col gap-gutter lg:col-span-2">
+            <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
+              <h3 className="mb-4 text-headline-sm text-on-surface">Estado de Dispositivos</h3>
+
+              {usageLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-full rounded-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 flex h-4 w-full overflow-hidden rounded-full bg-surface-container">
+                    <div className="h-full bg-primary" style={{ width: `${(online / deviceTotal) * 100}%` }} />
+                    <div className="h-full bg-warning" style={{ width: `${(disabled / deviceTotal) * 100}%` }} />
+                    <div className="h-full bg-outline" style={{ width: `${(offline / deviceTotal) * 100}%` }} />
+                  </div>
+                  <div className="flex flex-wrap gap-6">
+                    {[
+                      { label: "Online",        count: online,   dot: "bg-primary", icon: "check_circle" },
+                      { label: "Deshabilitado", count: disabled, dot: "bg-warning", icon: "pause_circle" },
+                      { label: "Offline",       count: offline,  dot: "bg-outline", icon: "circle" },
+                    ].map(({ label, count, dot, icon }) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded-full ${dot}`} />
+                        <Icon name={icon} className="text-[16px] text-on-surface-variant" />
+                        <span className="text-body-sm text-on-surface">
+                          {label} ({count.toLocaleString("es-MX")})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex flex-1 flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-headline-sm text-on-surface">Tráfico (últimas 6 h)</h3>
+                <div className="flex gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-sm" style={{ background: TX_COLOR }} />
+                    <span className="text-body-sm text-on-surface-variant">TX</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-sm" style={{ background: RX_COLOR }} />
+                    <span className="text-body-sm text-on-surface-variant">RX</span>
+                  </div>
+                </div>
+              </div>
+
+              {usageLoading ? (
+                <div className="flex h-48 items-end gap-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="flex-1 rounded" style={{ height: `${30 + i * 10}%` }} />
+                  ))}
+                </div>
+              ) : (
+                <TrafficChart data={usage?.trafficHourly ?? []} />
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
+      )}
     </div>
-  );
-}
-
-// ─── Connectivity SVG Area Chart ────────────────────────────────
-function ConnectivityChart({ stats, loading }: { stats: Stats | null; loading: boolean }) {
-  // Generate realistic 14-day trend based on current stats
-  const active = stats?.activeSims ?? 70;
-  const suspended = stats?.suspendedSims ?? 8;
-
-  const data = Array.from({ length: 14 }, (_, i) => {
-    const variance = 0.05;
-    return {
-      day: `${i + 1}/${new Date().getMonth() + 1}`,
-      active: Math.round(active * (1 + (Math.random() - 0.5) * variance)),
-      suspended: Math.round(suspended * (1 + (Math.random() - 0.5) * variance * 2)),
-    };
-  });
-
-  const W = 560, H = 170;
-  const padL = 36, padR = 12, padT = 10, padB = 28;
-  const iW = W - padL - padR;
-  const iH = H - padT - padB;
-  const maxVal = Math.max(...data.map((d) => d.active), 1);
-  const xOf = (i: number) => padL + (i / (data.length - 1)) * iW;
-  const yOf = (v: number) => padT + iH - (v / maxVal) * iH;
-  const polyline = (key: "active" | "suspended") => data.map((d, i) => `${xOf(i)},${yOf(d[key])}`).join(" ");
-  const area = (key: "active" | "suspended") => {
-    const pts = data.map((d, i) => `${xOf(i)},${yOf(d[key])}`).join(" ");
-    return `${padL},${padT + iH} ${pts} ${xOf(data.length - 1)},${padT + iH}`;
-  };
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(t * maxVal));
-
-  if (loading) {
-    return (
-      <div className="space-y-2">
-        <Skeleton className="h-36 w-full rounded-xl" />
-      </div>
-    );
-  }
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ overflow: "visible" }}>
-      {yTicks.map((t) => (
-        <line key={`grid-${t}`} x1={padL} y1={yOf(t)} x2={W - padR} y2={yOf(t)} stroke="#f3f4f6" strokeWidth={1} />
-      ))}
-      {yTicks.map((t) => (
-        <text key={`y-${t}`} x={padL - 6} y={yOf(t) + 4} textAnchor="end" fontSize={10} fill="#9ca3af">{t}</text>
-      ))}
-      {data.filter((_, i) => i % 2 === 0).map((d, idx) => {
-        const origIdx = data.findIndex((x) => x.day === d.day);
-        return (
-          <text key={`x-${idx}`} x={xOf(origIdx)} y={H - 6} textAnchor="middle" fontSize={10} fill="#9ca3af">{d.day}</text>
-        );
-      })}
-      <polygon points={area("suspended")} fill="#f59e0b" fillOpacity={0.08} />
-      <polygon points={area("active")} fill="#3ECF8E" fillOpacity={0.12} />
-      <polyline points={polyline("suspended")} fill="none" stroke="#f59e0b" strokeWidth={2} strokeLinejoin="round" />
-      <polyline points={polyline("active")} fill="none" stroke="#3ECF8E" strokeWidth={2} strokeLinejoin="round" />
-    </svg>
   );
 }
