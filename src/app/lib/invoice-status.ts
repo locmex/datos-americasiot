@@ -10,15 +10,18 @@ export interface InvoiceStatusConfig {
   label: string;
   color: string;
   bg: string;
+  /** Icono Lucide (panel admin heredado). */
   icon: LucideIcon;
+  /** Nombre en Material Symbols — iconografía del design system Stitch. */
+  symbol: string;
 }
 
 export const INVOICE_STATUS: Record<InvoiceStatus, InvoiceStatusConfig> = {
-  draft:          { label: "Borrador",     color: "#6b7280", bg: "rgba(107,114,128,0.12)", icon: FileEdit },
-  issued:         { label: "Emitida",      color: "#3b82f6", bg: "rgba(59,130,246,0.12)",  icon: Send },
-  partially_paid: { label: "Pago parcial", color: "#d97706", bg: "rgba(217,119,6,0.12)",   icon: CircleDollarSign },
-  paid:           { label: "Pagada",       color: "#16a34a", bg: "rgba(22,163,74,0.12)",   icon: CheckCircle2 },
-  cancelled:      { label: "Cancelada",    color: "#dc2626", bg: "rgba(220,38,38,0.12)",   icon: XCircle },
+  draft:          { label: "Borrador",     color: "#6b7280", bg: "rgba(107,114,128,0.12)", icon: FileEdit,          symbol: "edit_document" },
+  issued:         { label: "Emitida",      color: "#3b82f6", bg: "rgba(59,130,246,0.12)",  icon: Send,              symbol: "send" },
+  partially_paid: { label: "Pago parcial", color: "#d97706", bg: "rgba(217,119,6,0.12)",   icon: CircleDollarSign,  symbol: "payments" },
+  paid:           { label: "Pagada",       color: "#16a34a", bg: "rgba(22,163,74,0.12)",   icon: CheckCircle2,      symbol: "task_alt" },
+  cancelled:      { label: "Cancelada",    color: "#dc2626", bg: "rgba(220,38,38,0.12)",   icon: XCircle,           symbol: "cancel" },
 };
 
 export function getInvoiceStatus(status: string): InvoiceStatusConfig {

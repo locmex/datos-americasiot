@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AmericasIoT - Planes de Conectividad</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#3e495c",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#111c2d",
+                        "surface-tint": "#006c45",
+                        "on-background": "#0b1c30",
+                        "secondary-container": "#82f5c1",
+                        "on-primary": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "inverse-primary": "#51df9c",
+                        "tertiary-container": "#adb8cf",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-high": "#dce9ff",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d3e4fe",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed": "#85f8c4",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#213145",
+                        "primary": "#006c45",
+                        "on-secondary-fixed": "#002114",
+                        "on-tertiary-fixed-variant": "#3c475a",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#545f73",
+                        "primary-fixed-dim": "#51df9c",
+                        "outline": "#6c7a70",
+                        "primary-container": "#3ecf8e",
+                        "on-surface": "#0b1c30",
+                        "on-primary-container": "#005434",
+                        "on-surface-variant": "#3d4a41",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#00714e",
+                        "tertiary-fixed-dim": "#bcc7de",
+                        "on-secondary-fixed-variant": "#005137",
+                        "tertiary-fixed": "#d8e3fb",
+                        "outline-variant": "#bbcabe",
+                        "error-container": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "on-primary-fixed-variant": "#005233",
+                        "secondary-fixed-dim": "#68dba9",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed": "#71fcb6",
+                        "on-primary-fixed": "#002112",
+                        "secondary": "#006c4a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "section-gap": "32px",
+                        "card-padding": "20px"
+                    },
+                    "fontFamily": {
+                        "label-xs": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-xs": ["11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "display-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col p-4 space-y-2 bg-surface-container-low dark:bg-inverse-surface z-20 shadow-[1px_0_0_0_#E8E8ED]">
+<div class="flex items-center gap-3 px-4 py-3 mb-4">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold">A</div>
+<div>
+<h1 class="font-display-md text-display-md font-bold text-primary dark:text-primary-fixed-dim">AmericasIoT</h1>
+<p class="font-label-xs text-label-xs text-on-surface-variant">IoT Connectivity Hub</p>
+</div>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">router</span>
+<span>Dispositivos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">sd_card</span>
+<span>Inventario SIMs</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">assignment_ind</span>
+<span>Asignación</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Clientes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span>Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Productos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span>Facturación</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-lg font-bold font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">layers</span>
+<span>Planes</span>
+</a>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="hidden md:flex fixed top-0 right-0 w-[calc(100%-16rem)] h-16 bg-surface dark:bg-on-background z-10 border-b border-outline-variant dark:border-on-tertiary-fixed-variant justify-between items-center px-6">
+<div class="flex items-center gap-4 bg-surface-container-low rounded-full px-4 py-2 border border-outline-variant focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all w-96">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-body-md w-full placeholder:text-on-surface-variant" placeholder="Buscar planes..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-tertiary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small, professional headshot of an administrative user in a corporate tech setting. Clean lighting, neutral background, suitable for a dashboard avatar. High contrast, modern look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuASss2qWldgg1Ni_t3saMQHelwLw_YJYl5bDp_AbkNFt2oO6KERPIA-_kRAV5bpEty3TogwCi10Ye0mBPa_Khf3ahyuGa41T4mAKzsrLz3EHuqttF9HwLfFh2h4wSEdw0OcQbiP91Y4W9qwMW0z7jUigaD2xeCZ05-kVkf4oCHuc971mA6r7mY7LoCcAC2flAxM4w4BSexWXIZXpK1s8jm_JKDQYI8omD-_2JmRSprv8_adk1r401mOlPtTJODIVzSqQkhuoD_50w"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-container-margin mt-16 md:mt-16 bg-[#F2F4F7]">
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-section-gap gap-4">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-background">Planes de Conectividad</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Gestiona los planes de datos y servicios para tus dispositivos.</p>
+</div>
+<button class="bg-primary hover:bg-primary-container text-on-primary hover:text-on-primary-container px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Crear Plan
+                </button>
+</div>
+<!-- Bento Layout for Content -->
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-container-margin">
+<!-- Main Data Table Card -->
+<div class="xl:col-span-4 bg-white rounded-xl border border-[#E8E8ED] overflow-hidden flex flex-col">
+<!-- Toolbar -->
+<div class="p-card-padding border-b border-[#E8E8ED] flex justify-between items-center bg-white">
+<div class="flex items-center gap-2">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="pl-10 pr-4 py-2 border border-[#E8E8ED] rounded-lg font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary w-64" placeholder="Buscar por nombre..." type="text"/>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 border border-[#E8E8ED] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+<button class="p-2 border border-[#E8E8ED] rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">view_list</span>
+</button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface border-b border-[#E8E8ED]">
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider sticky top-0 bg-surface z-10">Nombre del Plan</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider sticky top-0 bg-surface z-10">Precio Mensual</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider sticky top-0 bg-surface z-10">Características</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider sticky top-0 bg-surface z-10">Estado</th>
+<th class="py-3 px-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider sticky top-0 bg-surface z-10 text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-background">
+<!-- Row 1 -->
+<tr class="border-b border-[#E8E8ED] hover:bg-[#F9FAFB] transition-colors group">
+<td class="py-4 px-4 font-semibold">Plan Único Global</td>
+<td class="py-4 px-4 font-mono">$45.00 MXN</td>
+<td class="py-4 px-4 text-on-surface-variant">Datos Ilimitados, SMS incl.</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                            Activo
+                                        </div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error transition-colors p-1" title="Borrar">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-[#E8E8ED] hover:bg-[#F9FAFB] transition-colors group">
+<td class="py-4 px-4 font-semibold">IoT Básico M2M</td>
+<td class="py-4 px-4 font-mono">$15.00 MXN</td>
+<td class="py-4 px-4 text-on-surface-variant">50MB Datos, Sin SMS</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                            Activo
+                                        </div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error transition-colors p-1" title="Borrar">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-[#E8E8ED] hover:bg-[#F9FAFB] transition-colors group">
+<td class="py-4 px-4 font-semibold">Flota Premium Avanzado</td>
+<td class="py-4 px-4 font-mono">$120.00 MXN</td>
+<td class="py-4 px-4 text-on-surface-variant">5GB Datos, Voz, Roaming Global</td>
+<td class="py-4 px-4">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-on-surface-variant/10 text-on-surface-variant font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+                                            Inactivo
+                                        </div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-on-surface-variant hover:text-error transition-colors p-1" title="Borrar">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="p-4 border-t border-[#E8E8ED] flex justify-between items-center bg-white mt-auto">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mostrando 1 a 3 de 12 planes</span>
+<div class="flex gap-1">
+<button class="p-1 border border-[#E8E8ED] rounded text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+<button class="p-1 border border-[#E8E8ED] rounded bg-surface-container-low text-primary font-label-md">1</button>
+<button class="p-1 border border-[#E8E8ED] rounded text-on-surface-variant hover:bg-surface-container-low font-label-md">2</button>
+<button class="p-1 border border-[#E8E8ED] rounded text-on-surface-variant hover:bg-surface-container-low"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
