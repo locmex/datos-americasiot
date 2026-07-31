@@ -1,14 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  Plus, Search, Trash2, Edit2, X, Loader2, Users, Building, Phone,
+  Plus, Search, X, Loader2, Users, Phone,
   Mail, CreditCard, Link2, Unlink, CheckSquare, Square, ChevronRight,
-  RefreshCw, UserCheck, SlidersHorizontal, Globe, KeyRound, Eye, EyeOff,
+  UserCheck, Globe, KeyRound, Eye, EyeOff,
   CheckCircle2, Lock, Copy, ExternalLink, ShieldCheck, AlertTriangle,
   Check, ChevronLeft, ArrowRight,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
+import { Icon } from "../components/ui/icon";
+import { PageHeader, IconButton, SearchField, EmptyState, RowAction } from "../components/admin/AdminUI";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 import { FiscalDataFields } from "../components/FiscalDataFields";
@@ -1110,87 +1112,83 @@ export default function ClientsPage() {
   const portalEnabled = clients.filter((c: any) => c.portalEnabled).length;
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-teal-500" />
-            Gestión de Clientes
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {clients.length} cliente{clients.length !== 1 ? "s" : ""} registrado{clients.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-            <RefreshCw className="w-4 h-4" />
-            <span className="hidden sm:inline">Actualizar</span>
-          </button>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors"
-            style={{ background: "#3ECF8E" }}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nuevo Cliente</span>
-            <span className="sm:hidden">Nuevo</span>
-          </button>
-        </div>
+    <div className="p-container-margin">
+      <PageHeader
+        title="Gestión de Clientes"
+        subtitle={`${clients.length} cliente${clients.length !== 1 ? "s" : ""} registrado${clients.length !== 1 ? "s" : ""}`}
+      >
+        <IconButton icon="refresh" onClick={load} title="Actualizar" spinning={loading} />
+        <button
+          onClick={() => setShowCreate(true)}
+          className="btn-primary flex items-center gap-2 rounded-lg px-4 py-2 text-label-md shadow-sm transition-colors"
+        >
+          <Icon name="add" className="text-[18px]" />
+          Nuevo Cliente
+        </button>
+      </PageHeader>
+
+      {/* Buscador */}
+      <div className="mb-gutter">
+        <SearchField value={search} onChange={setSearch} placeholder="Buscar por nombre, email o empresa…" />
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        <input
-          type="text" value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, email o empresa..."
-          className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
-        />
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+      {/* Métricas */}
+      <div className="mb-section-gap grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Clientes",  value: clients.length,                                         color: "#3ECF8E", icon: Users },
-          { label: "Chips Asignados", value: chips.filter((c) => c.clientId).length,                 color: "#60a5fa", icon: CreditCard },
-          { label: "Sin Chips",       value: clients.filter((c) => getChipCount(c.id) === 0).length, color: "#f59e0b", icon: Users },
-          { label: "Portal Activo",   value: portalEnabled,                                           color: "#a855f7", icon: Globe },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-gray-100 flex items-center gap-2 md:gap-3">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}18` }}>
-              <Icon className="w-4 h-4" style={{ color }} />
+          { label: "Total Clientes",  value: clients.length,                                         icon: "groups",   tone: "neutral" },
+          { label: "Chips Asignados", value: chips.filter((c) => c.clientId).length,                 icon: "sd_card",  tone: "success" },
+          { label: "Sin Chips",       value: clients.filter((c) => getChipCount(c.id) === 0).length, icon: "link_off", tone: "warning" },
+          { label: "Portal Activo",   value: portalEnabled,                                          icon: "language", tone: "neutral" },
+        ].map(({ label, value, icon, tone }) => {
+          const t = {
+            neutral: { v: "text-on-surface", c: "text-tertiary" },
+            success: { v: "text-primary",    c: "bg-primary/10 text-primary rounded p-1" },
+            warning: { v: "text-on-warning", c: "bg-warning/10 text-on-warning rounded p-1" },
+          }[tone as "neutral" | "success" | "warning"];
+          return (
+            <div
+              key={label}
+              className="flex flex-col justify-between rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding transition-colors hover:bg-surface-bright"
+            >
+              <div className="mb-4 flex items-start justify-between gap-2">
+                <p className="text-body-sm tracking-wider text-on-surface-variant uppercase">{label}</p>
+                <span className={t.c}><Icon name={icon} className="text-[16px]" /></span>
+              </div>
+              <h3 className={`text-display-lg ${t.v}`}>{loading ? "—" : value.toLocaleString("es-MX")}</h3>
             </div>
-            <div className="min-w-0">
-              <p className="text-lg md:text-xl font-bold text-gray-900 leading-tight">{loading ? "—" : value}</p>
-              <p className="text-[10px] md:text-xs text-gray-500 truncate">{label}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Grid */}
+      {/* Listado */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-gutter md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-3">
+            <div key={i} className="space-y-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
               <Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /><Skeleton className="h-4 w-2/3" />
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center">
-          <Users className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <p className="font-medium text-gray-500">{search ? "No se encontraron clientes" : "Aún no hay clientes registrados"}</p>
-          {!search && (
-            <Button onClick={() => setShowCreate(true)} className="mt-4 gap-2 text-black" style={{ background: "#3ECF8E" }}>
-              <Plus className="w-4 h-4" /> Agregar primer cliente
-            </Button>
-          )}
+        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest">
+          <EmptyState
+            icon="group"
+            title={search ? "No se encontraron clientes" : "Aún no hay clientes registrados"}
+            action={
+              !search && (
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="btn-primary flex items-center gap-2 rounded-lg px-4 py-2 text-label-md transition-colors"
+                >
+                  <Icon name="add" className="text-[18px]" />
+                  Agregar primer cliente
+                </button>
+              )
+            }
+          />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-gutter md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((client) => {
             const clientChips = getClientChips(client.id);
             const chipCount = clientChips.length;
@@ -1202,20 +1200,21 @@ export default function ClientsPage() {
 
             return (
               <div key={client.id}
-                className="bg-white rounded-2xl shadow-sm border flex flex-col transition-all hover:shadow-md"
-                style={{ borderColor: isActive ? "rgba(62,207,142,0.4)" : "#f1f5f9" }}>
+                className={`flex flex-col rounded-xl border bg-surface-container-lowest transition-colors ${
+                  isActive ? "border-primary-container" : "border-outline-variant hover:bg-surface-bright"
+                }`}>
 
-                {/* Card header */}
-                <div className="flex items-start justify-between p-5 pb-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: "rgba(62,207,142,0.15)", color: "#059669" }}>
+                {/* Cabecera de la card */}
+                <div className="flex items-start justify-between gap-2 p-card-padding pb-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-md text-on-primary-container">
                       {client.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm truncate">{client.name}</p>
+                      <p className="truncate text-label-md text-on-surface">{client.name}</p>
                       {client.company && (
-                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5 truncate">
-                          <Building className="w-3 h-3 shrink-0" />{client.company}
+                        <p className="mt-0.5 flex items-center gap-1 truncate text-body-sm text-on-surface-variant">
+                          <Icon name="business" className="shrink-0 text-[14px]" />{client.company}
                         </p>
                       )}
                       {/* Estado fiscal — sin datos completos no se puede timbrar */}
@@ -1238,84 +1237,77 @@ export default function ClientsPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => setEditing(client)} className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-all">
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => handleDelete(client)} className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="flex shrink-0 gap-1">
+                    <RowAction icon="edit" title="Editar cliente" onClick={() => setEditing(client)} />
+                    <RowAction icon="delete" title="Eliminar cliente" tone="danger" onClick={() => handleDelete(client)} />
                   </div>
                 </div>
 
-                {/* Contact */}
-                <div className="px-5 pb-3 space-y-1">
-                  <p className="flex items-center gap-2 text-xs text-gray-500 truncate">
-                    <Mail className="w-3.5 h-3.5 text-gray-300 shrink-0" />{client.email}
+                {/* Contacto */}
+                <div className="space-y-1 px-card-padding pb-3">
+                  <p className="flex items-center gap-2 truncate text-body-sm text-on-surface-variant">
+                    <Icon name="mail" className="shrink-0 text-[16px] text-outline" />{client.email}
                   </p>
                   {client.phone && (
-                    <p className="flex items-center gap-2 text-xs text-gray-500">
-                      <Phone className="w-3.5 h-3.5 text-gray-300 shrink-0" />{client.phone}
+                    <p className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+                      <Icon name="call" className="shrink-0 text-[16px] text-outline" />{client.phone}
                     </p>
                   )}
                 </div>
 
-                {/* Portal access badge */}
-                <div className="px-5 pb-3">
-                  <div
-                    className="flex items-center justify-between px-3 py-2 rounded-xl border cursor-pointer transition-all hover:opacity-80"
-                    style={{
-                      background: hasPortal ? "rgba(62,207,142,0.06)" : "#f9fafb",
-                      borderColor: hasPortal ? "rgba(62,207,142,0.3)" : "#e5e7eb",
-                    }}
+                {/* Acceso al portal */}
+                <div className="px-card-padding pb-3">
+                  <button
                     onClick={() => setPortalClient(client)}
+                    className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors ${
+                      hasPortal
+                        ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
+                        : "border-outline-variant bg-surface-container-low hover:bg-surface-container"
+                    }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5" style={{ color: hasPortal ? "#059669" : "#9ca3af" }} />
-                      <span className="text-xs font-medium" style={{ color: hasPortal ? "#059669" : "#9ca3af" }}>
-                        {hasPortal ? "Portal activo" : "Sin acceso al portal"}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setPortalClient(client); }}
-                      className="text-xs font-semibold flex items-center gap-1 transition-colors"
-                      style={{ color: hasPortal ? "#6366f1" : "#3ECF8E" }}
-                    >
-                      <KeyRound className="w-3 h-3" />
+                    <span className={`flex items-center gap-2 text-label-md ${hasPortal ? "text-primary" : "text-on-surface-variant"}`}>
+                      <Icon name="language" className="text-[16px]" />
+                      {hasPortal ? "Portal activo" : "Sin acceso al portal"}
+                    </span>
+                    <span className={`flex items-center gap-1 text-label-xs ${hasPortal ? "text-on-surface-variant" : "text-primary"}`}>
+                      <Icon name="key" className="text-[14px]" />
                       {hasPortal ? "Cambiar clave" : "Habilitar"}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
                 </div>
 
-                {/* Chips section */}
+                {/* SIMs asignadas */}
                 <button
                   onClick={() => setActiveClient(isActive ? null : client)}
-                  className="mx-4 mb-4 p-3 rounded-xl border transition-all text-left group"
-                  style={{
-                    borderColor: isActive ? "rgba(62,207,142,0.35)" : "#e5e7eb",
-                    background: isActive ? "rgba(62,207,142,0.05)" : "#f9fafb",
-                  }}
+                  className={`mx-card-padding mb-card-padding rounded-lg border p-3 text-left transition-colors ${
+                    isActive
+                      ? "border-primary/35 bg-primary/5"
+                      : "border-outline-variant bg-surface-container-low hover:bg-surface-container"
+                  }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: chipCount > 0 ? "#059669" : "#9ca3af" }}>
-                      <CreditCard className="w-3.5 h-3.5" />
-                      {chipCount === 0 ? "Sin SIMs asignadas" : `${chipCount} SIM${chipCount !== 1 ? "s" : ""} asignada${chipCount !== 1 ? "s" : ""}`}
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className={`flex items-center gap-1.5 text-label-md ${chipCount > 0 ? "text-primary" : "text-on-surface-variant"}`}>
+                      <Icon name="sd_card" className="text-[16px]" />
+                      {chipCount === 0
+                        ? "Sin SIMs asignadas"
+                        : `${chipCount} SIM${chipCount !== 1 ? "s" : ""} asignada${chipCount !== 1 ? "s" : ""}`}
                     </span>
-                    <span className="text-xs font-medium flex items-center gap-1 transition-colors" style={{ color: isActive ? "#059669" : "#6b7280" }}>
-                      <SlidersHorizontal className="w-3 h-3" />
+                    <span className={`flex items-center gap-1 text-label-xs ${isActive ? "text-primary" : "text-on-surface-variant"}`}>
                       Gestionar
-                      <ChevronRight className={`w-3 h-3 transition-transform ${isActive ? "rotate-90" : ""}`} />
+                      <Icon name="chevron_right" className={`text-[14px] transition-transform ${isActive ? "rotate-90" : ""}`} />
                     </span>
                   </div>
                   {chipCount > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {clientChips.slice(0, 3).map((chip) => (
-                        <code key={chip.iccid} className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: "rgba(62,207,142,0.12)", color: "#059669" }}>
+                        <code key={chip.iccid} className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-label-xs text-primary">
                           …{chip.iccid.slice(-8)}
                         </code>
                       ))}
                       {chipCount > 3 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">+{chipCount - 3} más</span>
+                        <span className="rounded bg-surface-container px-1.5 py-0.5 text-label-xs text-on-surface-variant">
+                          +{chipCount - 3} más
+                        </span>
                       )}
                     </div>
                   )}

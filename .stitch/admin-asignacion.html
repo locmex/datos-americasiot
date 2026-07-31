@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AmericasIoT - Asignación</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-tertiary-container": "#3e495c",
+                "error": "#ba1a1a",
+                "on-tertiary-fixed": "#111c2d",
+                "surface-tint": "#006c45",
+                "on-background": "#0b1c30",
+                "secondary-container": "#82f5c1",
+                "on-primary": "#ffffff",
+                "surface-dim": "#cbdbf5",
+                "inverse-primary": "#51df9c",
+                "tertiary-container": "#adb8cf",
+                "inverse-on-surface": "#eaf1ff",
+                "surface-container-high": "#dce9ff",
+                "on-secondary": "#ffffff",
+                "on-error": "#ffffff",
+                "surface-variant": "#d3e4fe",
+                "surface": "#f8f9ff",
+                "secondary-fixed": "#85f8c4",
+                "on-error-container": "#93000a",
+                "inverse-surface": "#213145",
+                "primary": "#006c45",
+                "on-secondary-fixed": "#002114",
+                "on-tertiary-fixed-variant": "#3c475a",
+                "surface-container-lowest": "#ffffff",
+                "tertiary": "#545f73",
+                "primary-fixed-dim": "#51df9c",
+                "outline": "#6c7a70",
+                "primary-container": "#3ecf8e",
+                "on-surface": "#0b1c30",
+                "on-primary-container": "#005434",
+                "on-surface-variant": "#3d4a41",
+                "surface-bright": "#f8f9ff",
+                "surface-container-highest": "#d3e4fe",
+                "surface-container-low": "#eff4ff",
+                "on-tertiary": "#ffffff",
+                "on-secondary-container": "#00714e",
+                "tertiary-fixed-dim": "#bcc7de",
+                "on-secondary-fixed-variant": "#005137",
+                "tertiary-fixed": "#d8e3fb",
+                "outline-variant": "#bbcabe",
+                "error-container": "#ffdad6",
+                "background": "#f8f9ff",
+                "on-primary-fixed-variant": "#005233",
+                "secondary-fixed-dim": "#68dba9",
+                "surface-container": "#e5eeff",
+                "primary-fixed": "#71fcb6",
+                "on-primary-fixed": "#002112",
+                "secondary": "#006c4a"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "container-margin": "24px",
+                "base": "4px",
+                "gutter": "16px",
+                "section-gap": "32px",
+                "card-padding": "20px"
+        },
+        "fontFamily": {
+                "label-xs": [
+                        "Inter"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "headline-sm": [
+                        "Inter"
+                ],
+                "display-lg": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "display-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "label-xs": [
+                        "11px",
+                        {
+                                "lineHeight": "14px",
+                                "letterSpacing": "0.03em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-sm": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "13px",
+                        {
+                                "lineHeight": "18px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+</head>
+<body class="bg-background text-on-surface font-body-md flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface-container-low dark:bg-inverse-surface flex-col p-4 space-y-2 z-20 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-3 mb-6 px-4">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
+<div>
+<h1 class="font-display-md text-display-md font-bold text-primary dark:text-primary-fixed-dim">AmericasIoT</h1>
+<p class="font-label-xs text-label-xs text-on-surface-variant">IoT Connectivity Hub</p>
+</div>
+</div>
+<div class="flex flex-col space-y-2 flex-grow overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">router</span>Dispositivos
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">sd_card</span>Inventario SIMs
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-lg font-bold font-label-md text-label-md transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_ind</span>Asignación
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">group</span>Clientes
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>Pedidos
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">inventory_2</span>Productos
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">receipt_long</span>Facturación
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-on-tertiary-fixed-variant rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">layers</span>Planes
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-full md:w-[calc(100%-16rem)] h-16 bg-surface dark:bg-on-background border-b border-outline-variant dark:border-on-tertiary-fixed-variant flex justify-between items-center px-6 z-10">
+<div class="flex items-center w-full max-w-md">
+<div class="relative w-full focus-within:ring-2 focus-within:ring-primary transition-all rounded-lg bg-surface-container-low flex items-center px-3 py-2 border border-outline-variant focus-within:border-primary">
+<span class="material-symbols-outlined text-on-surface-variant mr-2">search</span>
+<select class="bg-transparent border-none text-body-sm font-body-sm text-on-surface-variant focus:ring-0 py-0 pl-0 pr-6 mr-2 border-r border-outline-variant rounded-none">
+<option>ICCID</option>
+<option>Nombre</option>
+</select>
+<input class="bg-transparent border-none w-full text-body-md font-body-md text-on-surface focus:ring-0 py-0 px-2 outline-none" placeholder="Buscar SIM..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A small circular profile image of a professional technical manager in a modern office environment. Soft, bright lighting, high-quality, corporate aesthetic, clean background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDrfKjOlTmUhWvNYFFpqeUAzqsHLJzsROWTHBEX6zgWZLUWsdkeUN0MdZwSTYedGeAuTfHhkvtfUQYM-g3xqJApoYJzmgIxz_CB_M4yXIZyqArV6nmFadxvzjJsmqtHrhBg3L3UvH4t5gQwo5Qi_JYBI3UOwpGf0xGzGmNb8_YYuvuq0kDIOzZnvENaSZUuM2zGqxlUulKesR314xWkGCk3sHdjUo954pWLzaUtqsg9uV-AWxTjIZB_sA249agQRHncfz6bYJjhQ"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<div class="mt-16 p-container-margin overflow-y-auto flex-1 bg-background">
+<!-- Header & Mass Action -->
+<div class="flex justify-between items-end mb-section-gap">
+<div>
+<h2 class="font-display-lg text-display-lg font-bold text-on-surface">Asignación de SIMs</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Gestiona y vincula tarjetas SIM a clientes y dispositivos.</p>
+</div>
+<button class="bg-primary hover:bg-on-primary-container text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md flex items-center gap-2 transition-colors shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_add</span>
+                    Asignación Masiva
+                </button>
+</div>
+<!-- Metrics Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-section-gap">
+<div class="bg-surface border border-outline-variant rounded-xl p-card-padding flex items-center justify-between hover:bg-surface-bright transition-colors group">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Total SIMs</p>
+<p class="font-display-md text-display-md font-bold text-on-surface">1,574</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined text-2xl">sd_card</span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl p-card-padding flex items-center justify-between hover:bg-surface-bright transition-colors group">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Asignadas</p>
+<p class="font-display-md text-display-md font-bold text-on-surface">1,150</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-secondary-container bg-opacity-20 flex items-center justify-center text-secondary group-hover:bg-secondary-container transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">link</span>
+</div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl p-card-padding flex items-center justify-between hover:bg-surface-bright transition-colors group">
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Sin Asignar</p>
+<p class="font-display-md text-display-md font-bold text-on-surface">424</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-error-container bg-opacity-20 flex items-center justify-center text-error group-hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-2xl">link_off</span>
+</div>
+</div>
+</div>
+<!-- Table Section -->
+<div class="bg-surface border border-outline-variant rounded-xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
+<!-- Tabs Filter -->
+<div class="flex items-center gap-6 px-6 pt-4 border-b border-outline-variant bg-surface-container-lowest">
+<button class="pb-3 border-b-2 border-primary text-primary font-label-md text-label-md font-bold px-1">Todas</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-1 transition-colors">Asignadas</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-1 transition-colors">Sin asignar</button>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-lowest">
+<th class="p-4 w-12 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</th>
+<th class="p-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">SIM / ICCID</th>
+<th class="p-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Estado</th>
+<th class="p-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Dispositivo</th>
+<th class="p-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">Cliente Asignado</th>
+<th class="p-4 font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider text-right">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant bg-surface">
+<!-- Row 1: Asignada -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="p-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-low flex items-center justify-center text-on-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-lg">sim_card</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-bold text-on-surface">8952140000001234567</p>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container bg-opacity-20 text-secondary font-label-xs text-label-xs font-bold border border-secondary-container">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                        Activa
+                                    </span>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">router</span>
+<span class="font-body-md text-body-md text-on-surface">Gateway-Alpha-01</span>
+</div>
+</td>
+<td class="p-4">
+<div class="relative w-48 group-hover:block">
+<!-- Mock Selector -->
+<div class="flex items-center justify-between border border-outline-variant rounded-md px-3 py-1.5 bg-surface-container-lowest cursor-pointer hover:border-primary transition-colors">
+<span class="font-body-sm text-body-sm text-on-surface truncate">TechLogistics Inc.</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_drop_down</span>
+</div>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-error transition-colors p-1 rounded hover:bg-error-container" title="Desvincular">
+<span class="material-symbols-outlined text-xl">link_off</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Sin Asignar -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="p-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-low flex items-center justify-center text-on-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-lg">sim_card</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-bold text-on-surface">8952140000001234568</p>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs text-label-xs font-bold border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">inventory_2</span>
+                                        Emitida
+                                    </span>
+</td>
+<td class="p-4">
+<span class="font-body-sm text-body-sm text-on-surface-variant italic">Sin dispositivo</span>
+</td>
+<td class="p-4">
+<div class="relative w-48">
+<div class="flex items-center justify-between border border-outline-variant border-dashed rounded-md px-3 py-1.5 bg-surface-container-lowest cursor-pointer hover:border-primary hover:border-solid text-on-surface-variant transition-colors">
+<span class="font-body-sm text-body-sm truncate">Asignar cliente...</span>
+<span class="material-symbols-outlined text-sm">search</span>
+</div>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-surface-variant cursor-not-allowed p-1 rounded" disabled="">
+<span class="material-symbols-outlined text-xl">link_off</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Suspendida -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="p-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-low flex items-center justify-center text-on-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-lg">sim_card</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-bold text-on-surface text-on-surface-variant">8952140000001234569</p>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container bg-opacity-20 text-error font-label-xs text-label-xs font-bold border border-error-container">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                        Suspendida
+                                    </span>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">router</span>
+<span class="font-body-md text-body-md text-on-surface">Sensor-B-88</span>
+</div>
+</td>
+<td class="p-4">
+<div class="relative w-48">
+<div class="flex items-center justify-between border border-outline-variant rounded-md px-3 py-1.5 bg-surface-container-lowest cursor-pointer hover:border-primary transition-colors">
+<span class="font-body-sm text-body-sm text-on-surface truncate">AgriData Corp</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">arrow_drop_down</span>
+</div>
+</div>
+</td>
+<td class="p-4 text-right">
+<button class="text-on-surface-variant hover:text-error transition-colors p-1 rounded hover:bg-error-container" title="Desvincular">
+<span class="material-symbols-outlined text-xl">link_off</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="flex items-center justify-between p-4 border-t border-outline-variant bg-surface-container-lowest">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mostrando <span class="font-bold text-on-surface">1</span> a <span class="font-bold text-on-surface">3</span> de <span class="font-bold text-on-surface">1,574</span> resultados</p>
+<div class="flex items-center gap-2">
+<button class="p-1 rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-on-primary font-label-sm text-label-sm flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-high font-label-sm text-label-sm flex items-center justify-center transition-colors">2</button>
+<button class="w-8 h-8 rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-high font-label-sm text-label-sm flex items-center justify-center transition-colors">3</button>
+<span class="text-on-surface-variant">...</span>
+<button class="w-8 h-8 rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-high font-label-sm text-label-sm flex items-center justify-center transition-colors">53</button>
+<button class="p-1 rounded border border-outline-variant text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

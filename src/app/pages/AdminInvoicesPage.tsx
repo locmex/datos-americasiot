@@ -1,20 +1,16 @@
-import { useEffect, useState } from "react";
-import {
-  Receipt, X, Loader2, RefreshCw, AlertCircle, Search, ChevronRight,
-  FileDown, Send, CircleDollarSign, Ban,
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "../components/ui/skeleton";
+import { Icon } from "../components/ui/icon";
 import { api } from "../lib/api";
 import {
   INVOICE_STATUS, getInvoiceStatus, formatCurrency, formatPeriod, formatProrationFactor,
   type InvoiceStatus,
 } from "../lib/invoice-status";
+import { groupCharges } from "../lib/invoice-charges";
 import { generateInvoicePdf } from "../lib/invoice-pdf";
 import { toast } from "sonner";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Tipos ───────────────────────────────────────────────────────────────────
 interface InvoiceItem {
   id: string;
   iccid: string;
@@ -42,6 +38,7 @@ interface Invoice {
   status: InvoiceStatus;
   currency: string;
   total: number;
+  sim_count?: number;
   issued_at?: string | null;
   created_at: string;
   updated_at: string;
@@ -50,13 +47,31 @@ interface Invoice {
 const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"];
 
 function formatDate(ts: string): string {
-  return new Date(ts).toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleString("es-MX", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
 }
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-// ─── Generate Invoices Panel ───────────────────────────────────────────────────
+// ─── Chip de estado ──────────────────────────────────────────────────────────
+function StatusChip({ status, size = "sm" }: { status: string; size?: "sm" | "md" }) {
+  const cfg = getInvoiceStatus(status);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full whitespace-nowrap ${
+        size === "md" ? "px-2.5 py-1 text-label-md" : "px-2 py-0.5 text-label-xs"
+      }`}
+      style={{ color: cfg.color, background: cfg.bg }}
+    >
+      <Icon name={cfg.symbol} className={size === "md" ? "text-[14px]" : "text-[12px]"} />
+      {cfg.label}
+    </span>
+  );
+}
+
+// ─── Generar / resincronizar ─────────────────────────────────────────────────
 function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -69,7 +84,9 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
     setGenerating(true);
     try {
       const res = await api.generateInvoices({ year, month });
-      toast.success(`Facturación ${formatPeriod(year, month)}: ${res.created} generadas/actualizadas, ${res.skipped} omitidas`);
+      toast.success(
+        `Facturación ${formatPeriod(year, month)}: ${res.created} generadas/actualizadas, ${res.skipped} omitidas`,
+      );
       setOpen(false);
       onGenerated();
     } catch (e: any) {
@@ -88,18 +105,18 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
       const p: any = await api.resyncSimStates(true);
       const ok = window.confirm(
         `Resincronización contra EMNIFY\n\n` +
-        `Períodos abiertos revisados: ${p.periodos_abiertos}\n` +
-        `SIMs encontradas en EMNIFY: ${p.sims_en_emnify}\n\n` +
-        `• ${p.a_borrar_nunca_activadas} nunca activadas → se borran\n` +
-        `• ${p.a_cerrar_desactivadas} desactivadas → se cierran\n` +
-        `• ${p.a_actualizar_estado} cambian de estado\n` +
-        `• ${p.no_encontradas_en_emnify} no encontradas en EMNIFY (sin cambios)\n\n` +
-        `¿Aplicar estos cambios?`
+          `Períodos abiertos revisados: ${p.periodos_abiertos}\n` +
+          `SIMs encontradas en EMNIFY: ${p.sims_en_emnify}\n\n` +
+          `• ${p.a_borrar_nunca_activadas} nunca activadas → se borran\n` +
+          `• ${p.a_cerrar_desactivadas} desactivadas → se cierran\n` +
+          `• ${p.a_actualizar_estado} cambian de estado\n` +
+          `• ${p.no_encontradas_en_emnify} no encontradas en EMNIFY (sin cambios)\n\n` +
+          `¿Aplicar estos cambios?`,
       );
       if (!ok) return;
       const r: any = await api.resyncSimStates(false);
       toast.success(
-        `Resync aplicado: ${r.a_borrar_nunca_activadas} borradas, ${r.a_cerrar_desactivadas} cerradas, ${r.a_actualizar_estado} actualizadas`
+        `Resync aplicado: ${r.a_borrar_nunca_activadas} borradas, ${r.a_cerrar_desactivadas} cerradas, ${r.a_actualizar_estado} actualizadas`,
       );
       onGenerated();
     } catch (e: any) {
@@ -112,49 +129,63 @@ function GeneratePanel({ onGenerated }: { onGenerated: () => void }) {
   if (!open) {
     return (
       <div className="flex items-center gap-2">
-        <Button onClick={() => setOpen(true)} className="gap-2 text-black font-semibold" style={{ background: "#3ECF8E" }}>
-          <Receipt className="w-4 h-4" />
-          Generar Facturas
-        </Button>
-        <Button
-          variant="outline" disabled={resyncing} onClick={handleResync} className="gap-2"
-          title="Corrige los períodos de SIM contra el estado real de EMNIFY"
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 rounded-lg btn-primary px-4 py-2 text-label-md shadow-sm transition-colors"
         >
-          {resyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          <Icon name="receipt_long" className="text-[18px]" />
+          Generar Facturas
+        </button>
+        <button
+          onClick={handleResync}
+          disabled={resyncing}
+          title="Corrige los períodos de SIM contra el estado real de EMNIFY"
+          className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container disabled:opacity-50"
+        >
+          <Icon name="sync" className={`text-[18px] ${resyncing ? "animate-spin" : ""}`} />
           {resyncing ? "Resincronizando…" : "Resincronizar estados"}
-        </Button>
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 p-2.5 rounded-xl border" style={{ borderColor: "rgba(62,207,142,0.3)", background: "rgba(62,207,142,0.05)" }}>
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-2.5">
       <select
         value={month}
         onChange={(e) => setMonth(Number(e.target.value))}
-        className="px-2.5 py-1.5 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none"
+        className="rounded-lg border border-outline-variant bg-surface-container-lowest px-2.5 py-1.5 text-body-md outline-none focus:border-primary"
       >
         {Array.from({ length: 12 }).map((_, i) => (
-          <option key={i + 1} value={i + 1}>{formatPeriod(2000, i + 1).split(" ")[0]}</option>
+          <option key={i + 1} value={i + 1}>
+            {formatPeriod(2000, i + 1).split(" ")[0]}
+          </option>
         ))}
       </select>
-      <Input
-        type="number" value={year} onChange={(e) => setYear(Number(e.target.value))}
-        className="w-24 bg-white" min={2020} max={2100}
+      <input
+        type="number" min={2020} max={2100} value={year}
+        onChange={(e) => setYear(Number(e.target.value))}
+        className="w-24 rounded-lg border border-outline-variant bg-surface-container-lowest px-2.5 py-1.5 text-body-md outline-none focus:border-primary"
       />
-      <Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-      <Button
-        size="sm" disabled={generating} onClick={handleGenerate}
-        className="gap-1.5 text-black font-semibold" style={{ background: "#3ECF8E" }}
+      <button
+        onClick={() => setOpen(false)}
+        className="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-label-md text-on-surface transition-colors hover:bg-surface-container"
       >
-        {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Receipt className="w-3.5 h-3.5" />}
+        Cancelar
+      </button>
+      <button
+        onClick={handleGenerate}
+        disabled={generating}
+        className="flex items-center gap-1.5 rounded-lg btn-primary px-3 py-1.5 text-label-md transition-colors disabled:opacity-50"
+      >
+        <Icon name={generating ? "progress_activity" : "receipt_long"} className={`text-[16px] ${generating ? "animate-spin" : ""}`} />
         {generating ? "Generando…" : `Generar ${formatPeriod(year, month)}`}
-      </Button>
+      </button>
     </div>
   );
 }
 
-// ─── Register payment form ──────────────────────────────────────────────────
+// ─── Formulario de abono ─────────────────────────────────────────────────────
 function PaymentForm({
   invoice, balance, onCancel, onRegistered,
 }: {
@@ -169,14 +200,28 @@ function PaymentForm({
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const field =
+    "w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-2.5 py-2 text-body-md outline-none focus:border-primary focus:ring-1 focus:ring-primary";
+
   const handleConfirm = async () => {
     const amt = Number(amount);
-    if (!isFinite(amt) || amt <= 0) { toast.error("El monto del abono debe ser mayor a 0"); return; }
-    if (amt > balance) { toast.error(`El abono no puede exceder el saldo pendiente (${formatCurrency(balance, invoice.currency)})`); return; }
-    if (!paidAt) { toast.error("La fecha de pago es requerida"); return; }
+    if (!isFinite(amt) || amt <= 0) {
+      toast.error("El monto del abono debe ser mayor a 0");
+      return;
+    }
+    if (amt > balance) {
+      toast.error(`El abono no puede exceder el saldo pendiente (${formatCurrency(balance, invoice.currency)})`);
+      return;
+    }
+    if (!paidAt) {
+      toast.error("La fecha de pago es requerida");
+      return;
+    }
     setSaving(true);
     try {
-      await api.addPayment(invoice.id, { amount: amt, paid_at: paidAt, method, note: note.trim() || undefined });
+      await api.addPayment(invoice.id, {
+        amount: amt, paid_at: paidAt, method, note: note.trim() || undefined,
+      });
       toast.success(`Abono de ${formatCurrency(amt, invoice.currency)} registrado`);
       onRegistered();
     } catch (e: any) {
@@ -187,50 +232,134 @@ function PaymentForm({
   };
 
   return (
-    <div className="p-3 rounded-xl border space-y-3" style={{ borderColor: "#d97706", background: "rgba(217,119,6,0.06)" }}>
-      <p className="text-xs font-semibold" style={{ color: "#d97706" }}>
+    <div className="space-y-3 rounded-lg border border-warning bg-warning/5 p-3">
+      <p className="text-label-md text-on-warning">
         Registrar abono (saldo: {formatCurrency(balance, invoice.currency)})
       </p>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-gray-600">Monto *</label>
-          <Input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="bg-white" />
+          <label className="text-label-xs text-on-surface-variant">MONTO *</label>
+          <input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className={field} />
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-medium text-gray-600">Fecha *</label>
-          <Input type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className="bg-white" />
+          <label className="text-label-xs text-on-surface-variant">FECHA *</label>
+          <input type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={field} />
         </div>
       </div>
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-gray-600">Método *</label>
-        <select
-          value={method}
-          onChange={(e) => setMethod(e.target.value)}
-          className="w-full text-sm px-2.5 py-2 rounded-lg border border-gray-200 bg-white focus:outline-none"
-        >
+        <label className="text-label-xs text-on-surface-variant">MÉTODO *</label>
+        <select value={method} onChange={(e) => setMethod(e.target.value)} className={field}>
           {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-gray-600">Nota (opcional)</label>
-        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario interno..." className="bg-white" />
+        <label className="text-label-xs text-on-surface-variant">NOTA (OPCIONAL)</label>
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario interno…" className={field} />
       </div>
       <div className="flex gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel} className="flex-1">Cancelar</Button>
-        <Button
-          type="button" size="sm" onClick={handleConfirm} disabled={saving}
-          className="flex-1 text-black font-semibold" style={{ background: "#3ECF8E" }}
+        <button
+          onClick={onCancel}
+          className="flex-1 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container"
         >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+          Cancelar
+        </button>
+        <button
+          onClick={handleConfirm}
+          disabled={saving}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg btn-primary px-3 py-2 text-label-md transition-colors disabled:opacity-50"
+        >
+          {saving && <Icon name="progress_activity" className="animate-spin text-[16px]" />}
           {saving ? "Guardando…" : "Confirmar abono"}
-        </Button>
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── Invoice Detail Drawer ──────────────────────────────────────────────────────
-function InvoiceDetailDrawer({
+// ─── Desglose agrupado ───────────────────────────────────────────────────────
+function ChargeBreakdown({ items, currency }: { items: InvoiceItem[]; currency: string }) {
+  const groups = useMemo(() => groupCharges(items), [items]);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [simSearch, setSimSearch] = useState("");
+
+  if (items.length === 0) {
+    return (
+      <p className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-3 text-body-sm text-on-surface-variant">
+        Sin SIMs facturadas en este período
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {groups.map((g) => {
+        const isOpen = openKey === g.key;
+        const lines = items.filter(
+          (i) =>
+            i.plan_name === g.planName &&
+            Number(i.unit_price) === g.unitPrice &&
+            Number(i.proration_factor) === g.prorationFactor,
+        );
+        const visible = simSearch ? lines.filter((l) => l.iccid.includes(simSearch.trim())) : lines;
+
+        return (
+          <div key={g.key} className="overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest">
+            <button
+              onClick={() => { setOpenKey(isOpen ? null : g.key); setSimSearch(""); }}
+              className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-surface-container-low"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-label-md text-on-surface">{g.planName}</div>
+                <div className="mt-1 text-body-sm text-on-surface-variant">
+                  {g.count} SIM{g.count !== 1 ? "s" : ""} × {formatCurrency(g.unitPrice, currency)} ·{" "}
+                  {formatProrationFactor(g.prorationFactor)}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="text-headline-sm text-on-surface">{formatCurrency(g.total, currency)}</span>
+                <Icon
+                  name="expand_more"
+                  className={`text-on-surface-variant transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+              </div>
+            </button>
+
+            {isOpen && (
+              <div className="border-t border-outline-variant bg-surface p-3">
+                <div className="relative mb-3">
+                  <Icon name="search" className="absolute top-2 left-2.5 text-[16px] text-on-surface-variant" />
+                  <input
+                    value={simSearch}
+                    onChange={(e) => setSimSearch(e.target.value)}
+                    placeholder="Buscar ICCID…"
+                    className="w-full rounded-md border border-outline-variant bg-surface-container-lowest py-1.5 pr-3 pl-9 text-body-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
+                  {visible.map((l) => (
+                    <div
+                      key={l.id}
+                      className="flex items-center justify-between rounded p-2 text-body-sm transition-colors hover:bg-surface-container-low"
+                    >
+                      <span className="font-mono tracking-tight text-on-surface">{l.iccid}</span>
+                      <span className="text-on-surface-variant">{formatCurrency(l.amount, currency)}</span>
+                    </div>
+                  ))}
+                  {visible.length === 0 && (
+                    <p className="p-2 text-body-sm text-on-surface-variant">Ningún ICCID coincide</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Panel de detalle ────────────────────────────────────────────────────────
+function InvoiceDetailPanel({
   invoice: initialInvoice, onClose, onUpdated,
 }: {
   invoice: Invoice;
@@ -260,10 +389,10 @@ function InvoiceDetailDrawer({
     }
   };
 
-  useEffect(() => { loadDetail(); }, [initialInvoice.id]);
-
-  const statusCfg = getInvoiceStatus(invoice.status);
-  const StatusIcon = statusCfg.icon;
+  useEffect(() => {
+    setShowPaymentForm(false);
+    loadDetail();
+  }, [initialInvoice.id]);
 
   const handleIssue = async () => {
     setBusy(true);
@@ -294,174 +423,152 @@ function InvoiceDetailDrawer({
     }
   };
 
-  const handlePdf = () => {
-    generateInvoicePdf(invoice, items, payments, balance);
-  };
-
   const canIssue = invoice.status === "draft";
   const canPay = invoice.status === "issued" || invoice.status === "partially_paid";
   const canCancel = ["draft", "issued", "partially_paid"].includes(invoice.status);
   const canDownload = invoice.status !== "draft";
 
+  const actionBtn =
+    "flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-label-xs transition-colors disabled:opacity-50";
+
   return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: statusCfg.bg }}>
-            <StatusIcon className="w-5 h-5" style={{ color: statusCfg.color }} />
+    <div className="flex h-[700px] flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg">
+      {/* Cabecera fija — resumen + acciones SIEMPRE visibles */}
+      <div className="z-20 shrink-0 border-b border-outline-variant bg-surface-bright p-card-padding">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="mb-1 text-label-xs tracking-wider text-on-surface-variant uppercase">
+              Detalle de factura
+            </div>
+            <h3 className="truncate text-display-md leading-tight text-on-surface">
+              {formatPeriod(invoice.period_year, invoice.period_month)}
+            </h3>
+            <p className="mt-1 truncate text-body-sm text-primary">{invoice.client_name}</p>
+            <p className="mt-0.5 font-mono text-label-xs text-on-surface-variant">#{invoice.id.slice(0, 8)}</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">
-              Factura {formatPeriod(invoice.period_year, invoice.period_month)}
-            </p>
-            <p className="text-xs text-gray-400 truncate">{invoice.client_name}</p>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <StatusChip status={invoice.status} size="md" />
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+              aria-label="Cerrar detalle"
+            >
+              <Icon name="close" className="text-[18px]" />
+            </button>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 shrink-0">
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <div className="rounded-lg border border-outline-variant/50 bg-surface p-3">
+            <div className="mb-1 text-label-xs text-on-surface-variant">Total</div>
+            <div className="text-headline-sm text-on-surface">{formatCurrency(invoice.total, invoice.currency)}</div>
+          </div>
+          <div className="rounded-lg border border-outline-variant/50 bg-surface p-3">
+            <div className="mb-1 text-label-xs text-on-surface-variant">SIMs</div>
+            <div className="text-headline-sm text-on-surface">{loading ? "—" : items.length}</div>
+          </div>
+          <div className={`rounded-lg border p-3 ${balance > 0 ? "border-warning/30 bg-warning/5" : "border-primary/20 bg-surface-container-low"}`}>
+            <div className={`mb-1 text-label-xs ${balance > 0 ? "text-on-warning" : "text-primary"}`}>Pendiente</div>
+            <div className={`text-headline-sm ${balance > 0 ? "text-on-warning" : "text-primary"}`}>
+              {formatCurrency(balance, invoice.currency)}
             </div>
-          ) : (
-            <>
-              {/* Status + totals */}
-              <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Estado</span>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: statusCfg.color, background: statusCfg.bg }}>
-                    {statusCfg.label}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Total</span>
-                  <span className="text-sm font-bold text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">SIMs facturadas</span>
-                  <span className="text-sm font-semibold text-gray-700">{items.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Saldo pendiente</span>
-                  <span className="text-sm font-semibold" style={{ color: balance > 0 ? "#d97706" : "#16a34a" }}>
-                    {formatCurrency(balance, invoice.currency)}
-                  </span>
-                </div>
-                {invoice.issued_at && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Emitida</span>
-                    <span className="text-xs text-gray-600">{formatDate(invoice.issued_at)}</span>
-                  </div>
-                )}
-              </div>
+          </div>
+        </div>
 
-              {/* SIM breakdown */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Desglose por SIM ({items.length})</p>
-                <div className="rounded-xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-                  {items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-800 truncate font-mono">{item.iccid}</p>
-                        <p className="text-xs text-gray-400">
-                          {item.plan_name} · {formatCurrency(item.unit_price, invoice.currency)} · prorrateo {formatProrationFactor(item.proration_factor)}
-                        </p>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-700 shrink-0">{formatCurrency(item.amount, invoice.currency)}</p>
-                    </div>
-                  ))}
-                  {items.length === 0 && (
-                    <p className="text-xs text-gray-400 px-3 py-3">Sin SIMs facturadas en este período</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Payments history */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Abonos</p>
-                <div className="space-y-2">
-                  {payments.length === 0 ? (
-                    <p className="text-xs text-gray-400">Sin abonos registrados</p>
-                  ) : (
-                    payments.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-gray-50">
-                        <div>
-                          <p className="text-gray-700 font-medium">{formatDate(p.paid_at)} · {p.method}</p>
-                          {p.note && <p className="text-gray-400">{p.note}</p>}
-                        </div>
-                        <span className="font-semibold text-gray-800">{formatCurrency(p.amount, invoice.currency)}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Acciones</p>
-                <div className="flex flex-wrap gap-2">
-                  {canDownload && (
-                    <button
-                      onClick={handlePdf}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all hover:opacity-80"
-                      style={{ color: "#374151", borderColor: "#d1d5db" }}
-                    >
-                      <FileDown className="w-3.5 h-3.5" /> Descargar PDF
-                    </button>
-                  )}
-                  {canIssue && (
-                    <button
-                      onClick={handleIssue}
-                      disabled={busy}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all hover:opacity-80 disabled:opacity-50"
-                      style={{ color: "#3b82f6", borderColor: "#3b82f6", background: "rgba(59,130,246,0.08)" }}
-                    >
-                      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Emitir
-                    </button>
-                  )}
-                  {canPay && !showPaymentForm && (
-                    <button
-                      onClick={() => setShowPaymentForm(true)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all hover:opacity-80"
-                      style={{ color: "#d97706", borderColor: "#d97706", background: "rgba(217,119,6,0.08)" }}
-                    >
-                      <CircleDollarSign className="w-3.5 h-3.5" /> Registrar abono
-                    </button>
-                  )}
-                  {canCancel && (
-                    <button
-                      onClick={handleCancel}
-                      disabled={busy}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all hover:opacity-80 disabled:opacity-50"
-                      style={{ color: "#dc2626", borderColor: "#dc2626", background: "rgba(220,38,38,0.08)" }}
-                    >
-                      <Ban className="w-3.5 h-3.5" /> Cancelar factura
-                    </button>
-                  )}
-                </div>
-                {canPay && showPaymentForm && (
-                  <PaymentForm
-                    invoice={invoice}
-                    balance={balance}
-                    onCancel={() => setShowPaymentForm(false)}
-                    onRegistered={() => { setShowPaymentForm(false); onUpdated(); loadDetail(); }}
-                  />
-                )}
-              </div>
-            </>
+        <div className="grid grid-cols-2 gap-2">
+          {canIssue && (
+            <button onClick={handleIssue} disabled={busy} className={`${actionBtn} btn-primary`}>
+              <Icon name="send" className="text-[16px]" /> Emitir
+            </button>
+          )}
+          {canPay && (
+            <button
+              onClick={() => setShowPaymentForm((v) => !v)}
+              className={`${actionBtn} border border-outline-variant bg-surface text-on-surface hover:bg-surface-container-low`}
+            >
+              <Icon name="payments" className="text-[16px]" /> Abono
+            </button>
+          )}
+          {canDownload && (
+            <button
+              onClick={() => generateInvoicePdf(invoice, items, payments, balance)}
+              disabled={loading}
+              className={`${actionBtn} border border-outline-variant bg-surface text-on-surface hover:bg-surface-container-low`}
+            >
+              <Icon name="picture_as_pdf" className="text-[16px]" /> PDF
+            </button>
+          )}
+          {canCancel && (
+            <button onClick={handleCancel} disabled={busy} className={`${actionBtn} bg-error-container text-on-error-container hover:bg-error/20`}>
+              <Icon name="cancel" className="text-[16px]" /> Cancelar
+            </button>
           )}
         </div>
+
+        {canPay && showPaymentForm && (
+          <div className="mt-3">
+            <PaymentForm
+              invoice={invoice}
+              balance={balance}
+              onCancel={() => setShowPaymentForm(false)}
+              onRegistered={() => { setShowPaymentForm(false); onUpdated(); loadDetail(); }}
+            />
+          </div>
+        )}
       </div>
-    </>
+
+      {/* Contenido desplazable */}
+      <div className="flex-1 overflow-y-auto bg-surface p-card-padding">
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+          </div>
+        ) : (
+          <>
+            <h4 className="mb-4 flex items-center gap-2 text-label-md text-on-surface">
+              <Icon name="dns" className="text-[18px] text-on-surface-variant" />
+              Desglose de conceptos
+            </h4>
+            <ChargeBreakdown items={items} currency={invoice.currency} />
+
+            <h4 className="mt-6 mb-3 flex items-center gap-2 text-label-md text-on-surface">
+              <Icon name="payments" className="text-[18px] text-on-surface-variant" />
+              Abonos
+            </h4>
+            {payments.length === 0 ? (
+              <p className="text-body-sm text-on-surface-variant">Sin abonos registrados</p>
+            ) : (
+              <div className="space-y-2">
+                {payments.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-surface-container-low px-3 py-2 text-body-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-on-surface">{formatDate(p.paid_at)} · {p.method}</p>
+                      {p.note && <p className="truncate text-on-surface-variant">{p.note}</p>}
+                    </div>
+                    <span className="shrink-0 text-label-md text-on-surface">
+                      {formatCurrency(p.amount, invoice.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {invoice.issued_at && (
+              <p className="mt-6 border-t border-outline-variant pt-4 text-body-sm text-on-surface-variant">
+                Emitida el {formatDate(invoice.issued_at)}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Página ──────────────────────────────────────────────────────────────────
 export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -486,45 +593,49 @@ export default function AdminInvoicesPage() {
   useEffect(() => { load(); }, [statusFilter]);
 
   const filtered = invoices.filter(
-    (inv) => !search || inv.client_name.toLowerCase().includes(search.toLowerCase()) || inv.id.toLowerCase().includes(search.toLowerCase()),
+    (inv) =>
+      !search ||
+      inv.client_name.toLowerCase().includes(search.toLowerCase()) ||
+      inv.id.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+    <div className="p-container-margin">
+      {/* Encabezado */}
+      <div className="mb-gutter flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Receipt className="w-6 h-6 text-teal-500" />
-            Facturación
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="mb-1 text-display-md text-on-background">Facturación</h1>
+          <p className="text-body-lg text-on-surface-variant">
             {invoices.length} factura{invoices.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={load} className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={load}
+            title="Recargar"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-surface text-on-surface-variant transition-colors hover:bg-surface-container"
+          >
+            <Icon name="refresh" className="text-[18px]" />
+          </button>
           <GeneratePanel onGenerated={load} />
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
+      {/* Filtros */}
+      <div className="mb-gutter flex flex-col gap-3 sm:flex-row">
+        <div className="relative max-w-md flex-1">
+          <Icon name="search" className="absolute top-1/2 left-3 -translate-y-1/2 text-[18px] text-on-surface-variant" />
+          <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por cliente o ID de factura..."
-            className="pl-10"
+            placeholder="Buscar por cliente o ID de factura…"
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest py-2 pr-3 pl-10 text-body-md outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as InvoiceStatus | "")}
-          className="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md outline-none focus:border-primary"
         >
           <option value="">Todos los estados</option>
           {(Object.keys(INVOICE_STATUS) as InvoiceStatus[]).map((s) => (
@@ -533,81 +644,99 @@ export default function AdminInvoicesPage() {
         </select>
       </div>
 
-      {/* Error */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", color: "#dc2626" }}>
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="mb-gutter flex items-center gap-3 rounded-lg border border-error bg-error-container p-4 text-body-md text-on-error-container">
+          <Icon name="error" className="shrink-0 text-error" />
           {error}
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e5e7eb" }}>
-              {["Cliente", "Período", "Estado", "SIMs", "Total", ""].map((label) => (
-                <th key={label} className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap">
-                  {label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
+      {/* Maestro-detalle */}
+      <div className="grid grid-cols-1 gap-gutter lg:grid-cols-3">
+        {/* Tabla */}
+        <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest lg:col-span-2">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="sticky top-0 z-10 bg-surface-container-low">
+                <tr className="border-b border-outline-variant">
+                  {[
+                    { label: "Cliente", align: "text-left" },
+                    { label: "Período", align: "text-left" },
+                    { label: "Estado", align: "text-left" },
+                    { label: "SIMs", align: "text-right" },
+                    { label: "Total", align: "text-right" },
+                  ].map(({ label, align }) => (
+                    <th
+                      key={label}
+                      className={`px-4 py-3 text-label-xs tracking-wider whitespace-nowrap text-on-surface-variant uppercase ${align}`}
+                    >
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/50 text-body-sm text-on-surface">
+                {loading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  : filtered.map((invoice) => (
+                      <tr
+                        key={invoice.id}
+                        onClick={() => setSelected(invoice)}
+                        className={`cursor-pointer transition-colors hover:bg-surface-container-low ${
+                          selected?.id === invoice.id ? "bg-surface-container-highest/30" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="text-label-md text-on-surface">{invoice.client_name}</div>
+                          <div className="font-mono text-label-xs text-on-surface-variant">
+                            #{invoice.id.slice(0, 8)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-on-surface-variant">
+                          {formatPeriod(invoice.period_year, invoice.period_month)}
+                        </td>
+                        <td className="px-4 py-3"><StatusChip status={invoice.status} /></td>
+                        <td className="px-4 py-3 text-right">{invoice.sim_count ?? "—"}</td>
+                        <td className="px-4 py-3 text-right text-label-md">
+                          {formatCurrency(invoice.total, invoice.currency)}
+                        </td>
+                      </tr>
                     ))}
-                  </tr>
-                ))
-              : filtered.map((invoice) => {
-                  const cfg = getInvoiceStatus(invoice.status);
-                  return (
-                    <tr key={invoice.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setSelected(invoice)}>
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-medium text-gray-800">{invoice.client_name}</p>
-                        <p className="text-xs text-gray-400 font-mono">#{invoice.id.slice(0, 8)}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm text-gray-600">{formatPeriod(invoice.period_year, invoice.period_month)}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>
-                          {cfg.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-medium text-gray-600">{invoice.sim_count ?? "—"}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-semibold text-gray-700">{formatCurrency(invoice.total, invoice.currency)}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <ChevronRight className="w-4 h-4 text-gray-300" />
-                      </td>
-                    </tr>
-                  );
-                })}
-          </tbody>
-        </table>
-
-        {!loading && filtered.length === 0 && !error && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Receipt className="w-12 h-12 text-gray-200 mb-3" />
-            <p className="font-medium text-gray-500">{search || statusFilter ? "Sin resultados" : "Aún no hay facturas generadas"}</p>
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
 
-      {selected && (
-        <InvoiceDetailDrawer
-          invoice={selected}
-          onClose={() => setSelected(null)}
-          onUpdated={load}
-        />
-      )}
+          {!loading && filtered.length === 0 && !error && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Icon name="receipt_long" className="mb-3 text-[48px] text-outline-variant" />
+              <p className="text-body-md text-on-surface-variant">
+                {search || statusFilter ? "Sin resultados" : "Aún no hay facturas generadas"}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Panel */}
+        <div className="lg:col-span-1">
+          {selected ? (
+            <InvoiceDetailPanel invoice={selected} onClose={() => setSelected(null)} onUpdated={load} />
+          ) : (
+            <div className="hidden h-[700px] flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest/50 text-center lg:flex">
+              <Icon name="receipt_long" className="mb-3 text-[40px] text-outline-variant" />
+              <p className="text-body-md text-on-surface-variant">Seleccioná una factura</p>
+              <p className="mt-1 text-body-sm text-on-surface-variant">
+                El desglose y las acciones aparecen acá
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

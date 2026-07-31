@@ -1,47 +1,125 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Outlet, Navigate, NavLink, useLocation } from "react-router";
-import { LogOut, Cpu, ShoppingCart, Receipt } from "lucide-react";
 import { clientApi } from "../../lib/api";
 import { ClientAuthContext, ClientUser } from "../../lib/client-auth";
 import { AmericasIoTLogo } from "../AmericasIoTLogo";
+import { Icon } from "../ui/icon";
 
 const portalNav = [
-  { to: "/portal",          icon: Cpu,          label: "Mis Dispositivos", end: true },
-  { to: "/portal/orders",   icon: ShoppingCart, label: "Pedidos" },
-  { to: "/portal/invoices", icon: Receipt,      label: "Mis Facturas" },
+  { to: "/portal",          icon: "devices",      label: "Mis Dispositivos", end: true },
+  { to: "/portal/orders",   icon: "shopping_cart", label: "Pedidos" },
+  { to: "/portal/invoices", icon: "receipt_long",  label: "Mis Facturas" },
 ];
 
-function PortalNav() {
+// ─── Sidebar (desktop) ────────────────────────────────────────────────────────
+function PortalSidebar() {
+  const ctx = useContext(ClientAuthContext)!;
+  const initial = ctx.user?.name?.charAt(0)?.toUpperCase()
+    || ctx.user?.email?.charAt(0)?.toUpperCase()
+    || "C";
+
   return (
-    <nav
-      className="fixed top-14 left-0 right-0 z-20 flex items-center gap-1 px-4 md:px-6 h-11 overflow-x-auto"
-      style={{ background: "#ffffff", borderBottom: "1px solid #e8e8ed" }}
-    >
-      {portalNav.map(({ to, icon: Icon, label, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-          style={({ isActive }) => ({
-            color:      isActive ? "#059669"                 : "#6b6b80",
-            background: isActive ? "rgba(62,207,142,0.12)"   : "transparent",
-          })}
+    <nav className="hidden md:flex flex-col h-screen py-6 px-4 bg-surface border-r border-outline-variant fixed left-0 top-0 w-64 z-50">
+      <div className="mb-8 px-4">
+        <AmericasIoTLogo height={28} forceLight />
+      </div>
+
+      {/* Usuario */}
+      <div className="flex items-center gap-3 px-4 mb-8">
+        <div className="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant shrink-0 flex items-center justify-center font-bold text-on-secondary-container">
+          {initial}
+        </div>
+        <div className="min-w-0">
+          <p className="font-label-md text-label-md text-on-surface truncate">
+            Hola, {ctx.user?.name?.split(" ")[0] ?? "Cliente"} 👋
+          </p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">Portal Cliente</p>
+        </div>
+      </div>
+
+      {/* Navegación */}
+      <div className="flex-1 flex flex-col gap-2">
+        {portalNav.map(({ to, icon, label, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `rounded-lg px-4 py-2 flex items-center gap-3 font-label-md text-label-md transition-all ${
+                isActive
+                  ? "bg-secondary-container text-on-secondary-container"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon name={icon} filled={isActive} />
+                {label}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
+
+      {/* Salir */}
+      <div className="mt-auto px-4">
+        <button
+          onClick={ctx.logout}
+          className="w-full flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-error transition-colors rounded-lg font-label-md text-label-md"
         >
-          <Icon className="w-3.5 h-3.5" />
-          {label}
-        </NavLink>
-      ))}
+          <Icon name="logout" />
+          Cerrar sesión
+        </button>
+      </div>
     </nav>
   );
 }
 
-// ─── Auth Provider (single instance for ALL portal routes) ────────────────────
+// ─── Header + tabs (móvil) ────────────────────────────────────────────────────
+function PortalMobileHeader() {
+  const ctx = useContext(ClientAuthContext)!;
+
+  return (
+    <header className="md:hidden flex flex-col w-full px-container-margin bg-surface border-b border-outline-variant sticky top-0 z-40">
+      <div className="flex items-center justify-between h-16">
+        <AmericasIoTLogo height={24} forceLight />
+        <button
+          onClick={ctx.logout}
+          className="flex items-center gap-1.5 text-on-surface-variant hover:text-error transition-colors font-label-md text-label-md"
+        >
+          <Icon name="logout" />
+          Salir
+        </button>
+      </div>
+      <div className="flex gap-6 overflow-x-auto no-scrollbar">
+        {portalNav.map(({ to, label, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `pb-2 whitespace-nowrap font-body-md text-body-md transition-colors ${
+                isActive
+                  ? "text-primary border-b-2 border-primary font-bold"
+                  : "text-on-surface-variant font-medium hover:text-primary"
+              }`
+            }
+          >
+            {label}
+          </NavLink>
+        ))}
+      </div>
+    </header>
+  );
+}
+
+// ─── Auth Provider (una sola instancia para TODAS las rutas del portal) ───────
 function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<ClientUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount: restore session if one is stored in localStorage
+  // Al montar: restaura la sesión si hay una guardada en localStorage
   useEffect(() => {
     const stored = localStorage.getItem("portal_session_id");
     if (!stored) {
@@ -60,7 +138,6 @@ function ClientAuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const res = await clientApi.login(email, password);
-    // Store session ID and immediately set user — no second server round-trip needed
     localStorage.setItem("portal_session_id", res.sessionId);
     setUser(res.user as ClientUser);
   };
@@ -80,103 +157,56 @@ function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Portal Header (only shown when logged in) ────────────────────────────────
-function PortalHeader() {
-  const ctx = useContext(ClientAuthContext)!;
-  return (
-    <header
-      className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 md:px-6 h-14"
-      style={{ background: "#ffffff", borderBottom: "1px solid #e8e8ed" }}
-    >
-      <div className="flex items-center gap-3">
-        <AmericasIoTLogo height={26} forceLight />
-        <span
-          className="hidden sm:inline text-[11px] font-semibold px-2 py-0.5 rounded-full"
-          style={{ background: "rgba(62,207,142,0.12)", color: "#0d8f5c" }}
-        >
-          Portal Cliente
-        </span>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="text-right">
-          <p className="text-xs font-semibold leading-tight" style={{ color: "#1a1a1a" }}>
-            Hola, <span style={{ color: "#059669" }}>{ctx.user?.name?.split(" ")[0]}</span> 👋
-          </p>
-          <p className="hidden sm:block text-[10px] leading-tight" style={{ color: "#adadb8" }}>
-            {ctx.user?.email}
-          </p>
-        </div>
-        <button
-          onClick={ctx.logout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-          style={{ color: "#e11d48", background: "#fff1f2" }}
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Salir</span>
-        </button>
-      </div>
-    </header>
-  );
-}
-
-// ─── Loading Screen ───────────────────────────────────────────────────────────
+// ─── Pantalla de carga ────────────────────────────────────────────────────────
 function PortalLoading() {
   return (
-    <div className="flex h-screen items-center justify-center" style={{ background: "#f2f4f7" }}>
+    <div className="flex h-screen items-center justify-center bg-surface">
       <div className="text-center space-y-4">
         <div className="relative w-12 h-12 mx-auto">
-          <div
-            className="absolute inset-0 rounded-2xl animate-pulse"
-            style={{ background: "rgba(62,207,142,0.15)" }}
-          />
-          <div className="absolute inset-3 rounded-xl" style={{ background: "#3ECF8E" }} />
+          <div className="absolute inset-0 rounded-xl animate-pulse bg-primary-container/20" />
+          <div className="absolute inset-3 rounded-lg bg-primary-container" />
         </div>
-        <p className="text-xs font-medium" style={{ color: "#adadb8" }}>
-          Cargando portal...
-        </p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">Cargando portal…</p>
       </div>
     </div>
   );
 }
 
-// ─── Portal Router (auth guard + layout switcher) ─────────────────────────────
-// This runs INSIDE the single ClientAuthProvider — no double-init possible.
+// ─── Router del portal (guard de auth + layout) ───────────────────────────────
 function PortalRouter() {
   const ctx      = useContext(ClientAuthContext)!;
   const location = useLocation();
   const isLoginPage = location.pathname === "/portal/login";
 
-  // Still checking stored session
+  // Todavía verificando la sesión guardada
   if (ctx.isLoading) return <PortalLoading />;
 
-  // Not authenticated → send to the unified login page at /
+  // Sin autenticar → al login unificado en /
   if (!ctx.user && !isLoginPage) {
     return <Navigate to="/" replace state={{ from: location }} />;
   }
 
-  // Authenticated + trying to see login → dashboard
+  // Autenticado + intentando ver el login → dashboard
   if (ctx.user && isLoginPage) {
     return <Navigate to="/portal" replace />;
   }
 
-  // Authenticated: show header + content
   if (ctx.user) {
     return (
-      <div className="min-h-screen" style={{ background: "#f2f4f7" }}>
-        <PortalHeader />
-        <PortalNav />
-        <main className="pt-[100px]">
+      <div className="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col md:flex-row">
+        <PortalSidebar />
+        <PortalMobileHeader />
+        <main className="flex-1 md:ml-64 bg-background min-h-screen">
           <Outlet />
         </main>
       </div>
     );
   }
 
-  // Not authenticated + on login (legacy path): redirect to /
   return <Navigate to="/" replace />;
 }
 
-// ─── Public export: single root for all /portal/** routes ─────────────────────
+// ─── Export público: raíz única de todas las rutas /portal/** ─────────────────
 export function PortalRootLayout() {
   return (
     <ClientAuthProvider>
@@ -185,6 +215,6 @@ export function PortalRootLayout() {
   );
 }
 
-// Legacy aliases kept so any other import still compiles
+// Alias legacy para que cualquier import existente siga compilando
 export function ClientPortalLayout()       { return <PortalRootLayout />; }
 export function ClientPortalLoginWrapper() { return <PortalRootLayout />; }

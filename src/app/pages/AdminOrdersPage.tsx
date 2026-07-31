@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import {
-  ClipboardList, X, Loader2, RefreshCw, AlertCircle, Search, ChevronRight,
-  Truck, ExternalLink, History as HistoryIcon,
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Skeleton } from "../components/ui/skeleton";
 import { api } from "../lib/api";
-import { ORDER_STATUS, ADMIN_NEXT_STATUS, CARRIERS, formatCurrency, getOrderStatus, type OrderStatus } from "../lib/order-status";
+import {
+  ORDER_STATUS, ADMIN_NEXT_STATUS, CARRIERS, formatCurrency, getOrderStatus,
+  type OrderStatus,
+} from "../lib/order-status";
+import { Icon } from "../components/ui/icon";
+import {
+  PageHeader, IconButton, SearchField, ErrorBanner, TableCard, TableHead, TableSkeleton,
+  EmptyState, Field, fieldClass,
+} from "../components/admin/AdminUI";
 import { toast } from "sonner";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Tipos ───────────────────────────────────────────────────────────────────
 interface OrderItem {
   id: string;
   product_id: string;
@@ -42,14 +43,32 @@ interface Order {
 }
 
 function formatDate(ts: string): string {
-  return new Date(ts).toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleString("es-MX", {
+    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
 }
 
 function orderTotal(items: OrderItem[] = []): number {
   return items.reduce((sum, it) => sum + it.unit_price * it.quantity, 0);
 }
 
-// ─── Status change form ───────────────────────────────────────────────────────
+// ─── Chip de estado ──────────────────────────────────────────────────────────
+function StatusChip({ status, size = "sm" }: { status: string; size?: "sm" | "md" }) {
+  const cfg = getOrderStatus(status);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full whitespace-nowrap ${
+        size === "md" ? "px-2.5 py-1 text-label-md" : "px-2 py-0.5 text-label-xs"
+      }`}
+      style={{ color: cfg.color, background: cfg.bg }}
+    >
+      <Icon name={cfg.symbol} className={size === "md" ? "text-[14px]" : "text-[12px]"} />
+      {cfg.label}
+    </span>
+  );
+}
+
+// ─── Cambio de estado ────────────────────────────────────────────────────────
 function StatusChangeForm({
   order, targetStatus, onCancel, onConfirmed,
 }: {
@@ -89,51 +108,63 @@ function StatusChangeForm({
   };
 
   return (
-    <div className="p-3 rounded-xl border space-y-3" style={{ borderColor: cfg.color, background: cfg.bg }}>
-      <p className="text-xs font-semibold" style={{ color: cfg.color }}>
+    <div className="space-y-3 rounded-lg border p-3" style={{ borderColor: cfg.color, background: cfg.bg }}>
+      <p className="text-label-md" style={{ color: cfg.color }}>
         Cambiar estado a "{cfg.label}"
       </p>
+
       {needsTracking && (
         <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-gray-600">Paquetería *</label>
-            <select
-              value={carrier}
-              onChange={(e) => setCarrier(e.target.value)}
-              className="w-full text-sm px-2.5 py-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            >
-              <option value="">Selecciona…</option>
+          <Field label="Paquetería" required>
+            <select value={carrier} onChange={(e) => setCarrier(e.target.value)} className={fieldClass}>
+              <option value="">Seleccioná…</option>
               {CARRIERS.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{c.toUpperCase()}</option>
               ))}
             </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-[11px] font-medium text-gray-600">Número de guía *</label>
-            <Input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="123456789" className="bg-white" />
-          </div>
+          </Field>
+          <Field label="Número de guía" required>
+            <input
+              value={tracking}
+              onChange={(e) => setTracking(e.target.value)}
+              placeholder="123456789"
+              className={fieldClass}
+            />
+          </Field>
         </div>
       )}
-      <div className="space-y-1">
-        <label className="text-[11px] font-medium text-gray-600">Nota (opcional)</label>
-        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario interno..." className="bg-white" />
-      </div>
+
+      <Field label="Nota interna">
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Comentario interno…"
+          className={fieldClass}
+        />
+      </Field>
+
       <div className="flex gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel} className="flex-1">Cancelar</Button>
-        <Button
-          type="button" size="sm" onClick={handleConfirm} disabled={saving}
-          className="flex-1 text-black font-semibold" style={{ background: "#3ECF8E" }}
+        <button
+          onClick={onCancel}
+          className="flex-1 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container"
         >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+          Cancelar
+        </button>
+        <button
+          onClick={handleConfirm}
+          disabled={saving}
+          className="btn-primary flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-label-md transition-colors disabled:opacity-50"
+        >
+          {saving && <Icon name="progress_activity" className="animate-spin text-[16px]" />}
           {saving ? "Guardando…" : "Confirmar"}
-        </Button>
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── Order Detail Drawer ──────────────────────────────────────────────────────
-function OrderDetailDrawer({
+// ─── Panel de detalle ────────────────────────────────────────────────────────
+function OrderDetailPanel({
   order: initialOrder, onClose, onUpdated,
 }: {
   order: Order;
@@ -160,10 +191,11 @@ function OrderDetailDrawer({
     }
   };
 
-  useEffect(() => { loadDetail(); }, [initialOrder.id]);
+  useEffect(() => {
+    setPendingTarget(null);
+    loadDetail();
+  }, [initialOrder.id]);
 
-  const statusCfg = getOrderStatus(order.status);
-  const StatusIcon = statusCfg.icon;
   const nextOptions = ADMIN_NEXT_STATUS[order.status] ?? [];
 
   const handleConfirmed = (updated: Order) => {
@@ -174,139 +206,165 @@ function OrderDetailDrawer({
   };
 
   return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: statusCfg.bg }}>
-            <StatusIcon className="w-5 h-5" style={{ color: statusCfg.color }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">Pedido #{order.id.slice(0, 8)}</p>
-            <p className="text-xs text-gray-400 truncate">{order.client_name}</p>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 shrink-0">
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}
+    <div className="flex h-[700px] flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg">
+      {/* Cabecera fija — estado, envío y acciones siempre visibles */}
+      <div className="z-20 shrink-0 border-b border-outline-variant bg-surface-bright p-card-padding">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="mb-1 text-label-xs tracking-wider text-on-surface-variant uppercase">
+              Detalle de pedido
             </div>
-          ) : (
-            <>
-              {/* Status + tracking */}
-              <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Estado</span>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: statusCfg.color, background: statusCfg.bg }}>
-                    {statusCfg.label}
-                  </span>
-                </div>
-                {order.carrier && order.tracking_number && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" />{order.carrier}</span>
-                    {order.tracking_url ? (
-                      <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 flex items-center gap-1 hover:underline">
-                        {order.tracking_number}<ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : (
-                      <span className="text-xs font-mono text-gray-600">{order.tracking_number}</span>
-                    )}
-                  </div>
-                )}
-                {order.notes && <p className="text-xs text-gray-500 pt-1 border-t border-gray-100">{order.notes}</p>}
-              </div>
-
-              {/* Items */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Productos</p>
-                <div className="rounded-xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-                  {items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between px-3 py-2.5">
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-800 truncate">{item.product_name}</p>
-                        <p className="text-xs text-gray-400">{item.quantity} × {formatCurrency(item.unit_price)}</p>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-700 shrink-0">{formatCurrency(item.unit_price * item.quantity)}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between px-1 pt-2">
-                  <span className="text-xs font-semibold text-gray-500">Total</span>
-                  <span className="text-sm font-bold text-gray-900">{formatCurrency(orderTotal(items))}</span>
-                </div>
-              </div>
-
-              {/* Change status actions */}
-              {nextOptions.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Cambiar estado</p>
-                  {pendingTarget ? (
-                    <StatusChangeForm
-                      order={order}
-                      targetStatus={pendingTarget}
-                      onCancel={() => setPendingTarget(null)}
-                      onConfirmed={handleConfirmed}
-                    />
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {nextOptions.map((next) => {
-                        const nextCfg = getOrderStatus(next);
-                        return (
-                          <button
-                            key={next}
-                            onClick={() => setPendingTarget(next)}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all hover:opacity-80"
-                            style={{ color: nextCfg.color, borderColor: nextCfg.color, background: nextCfg.bg }}
-                          >
-                            <ChevronRight className="w-3.5 h-3.5" />
-                            {next === "cancelled" ? "Cancelar pedido" : `Marcar ${nextCfg.label.toLowerCase()}`}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* History */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1.5">
-                  <HistoryIcon className="w-3 h-3" />Historial
-                </p>
-                <div className="space-y-2">
-                  {history.length === 0 ? (
-                    <p className="text-xs text-gray-400">Sin historial aún</p>
-                  ) : (
-                    history.map((h) => (
-                      <div key={h.id} className="flex items-start gap-2 text-xs">
-                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: getOrderStatus(h.to_status).color }} />
-                        <div className="min-w-0">
-                          <p className="text-gray-700">
-                            {h.from_status ? `${getOrderStatus(h.from_status).label} → ` : ""}
-                            <span className="font-semibold">{getOrderStatus(h.to_status).label}</span>
-                            <span className="text-gray-400"> · {h.changed_by_role === "admin" ? "Admin" : "Cliente"}</span>
-                          </p>
-                          <p className="text-gray-400">{formatDate(h.created_at)}{h.note ? ` · ${h.note}` : ""}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+            <h3 className="truncate font-mono text-display-md leading-tight text-on-surface">
+              #{order.id.slice(0, 8)}
+            </h3>
+            <p className="mt-1 truncate text-body-sm text-primary">{order.client_name}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <StatusChip status={order.status} size="md" />
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+              aria-label="Cerrar detalle"
+            >
+              <Icon name="close" className="text-[18px]" />
+            </button>
+          </div>
         </div>
+
+        {order.carrier && order.tracking_number && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-outline-variant/50 bg-surface p-3">
+            <span className="flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+              <Icon name="local_shipping" className="text-[16px]" />
+              {order.carrier.toUpperCase()}
+            </span>
+            {order.tracking_url ? (
+              <a
+                href={order.tracking_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-mono text-label-md text-primary hover:underline"
+              >
+                {order.tracking_number}
+                <Icon name="open_in_new" className="text-[14px]" />
+              </a>
+            ) : (
+              <span className="font-mono text-label-md text-on-surface">{order.tracking_number}</span>
+            )}
+          </div>
+        )}
+
+        {nextOptions.length > 0 &&
+          (pendingTarget ? (
+            <StatusChangeForm
+              order={order}
+              targetStatus={pendingTarget}
+              onCancel={() => setPendingTarget(null)}
+              onConfirmed={handleConfirmed}
+            />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {nextOptions.map((next) => {
+                const nextCfg = getOrderStatus(next);
+                return (
+                  <button
+                    key={next}
+                    onClick={() => setPendingTarget(next)}
+                    className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-label-xs transition-opacity hover:opacity-80"
+                    style={{ color: nextCfg.color, borderColor: nextCfg.color, background: nextCfg.bg }}
+                  >
+                    <Icon name={nextCfg.symbol} className="text-[16px]" />
+                    {next === "cancelled" ? "Cancelar pedido" : `Marcar ${nextCfg.label.toLowerCase()}`}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
       </div>
-    </>
+
+      {/* Contenido desplazable */}
+      <div className="flex-1 overflow-y-auto bg-surface p-card-padding">
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-16 w-full animate-pulse rounded-lg bg-surface-container" />
+            ))}
+          </div>
+        ) : (
+          <>
+            <h4 className="mb-3 flex items-center gap-2 text-label-md text-on-surface">
+              <Icon name="inventory_2" className="text-[18px] text-on-surface-variant" />
+              Productos
+            </h4>
+            <div className="overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 border-b border-outline-variant/50 px-3 py-2.5 last:border-0"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-body-md text-on-surface">{item.product_name}</p>
+                    <p className="text-body-sm text-on-surface-variant">
+                      {item.quantity} × {formatCurrency(item.unit_price)}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-label-md text-on-surface">
+                    {formatCurrency(item.unit_price * item.quantity)}
+                  </p>
+                </div>
+              ))}
+              {items.length === 0 && (
+                <p className="px-3 py-3 text-body-sm text-on-surface-variant">Este pedido no tiene productos</p>
+              )}
+            </div>
+            <div className="flex items-center justify-between px-1 pt-2">
+              <span className="text-label-md text-on-surface-variant">Total</span>
+              <span className="text-headline-sm text-on-surface">{formatCurrency(orderTotal(items))}</span>
+            </div>
+
+            {order.notes && (
+              <p className="mt-4 rounded-lg bg-surface-container-low p-3 text-body-sm text-on-surface-variant">
+                {order.notes}
+              </p>
+            )}
+
+            <h4 className="mt-6 mb-3 flex items-center gap-2 text-label-md text-on-surface">
+              <Icon name="history" className="text-[18px] text-on-surface-variant" />
+              Historial
+            </h4>
+            {history.length === 0 ? (
+              <p className="text-body-sm text-on-surface-variant">Sin historial aún</p>
+            ) : (
+              <div className="space-y-2">
+                {history.map((h) => (
+                  <div key={h.id} className="flex items-start gap-2 text-body-sm">
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ background: getOrderStatus(h.to_status).color }}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-on-surface">
+                        {h.from_status ? `${getOrderStatus(h.from_status).label} → ` : ""}
+                        <span className="text-label-md">{getOrderStatus(h.to_status).label}</span>
+                        <span className="text-on-surface-variant">
+                          {" "}· {h.changed_by_role === "admin" ? "Admin" : "Cliente"}
+                        </span>
+                      </p>
+                      <p className="text-on-surface-variant">
+                        {formatDate(h.created_at)}{h.note ? ` · ${h.note}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Página ──────────────────────────────────────────────────────────────────
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -331,42 +389,29 @@ export default function AdminOrdersPage() {
   useEffect(() => { load(); }, [statusFilter]);
 
   const filtered = orders.filter(
-    (o) => !search || o.client_name.toLowerCase().includes(search.toLowerCase()) || o.id.toLowerCase().includes(search.toLowerCase()),
+    (o) =>
+      !search ||
+      o.client_name.toLowerCase().includes(search.toLowerCase()) ||
+      o.id.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-teal-500" />
-            Pedidos
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {orders.length} pedido{orders.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={load} className="gap-2">
-          <RefreshCw className="w-4 h-4" />
-        </Button>
-      </div>
+    <div className="p-container-margin">
+      <PageHeader title="Pedidos" subtitle={`${orders.length} pedido${orders.length !== 1 ? "s" : ""}`}>
+        <IconButton icon="refresh" onClick={load} title="Recargar" spinning={loading} />
+      </PageHeader>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por cliente o ID de pedido..."
-            className="pl-10"
-          />
-        </div>
+      <div className="mb-gutter flex flex-col gap-3 sm:flex-row">
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por cliente o ID de pedido…"
+          className="max-w-md flex-1"
+        />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as OrderStatus | "")}
-          className="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md outline-none focus:border-primary"
         >
           <option value="">Todos los estados</option>
           {(Object.keys(ORDER_STATUS) as OrderStatus[]).map((s) => (
@@ -375,79 +420,73 @@ export default function AdminOrdersPage() {
         </select>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.2)", color: "#dc2626" }}>
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={load} />}
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e5e7eb" }}>
-              {["Pedido", "Cliente", "Estado", "Fecha", ""].map((label) => (
-                <th key={label} className="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap">
-                  {label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
-                    ))}
-                  </tr>
-                ))
-              : filtered.map((order) => {
-                  const cfg = getOrderStatus(order.status);
+      <div className="grid grid-cols-1 gap-gutter lg:grid-cols-3">
+        <TableCard className="lg:col-span-2">
+          <table className="w-full">
+            <TableHead
+              columns={[
+                { label: "Pedido" },
+                { label: "Cliente" },
+                { label: "Estado" },
+                { label: "Fecha" },
+              ]}
+            />
+            <tbody className="divide-y divide-outline-variant/50 text-body-sm text-on-surface">
+              {loading ? (
+                <TableSkeleton cols={4} />
+              ) : (
+                filtered.map((order) => {
                   const itemsCount = (order.items || []).length;
                   return (
-                    <tr key={order.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setSelected(order)}>
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-mono text-gray-700">#{order.id.slice(0, 8)}</p>
-                        <p className="text-xs text-gray-400">{itemsCount} producto{itemsCount !== 1 ? "s" : ""}</p>
+                    <tr
+                      key={order.id}
+                      onClick={() => setSelected(order)}
+                      className={`cursor-pointer transition-colors hover:bg-surface-container-low ${
+                        selected?.id === order.id ? "bg-surface-container-highest/30" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-mono text-label-md text-on-surface">#{order.id.slice(0, 8)}</div>
+                        <div className="text-label-xs text-on-surface-variant">
+                          {itemsCount} producto{itemsCount !== 1 ? "s" : ""}
+                        </div>
                       </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-medium text-gray-800">{order.client_name}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>
-                          {cfg.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-sm text-gray-500">{formatDate(order.created_at)}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <ChevronRight className="w-4 h-4 text-gray-300" />
+                      <td className="px-4 py-3 text-label-md text-on-surface">{order.client_name}</td>
+                      <td className="px-4 py-3"><StatusChip status={order.status} /></td>
+                      <td className="px-4 py-3 whitespace-nowrap text-on-surface-variant">
+                        {formatDate(order.created_at)}
                       </td>
                     </tr>
                   );
-                })}
-          </tbody>
-        </table>
+                })
+              )}
+            </tbody>
+          </table>
 
-        {!loading && filtered.length === 0 && !error && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <ClipboardList className="w-12 h-12 text-gray-200 mb-3" />
-            <p className="font-medium text-gray-500">{search || statusFilter ? "Sin resultados" : "Aún no hay pedidos"}</p>
-          </div>
-        )}
+          {!loading && filtered.length === 0 && !error && (
+            <EmptyState
+              icon="shopping_cart"
+              title={search || statusFilter ? "Sin resultados" : "Aún no hay pedidos"}
+            />
+          )}
+        </TableCard>
+
+        <div className="lg:col-span-1">
+          {selected ? (
+            <OrderDetailPanel order={selected} onClose={() => setSelected(null)} onUpdated={load} />
+          ) : (
+            <div className="hidden h-[700px] flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest/50 text-center lg:flex">
+              <Icon name="shopping_cart" className="mb-3 text-[40px] text-outline-variant" />
+              <p className="text-body-md text-on-surface-variant">Seleccioná un pedido</p>
+              <p className="mt-1 text-body-sm text-on-surface-variant">
+                Los productos, el envío y el historial aparecen acá
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-
-      {selected && (
-        <OrderDetailDrawer
-          order={selected}
-          onClose={() => setSelected(null)}
-          onUpdated={load}
-        />
-      )}
     </div>
   );
 }
