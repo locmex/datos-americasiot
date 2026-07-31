@@ -1224,16 +1224,14 @@ export default function ClientsPage() {
                             ? "Datos fiscales completos: se le pueden emitir facturas"
                             : `No se pueden emitir facturas. Falta: ${faltantesFiscales.join(", ")}`
                         }
-                        className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                        style={
+                        className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-xs ${
                           facturable
-                            ? { background: "rgba(5,150,105,0.12)", color: "#059669" }
-                            : { background: "rgba(217,119,6,0.12)", color: "#d97706" }
-                        }
+                            ? "bg-primary/10 text-primary"
+                            : "bg-warning/10 text-on-warning"
+                        }`}
                       >
-                        {facturable
-                          ? <><ShieldCheck className="w-3 h-3" />Facturable</>
-                          : <><AlertTriangle className="w-3 h-3" />Sin datos fiscales</>}
+                        <Icon name={facturable ? "verified" : "warning"} className="text-[14px]" />
+                        {facturable ? "Facturable" : "Sin datos fiscales"}
                       </span>
                     </div>
                   </div>
