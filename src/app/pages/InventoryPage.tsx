@@ -11,6 +11,8 @@ import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
 import { PageHeader, IconButton, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
+import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
+import { TableCustomizer } from "../components/table/TableCustomizer";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
@@ -46,6 +48,31 @@ const STATUS_CFG: Record<number, { label: string; color: string; icon: React.FC<
   2: { label: "Suspendida",   color: "#f59e0b", icon: PauseCircle,  symbol: "pause_circle" },
   3: { label: "Desactivada",  color: "#ef4444", icon: XCircle,      symbol: "cancel" },
   5: { label: "Modo Prueba",  color: "#8b5cf6", icon: AlertCircle,  symbol: "science" },
+};
+
+// ── Columnas configurables ────────────────────────────────────────
+type SimColKey =
+  | "ICCID" | "MSISDN" | "Estado de la SIM" | "Nombre del dispositivo"
+  | "Cliente asignado" | "IMSI" | "Tipo de SIM";
+
+const SIM_COLUMNS: ColumnDef<SimColKey>[] = [
+  { key: "ICCID",                  label: "ICCID", locked: true },
+  { key: "MSISDN",                 label: "MSISDN" },
+  { key: "Estado de la SIM",       label: "Estado de la SIM" },
+  { key: "Nombre del dispositivo", label: "Nombre del dispositivo" },
+  { key: "Cliente asignado",       label: "Cliente asignado" },
+  { key: "IMSI",        label: "IMSI",        hiddenByDefault: true },
+  { key: "Tipo de SIM", label: "Tipo de SIM", hiddenByDefault: true },
+];
+
+/** Sin entrada = columna no ordenable. */
+const SIM_SORT_KEY: Partial<Record<SimColKey, string>> = {
+  "ICCID":                  "iccid",
+  "MSISDN":                 "msisdn",
+  "Estado de la SIM":       "status",
+  "Nombre del dispositivo": "endpoint",
+  "Cliente asignado":       "client",
+  "IMSI":                   "imsi",
 };
 
 // Status filter options shown as pills
@@ -509,11 +536,14 @@ function DetailPanel({
   onClose,
   onStatusChange,
   actionLoading,
+  cellCount,
 }: {
   sim: SIM;
   onClose: () => void;
   onStatusChange: (sim: SIM, status: number) => void;
   actionLoading: boolean;
+  /** Columnas visibles + checkbox + chevron: el panel ocupa la fila entera. */
+  cellCount: number;
 }) {
   const [tab, setTab] = useState<DetailTab>("detalles");
 
@@ -528,7 +558,7 @@ function DetailPanel({
 
   return (
     <tr>
-      <td colSpan={8} className="p-0" style={{ background: "#fafafa", borderBottom: "1px solid #e8e8ed" }}>
+      <td colSpan={cellCount} className="p-0" style={{ background: "#fafafa", borderBottom: "1px solid #e8e8ed" }}>
         <div className="px-6 py-5">
           {/* Header */}
           <div className="flex items-start justify-between mb-4 gap-3">
@@ -1086,6 +1116,7 @@ export default function InventoryPage() {
       if (sortKey === "status")   { aVal = String(a.status?.id ?? 0); bVal = String(b.status?.id ?? 0); }
       if (sortKey === "endpoint") { aVal = a.endpoint?.name || ""; bVal = b.endpoint?.name || ""; }
       if (sortKey === "client")   { aVal = a.localData?.clientName || ""; bVal = b.localData?.clientName || ""; }
+      if (sortKey === "imsi")     { aVal = a.imsi || ""; bVal = b.imsi || ""; }
       const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: "base" });
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -1095,14 +1126,9 @@ export default function InventoryPage() {
     <SharedSortIcon active={sortKey === col} dir={sortDir} />
   );
 
-  const COLS: { label: string; key: string | null }[] = [
-    { label: "ICCID",                key: "iccid" },
-    { label: "MSISDN",               key: "msisdn" },
-    { label: "Estado de la SIM",     key: "status" },
-    { label: "Nombre del dispositivo", key: "endpoint" },
-    { label: "Cliente asignado",     key: "client" },
-    { label: "",                     key: null },
-  ];
+  // Columnas configurables, persistidas por usuario.
+  const cols = useTableColumns<SimColKey>("admin.sims.columns", SIM_COLUMNS);
+  const COLS = cols.visibleColumns.map((c) => ({ label: c.label, key: SIM_SORT_KEY[c.key] ?? null }));
 
   return (
     <div className="p-container-margin">
@@ -1110,6 +1136,16 @@ export default function InventoryPage() {
         title="Inventario de SIMs"
         subtitle={`SIMs emnify + inventario local · ${total > 0 ? `${total.toLocaleString()} en total` : "—"}`}
       >
+        <TableCustomizer
+          columns={cols.columns}
+          isVisible={cols.isVisible}
+          toggle={cols.toggle}
+          reset={cols.reset}
+          density={cols.density}
+          setDensity={cols.setDensity}
+          columnLines={cols.columnLines}
+          setColumnLines={cols.setColumnLines}
+        />
         <IconButton icon="refresh" onClick={() => load(page, search)} title="Actualizar" spinning={loading} />
         <button
           onClick={() => setShowAdd(true)}
@@ -1310,18 +1346,22 @@ export default function InventoryPage() {
                 <th className="w-10 px-4 py-3">
                   <input type="checkbox" className="rounded border-outline-variant" />
                 </th>
-                {COLS.map((col) => (
+                {COLS.map((col, i) => (
                   <th
                     key={col.label}
                     onClick={col.key ? () => handleSort(col.key!) : undefined}
-                    className={`px-4 py-3 text-left text-label-xs tracking-wider whitespace-nowrap uppercase ${
+                    className={`px-4 ${cols.densityClass} text-left text-label-xs tracking-wider whitespace-nowrap uppercase ${
                       col.key ? "cursor-pointer select-none transition-colors hover:bg-surface-container" : ""
-                    } ${sortKey === col.key ? "text-primary" : "text-on-surface-variant"}`}
+                    } ${sortKey === col.key ? "text-primary" : "text-on-surface-variant"} ${
+                      cols.columnLines ? "border-r border-outline-variant/50" : ""
+                    } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-low" : ""}`}
                   >
                     {col.label}
                     {col.key && <SortIcon col={col.key} />}
                   </th>
                 ))}
+                {/* Chevron de expansión — fijo a la derecha */}
+                <th className={`w-12 px-4 ${cols.densityClass} sticky right-0 z-10 bg-surface-container-low`} />
               </tr>
             </thead>
             <tbody>
@@ -1332,6 +1372,7 @@ export default function InventoryPage() {
                       {COLS.map((col, j) => (
                         <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                       ))}
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-4" /></td>
                     </tr>
                   ))
                 : sortedSims.map((sim) => {
@@ -1344,58 +1385,95 @@ export default function InventoryPage() {
                       <Fragment key={sim.iccid}>
                         <tr
                           onClick={() => handleRowClick(sim.iccid)}
-                          className="border-b border-gray-50 cursor-pointer transition-colors"
-                          style={{ background: isExpanded ? "#f0fdf4" : undefined }}
-                          onMouseEnter={(e) => { if (!isExpanded) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isExpanded ? "#f0fdf4" : ""; }}
+                          className={`group cursor-pointer border-b border-outline-variant/50 transition-colors ${
+                            isExpanded ? "bg-primary/5" : "hover:bg-surface-container-low"
+                          }`}
                         >
                           <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             <input type="checkbox" className="rounded" />
                           </td>
-                          <td className="px-4 py-3">
-                            <code className="text-xs font-mono text-gray-800 tracking-wide">{displayIccid(sim)}</code>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-gray-600">{sim.msisdn || "—"}</td>
-                          <td className="px-4 py-3">
-                            <StatusBadge statusId={statusId} />
-                          </td>
-                          <td className="px-4 py-3">
-                            {sim.endpoint?.name ? (
-                              <span className="text-blue-500 text-xs font-mono hover:underline">{sim.endpoint.name}</span>
-                            ) : (
-                              <span className="text-gray-300 text-xs">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                            {sim.localData?.clientName ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                                  style={{ background: "rgba(62,207,142,0.15)", color: "#059669" }}>
-                                  {sim.localData.clientName.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="text-sm font-medium text-gray-800 truncate max-w-[140px]">
-                                  {sim.localData.clientName}
-                                </span>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setAssignSim(sim)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-80"
-                                style={{ background: "rgba(62,207,142,0.08)", color: "#059669", borderColor: "rgba(62,207,142,0.3)" }}
-                              >
-                                <UserCheck className="w-3.5 h-3.5" />
-                                Asignar cliente
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-gray-400">
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {cols.visibleColumns.map((c, i) => {
+                            const tdClass = `px-4 ${cols.densityClass} ${
+                              cols.columnLines ? "border-r border-outline-variant/50" : ""
+                            } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest" : ""}`;
+                            const mono = "font-mono text-body-sm tracking-tight text-on-surface-variant";
+                            const dash = <span className="text-body-sm text-outline-variant">—</span>;
+
+                            switch (c.key) {
+                              case "ICCID":
+                                return (
+                                  <td key={c.key} className={tdClass}>
+                                    <code className="font-mono text-body-sm tracking-tight text-on-surface">
+                                      {displayIccid(sim)}
+                                    </code>
+                                  </td>
+                                );
+
+                              case "MSISDN":
+                                return <td key={c.key} className={`${tdClass} ${mono}`}>{sim.msisdn || dash}</td>;
+
+                              case "Estado de la SIM":
+                                return <td key={c.key} className={tdClass}><StatusBadge statusId={statusId} /></td>;
+
+                              case "Nombre del dispositivo":
+                                return (
+                                  <td key={c.key} className={tdClass}>
+                                    {sim.endpoint?.name
+                                      ? <span className="font-mono text-body-sm text-primary hover:underline">{sim.endpoint.name}</span>
+                                      : dash}
+                                  </td>
+                                );
+
+                              case "Cliente asignado":
+                                return (
+                                  <td key={c.key} className={tdClass} onClick={(e) => e.stopPropagation()}>
+                                    {sim.localData?.clientName ? (
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-xs text-on-primary-container">
+                                          {sim.localData.clientName.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span className="max-w-[140px] truncate text-label-md text-on-surface">
+                                          {sim.localData.clientName}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => setAssignSim(sim)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-label-xs text-primary transition-colors hover:bg-primary/10"
+                                      >
+                                        <Icon name="person_add" className="text-[16px]" />
+                                        Asignar cliente
+                                      </button>
+                                    )}
+                                  </td>
+                                );
+
+                              case "IMSI":
+                                return <td key={c.key} className={`${tdClass} ${mono}`}>{sim.imsi || dash}</td>;
+
+                              case "Tipo de SIM":
+                                return (
+                                  <td key={c.key} className={`${tdClass} text-body-sm whitespace-nowrap text-on-surface-variant`}>
+                                    {simTypeName}
+                                  </td>
+                                );
+
+                              default:
+                                return null;
+                            }
+                          })}
+                          <td className={`px-4 ${cols.densityClass} sticky right-0 z-10 bg-surface-container-lowest text-on-surface-variant`}>
+                            <Icon
+                              name="expand_more"
+                              className={`text-[20px] transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                            />
                           </td>
                         </tr>
 
                         {isExpanded && (
                           <DetailPanel
                             sim={sim}
+                            cellCount={cols.visibleColumns.length + 2}
                             onClose={() => setExpandedIccid(null)}
                             onStatusChange={handleStatusChange}
                             actionLoading={actionLoading === sim.iccid}

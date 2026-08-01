@@ -844,7 +844,7 @@ function ChipsDrawer({ client, chips, onClose, onRefresh }: {
                 <button
                   onClick={() => handleRemove(chip.iccid)}
                   disabled={removingIccid === chip.iccid}
-                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50"
+                  className="hover-reveal tap-target shrink-0 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-error-container"
                   title="Quitar chip"
                 >
                   {removingIccid === chip.iccid

@@ -198,6 +198,26 @@
   background-color: var(--color-primary-fixed-dim);
 }
 
+/* Objetivo táctil.
+   Se aplica SOLO con puntero grueso (dedo), no por ancho de pantalla: una
+   tablet en horizontal es ancha pero se toca, y una ventana angosta en una
+   laptop se usa con mouse. Un breakpoint por ancho fallaría en ambos casos.
+
+   Así el panel admin conserva su densidad en escritorio —es una herramienta
+   de datos que se usa horas— y crece solo donde hace falta. */
+@media (pointer: coarse) {
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Cualquier cosa que se revele con hover es INVISIBLE con el dedo: el hover
+     no existe en táctil. Si es una acción, queda inusable; si es una pista
+     (una flecha de orden), el usuario no sabe que la columna es ordenable.
+     Con puntero grueso se muestran siempre. */
+  .hover-reveal { opacity: 1 !important; }
+}
+
 /* Punto de conexión que late (dispositivo online) */
 @keyframes stitch-pulse {
   0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.7); }

@@ -8,6 +8,8 @@ import {
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
 import { PageHeader, IconButton, FilterPills, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
+import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
+import { TableCustomizer } from "../components/table/TableCustomizer";
 import { api } from "../lib/api";
 import { toast } from "sonner";
 
@@ -38,6 +40,27 @@ const STATUS_CFG: Record<number, { label: string; color: string; bg: string; ico
 function displayIccid(sim: SIM) {
   return sim.iccid_with_luhn || sim.iccid;
 }
+
+// ── Columnas configurables ────────────────────────────────────────────────────
+// Acá las 4 columnas son todas útiles para la tarea, así que el valor del
+// selector está sobre todo en la altura de fila (con 1,500 SIMs, ver el doble
+// de filas por pantalla cambia el trabajo) y en poder dejar solo ICCID +
+// Cliente para una pasada de asignación masiva.
+type AsigColKey = "SIM / ICCID" | "Estado" | "Dispositivo" | "Cliente Asignado";
+
+const ASIG_COLUMNS: ColumnDef<AsigColKey>[] = [
+  { key: "SIM / ICCID",      label: "SIM / ICCID", locked: true },
+  { key: "Estado",           label: "Estado" },
+  { key: "Dispositivo",      label: "Dispositivo" },
+  { key: "Cliente Asignado", label: "Cliente Asignado" },
+];
+
+const ASIG_SORT_KEY: Record<AsigColKey, string> = {
+  "SIM / ICCID":      "iccid",
+  "Estado":           "status",
+  "Dispositivo":      "endpoint",
+  "Cliente Asignado": "client",
+};
 
 const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
@@ -453,6 +476,9 @@ export default function AssignmentPage() {
     <SharedSortIcon active={sortKey === col} dir={sortDir} />
   );
 
+  // Columnas configurables, persistidas por usuario.
+  const cols = useTableColumns<AsigColKey>("admin.assignment.columns", ASIG_COLUMNS);
+
 
   const selectedSims = sims.filter((s) => selected.has(s.iccid));
 
@@ -463,6 +489,16 @@ export default function AssignmentPage() {
         title="Asignación de SIMs"
         subtitle="Vinculá SIMs con tus clientes · Selección múltiple disponible"
       >
+        <TableCustomizer
+          columns={cols.columns}
+          isVisible={cols.isVisible}
+          toggle={cols.toggle}
+          reset={cols.reset}
+          density={cols.density}
+          setDensity={cols.setDensity}
+          columnLines={cols.columnLines}
+          setColumnLines={cols.setColumnLines}
+        />
         <IconButton
           icon="refresh"
           onClick={() => load(page, perPage, serverQuery)}
@@ -569,17 +605,18 @@ export default function AssignmentPage() {
                   </button>
                 </th>
                 {([
-                  { label: "SIM / ICCID",      key: "iccid" },
-                  { label: "Estado",            key: "status" },
-                  { label: "Dispositivo",       key: "endpoint" },
-                  { label: "Cliente Asignado",  key: "client" },
-                  { label: "Acción",            key: null },
-                ] as const).map(({ label, key }) => (
+                  ...cols.visibleColumns.map((c) => ({ label: c.label, key: ASIG_SORT_KEY[c.key] })),
+                  { label: "Acción", key: null },
+                ] as { label: string; key: string | null }[]).map(({ label, key }, i) => (
                   <th key={label}
                     onClick={key ? () => handleSort(key) : undefined}
-                    className={`px-4 py-3 text-left text-label-xs tracking-wider whitespace-nowrap uppercase ${
+                    className={`px-4 ${cols.densityClass} text-left text-label-xs tracking-wider whitespace-nowrap uppercase ${
                       key ? "cursor-pointer select-none transition-colors hover:bg-surface-container" : ""
-                    } ${sortKey === key ? "text-primary" : "text-on-surface-variant"}`}>
+                    } ${sortKey === key ? "text-primary" : "text-on-surface-variant"} ${
+                      cols.columnLines ? "border-r border-outline-variant/50" : ""
+                    } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-low" : ""} ${
+                      key === null ? "sticky right-0 z-10 bg-surface-container-low" : ""
+                    }`}>
                     {label}{key && <SortIcon col={key} />}
                   </th>
                 ))}
@@ -598,84 +635,106 @@ export default function AssignmentPage() {
                     const isAssigned = !!sim.localData?.clientId;
                     const statusId   = sim.status?.id ?? 0;
                     const cfg        = STATUS_CFG[statusId] ?? STATUS_CFG[0];
-                    const Icon       = cfg.icon;
+                    // Ojo: no llamar `Icon` a esto — taparía el componente
+                    // Icon de Material Symbols que usa el resto del archivo.
+                    const StatusIcon = cfg.icon;
                     const iccidDisplay = displayIccid(sim);
                     const isSelected = selected.has(sim.iccid);
                     const isLoading  = actionLoading.has(sim.iccid);
 
+                    const cellCls = (i: number) =>
+                      `px-4 ${cols.densityClass} ${
+                        cols.columnLines ? "border-r border-outline-variant/50" : ""
+                      } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest" : ""}`;
+
                     return (
                       <tr key={sim.iccid}
                         onClick={() => toggleOne(sim.iccid)}
-                        className="border-b border-gray-50 cursor-pointer transition-colors hover:bg-gray-50/60"
-                        style={isSelected ? { background: "rgba(62,207,142,0.05)" } : {}}>
+                        className={`group cursor-pointer border-b border-outline-variant/50 transition-colors ${
+                          isSelected ? "bg-primary/5" : "hover:bg-surface-container-low"
+                        }`}>
 
                         {/* Checkbox */}
-                        <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                        <td className={`px-4 ${cols.densityClass}`} onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => toggleOne(sim.iccid)} className="flex items-center justify-center w-5 h-5">
                             {isSelected
-                              ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
-                              : <Square className="w-4 h-4 text-gray-300 hover:text-gray-400" />
+                              ? <CheckSquare className="w-4 h-4 text-primary-container" />
+                              : <Square className="w-4 h-4 text-outline-variant hover:text-on-surface-variant" />
                             }
                           </button>
                         </td>
 
-                        {/* ICCID */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4 text-gray-300 shrink-0" />
-                            <code className="text-xs font-mono text-gray-800 tracking-wide">{iccidDisplay}</code>
-                          </div>
-                        </td>
+                        {cols.visibleColumns.map((c, i) => {
+                          switch (c.key) {
+                            case "SIM / ICCID":
+                              return (
+                                <td key={c.key} className={cellCls(i)}>
+                                  <div className="flex items-center gap-2">
+                                    <Icon name="sd_card" className="shrink-0 text-[18px] text-outline-variant" />
+                                    <code className="font-mono text-body-sm tracking-tight text-on-surface">{iccidDisplay}</code>
+                                  </div>
+                                </td>
+                              );
 
-                        {/* Status */}
-                        <td className="px-4 py-3.5">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
-                            style={{ color: cfg.color, background: cfg.bg }}>
-                            <Icon className="w-3 h-3" />
-                            {cfg.label}
-                          </span>
-                        </td>
+                            case "Estado":
+                              return (
+                                <td key={c.key} className={cellCls(i)}>
+                                  <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-xs"
+                                    style={{ color: cfg.color, background: cfg.bg }}>
+                                    <StatusIcon className="w-3 h-3" />
+                                    {cfg.label}
+                                  </span>
+                                </td>
+                              );
 
-                        {/* Endpoint */}
-                        <td className="px-4 py-3.5">
-                          {sim.endpoint?.name
-                            ? <span className="text-sm text-gray-700 font-mono">{sim.endpoint.name}</span>
-                            : <span className="text-xs text-gray-300 italic">Sin endpoint</span>
-                          }
-                        </td>
+                            case "Dispositivo":
+                              return (
+                                <td key={c.key} className={cellCls(i)}>
+                                  {sim.endpoint?.name
+                                    ? <span className="font-mono text-body-sm text-on-surface">{sim.endpoint.name}</span>
+                                    : <span className="text-body-sm italic text-outline-variant">Sin endpoint</span>}
+                                </td>
+                              );
 
-                        {/* Cliente Asignado */}
-                        <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                            case "Cliente Asignado":
+                              return (
+                                <td key={c.key} className={cellCls(i)} onClick={(e) => e.stopPropagation()}>
                           {isAssigned ? (
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                                style={{ background: "rgba(62,207,142,0.15)", color: "#059669" }}>
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-xs text-on-primary-container">
                                 {sim.localData!.clientName!.charAt(0).toUpperCase()}
                               </div>
-                              <span className="text-sm font-medium text-gray-800 truncate max-w-[160px]">
+                              <span className="max-w-[160px] truncate text-label-md text-on-surface">
                                 {sim.localData!.clientName}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">Sin asignar</span>
+                            <span className="text-body-sm italic text-outline-variant">Sin asignar</span>
                           )}
-                        </td>
+                                </td>
+                              );
 
-                        {/* Acción */}
-                        <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                            default:
+                              return null;
+                          }
+                        })}
+
+                        {/* Acción — fija a la derecha */}
+                        <td
+                          className={`px-4 ${cols.densityClass} sticky right-0 z-10 bg-surface-container-lowest`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {isAssigned ? (
                             <button onClick={() => handleUnassign(sim.iccid, sim.localData!.clientName!)}
                               disabled={isLoading}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                              style={{ background: "rgba(239,68,68,0.08)", color: "#dc2626" }}>
-                              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlink className="w-3 h-3" />}
+                              className="flex items-center gap-1.5 rounded-lg bg-error-container px-3 py-1.5 text-label-xs text-on-error-container transition-opacity hover:opacity-80 disabled:opacity-50">
+                              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Icon name="link_off" className="text-[14px]" />}
                               Quitar
                             </button>
                           ) : (
                             <button onClick={() => setModalSims([sim])}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                              style={{ background: "rgba(62,207,142,0.10)", color: "#059669" }}>
-                              <Link2 className="w-3 h-3" />
+                              className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-label-xs text-primary transition-colors hover:bg-primary/20">
+                              <Icon name="link" className="text-[14px]" />
                               Asignar
                             </button>
                           )}
