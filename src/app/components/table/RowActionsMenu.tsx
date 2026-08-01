@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "../ui/icon";
 
@@ -15,7 +15,12 @@ import { Icon } from "../ui/icon";
 export interface RowAction {
   icon: string;
   label: string;
-  onSelect: () => void;
+  /**
+   * Recibe el botón `⋮` como ancla. Sirve para que un popover de confirmación
+   * se posicione contra algo real: sin ancla, popper.js lo deja en la esquina
+   * superior izquierda.
+   */
+  onSelect: (anchor: HTMLElement | null) => void;
   disabled?: boolean;
   /** Acciones destructivas: se pintan en rojo y van al final. */
   danger?: boolean;
@@ -30,6 +35,7 @@ export function RowActionsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +52,7 @@ export function RowActionsMenu({
   const run = (a: RowAction) => {
     if (a.disabled) return;
     setOpen(false);
-    a.onSelect();
+    a.onSelect(triggerRef.current);
   };
 
   const items: ReactNode = actions.map((a) => (
@@ -68,6 +74,7 @@ export function RowActionsMenu({
   return (
     <>
       <button
+        ref={triggerRef}
         onClick={(e) => {
           e.stopPropagation();
           setAnchor(e.currentTarget.getBoundingClientRect());
