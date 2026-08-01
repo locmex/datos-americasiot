@@ -210,6 +210,12 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /* Cualquier cosa que se revele con hover es INVISIBLE con el dedo: el hover
+     no existe en táctil. Si es una acción, queda inusable; si es una pista
+     (una flecha de orden), el usuario no sabe que la columna es ordenable.
+     Con puntero grueso se muestran siempre. */
+  .hover-reveal { opacity: 1 !important; }
 }
 
 /* Punto de conexión que late (dispositivo online) */

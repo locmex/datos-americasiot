@@ -1348,7 +1348,7 @@ export default function ClientPortalDashboard() {
                               </span>
                               <Icon
                                 name={sortKey === key && sortDir === "desc" ? "arrow_downward" : "arrow_upward"}
-                                className={`text-[14px] transition-opacity ${sortKey === key ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
+                                className={`hover-reveal text-[14px] transition-opacity ${sortKey === key ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
                               />
                             </button>
                           ) : (
@@ -1573,7 +1573,7 @@ export default function ClientPortalDashboard() {
                               </span>
                               <Icon
                                 name={active && deviceSort.dir === "desc" ? "arrow_downward" : "arrow_upward"}
-                                className={`text-[14px] transition-opacity ${active ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
+                                className={`hover-reveal text-[14px] transition-opacity ${active ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
                               />
                             </button>
                           </th>
