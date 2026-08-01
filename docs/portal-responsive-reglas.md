@@ -28,25 +28,27 @@ se toca por accidente y obliga a re-autenticar. Salir se queda en el header.
 **Desviación deliberada:** el header de Stitch trae una foto de perfil de stock.
 El portal no tiene avatar ni pantalla de perfil; se omite.
 
-## 2. Tabla → tarjeta
+## 2. La tabla se queda tabla
 
-Debajo de `md`, cada fila de tabla se vuelve una tarjeta:
+**Decisión del proyecto (revisa una versión anterior de este doc que proponía
+colapsar a tarjetas).** En móvil la tabla NO se convierte en tarjetas, ni en el
+portal ni en el admin. Se mantiene como tabla con scroll horizontal.
 
-```
-rounded-xl border border-outline-variant bg-surface-container-lowest
-active:scale-[0.98]        ← feedback táctil
-```
+El mecanismo responsive es el **selector de columnas**: en un teléfono el usuario
+reduce la tabla a las columnas que le importan, en vez de que el diseño decida
+por él. Es el patrón de EMNIFY y evita mantener dos representaciones del mismo
+dato.
 
-Anatomía de la fila colapsada:
+Condiciones para que esto no se rompa:
 
-| Zona | Contenido |
-|---|---|
-| Izquierda | Cuadro de 48×48 (`rounded-lg`) con color semántico de estado + icono |
-| Centro | Identificador (`text-label-md`) sobre descriptor (`text-body-sm`) |
-| Derecha | Dato principal (monto / métrica) sobre chip de estado |
+- La **columna de acciones queda fija** (`sticky right-0`). Con scroll horizontal,
+  una acción que se va hacia la derecha es una acción inalcanzable.
+- La **primera columna identificadora queda fija** (`sticky left-0`), o al
+  desplazarse el usuario pierde de vista de qué fila está leyendo.
+- La preferencia de columnas se guarda por usuario en `localStorage`.
 
-El detalle va **dentro de la misma tarjeta**, expandible, separado por
-`border-t border-outline-variant` y sobre `bg-surface`.
+La excepción son los listados que ya nacieron como tarjetas (facturas, pedidos):
+esos siguen siendo tarjetas, porque nunca fueron tablas.
 
 ## 3. Acciones
 
