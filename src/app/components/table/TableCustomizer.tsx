@@ -47,7 +47,7 @@ export function TableCustomizer<T extends string>({
         <button
           onClick={() => setOpen(false)}
           aria-label="Cerrar"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+          className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
         >
           <Icon name="close" className="text-[18px]" />
         </button>
@@ -64,7 +64,7 @@ export function TableCustomizer<T extends string>({
               title={d.label}
               aria-label={d.label}
               aria-pressed={density === d.value}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+              className={`tap-target flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
                 density === d.value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
@@ -122,7 +122,7 @@ export function TableCustomizer<T extends string>({
 
       <button
         onClick={reset}
-        className="self-start font-label-md text-label-md text-primary transition-opacity hover:opacity-80"
+        className="tap-target self-start text-left font-label-md text-label-md text-primary transition-opacity hover:opacity-80"
       >
         Restablecer valores por defecto
       </button>
@@ -136,7 +136,7 @@ export function TableCustomizer<T extends string>({
         onClick={() => setOpen(true)}
         title="Personalizar tabla"
         aria-label="Personalizar tabla"
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-surface text-on-surface-variant transition-colors hover:bg-surface-container"
+        className="tap-target flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-surface text-on-surface-variant transition-colors hover:bg-surface-container"
       >
         <Icon name="tune" className="text-[18px]" />
       </button>

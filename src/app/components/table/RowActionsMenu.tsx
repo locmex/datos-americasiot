@@ -83,7 +83,7 @@ export function RowActionsMenu({
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container"
+        className="tap-target flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container"
       >
         <Icon name="more_vert" className="text-[20px]" />
       </button>
@@ -106,7 +106,7 @@ export function RowActionsMenu({
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+                className="tap-target flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
               >
                 <Icon name="close" className="text-[18px]" />
               </button>

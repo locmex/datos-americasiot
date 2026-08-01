@@ -939,7 +939,7 @@ export default function DevicesPage() {
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
                     aria-label="Página anterior"
-                    className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
+                    className="tap-target flex items-center justify-center rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
                   >
                     <Icon name="chevron_left" className="text-[16px]" />
                   </button>
@@ -948,7 +948,7 @@ export default function DevicesPage() {
                       key={p}
                       onClick={() => setPage(p)}
                       aria-current={p === page ? "page" : undefined}
-                      className={`h-8 w-8 rounded-lg text-label-md transition-colors ${
+                      className={`tap-target h-8 w-8 rounded-lg text-label-md transition-colors ${
                         p === page
                           ? "btn-primary"
                           : "border border-outline-variant text-on-surface-variant hover:bg-surface-container"
@@ -964,7 +964,7 @@ export default function DevicesPage() {
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                     aria-label="Página siguiente"
-                    className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
+                    className="tap-target flex items-center justify-center rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
                   >
                     <Icon name="chevron_right" className="text-[16px]" />
                   </button>
