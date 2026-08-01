@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AmericasIoT - Dispositivos Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-pill {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for data-heavy sections */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bbcabe;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#bbcabe",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#00714e",
+                        "surface-variant": "#d3e4fe",
+                        "primary-fixed": "#71fcb6",
+                        "inverse-primary": "#51df9c",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#111c2d",
+                        "on-background": "#0b1c30",
+                        "secondary-fixed": "#85f8c4",
+                        "primary-fixed-dim": "#51df9c",
+                        "tertiary-fixed": "#d8e3fb",
+                        "on-primary-fixed-variant": "#005233",
+                        "secondary": "#006c4a",
+                        "on-primary-container": "#005434",
+                        "primary": "#006c45",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "primary-container": "#3ecf8e",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed-dim": "#68dba9",
+                        "secondary-container": "#82f5c1",
+                        "on-tertiary-container": "#3e495c",
+                        "on-secondary": "#ffffff",
+                        "outline": "#6c7a70",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary-container": "#adb8cf",
+                        "on-tertiary-fixed-variant": "#3c475a",
+                        "surface-container-high": "#dce9ff",
+                        "surface": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-secondary-fixed": "#002114",
+                        "background": "#f8f9ff",
+                        "tertiary-fixed-dim": "#bcc7de",
+                        "surface-tint": "#006c45",
+                        "tertiary": "#545f73",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed": "#002112",
+                        "on-secondary-fixed-variant": "#005137",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "on-surface-variant": "#3d4a41",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "32px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "card-padding": "20px",
+                        "container-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "label-xs": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "display-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "label-xs": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700"}],
+                        "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "display-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24 overflow-x-hidden">
+<!-- TopAppBar (Shell Filter Applied: Hidden on Mobile as per typical hybrid but kept for brand continuity in this specific request) -->
+<!-- Applying Shared Component JSON Styles: TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-40 bg-surface-container-lowest dark:bg-surface-container-low flex justify-between items-center h-16 px-6 border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-3">
+<span class="font-headline-sm text-headline-sm font-black text-on-surface">AmericasIoT</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-container dark:hover:bg-surface-container-high rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a technical administrator for an IoT platform, looking confidently at the camera. The background is a clean, softly lit corporate office environment with subtle green and slate accents. The lighting is bright and even, reinforcing a light-mode, modern professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvrbqbmRmaLg-M73pzhNdMeRto8SXg8HmdNZ-ikD4Yb6XORbnvF8E7pLTVn-J0ct171q1nDE-2Bm4jlOqohJPJPLpuYCEFZf72wrv9A3snbMHYpukKCPP3kWDR3bMR0Js1k9Wmn1Da0g9qCDL22OXRNdySWWlokXRCHre-JHIJItSdH_gfmX5pEBXPAm5nxTqC5aQpka1pxWlU-tUR_SHgR_T4N93VeObZbLW6pGDcyp0kEqTx4_Y"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 px-4 max-w-full">
+<!-- Search and Filter Header -->
+<section class="mt-4 mb-6">
+<div class="flex flex-col gap-4">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full h-12 pl-12 pr-4 bg-surface-container-lowest border border-outline-variant rounded-xl focus:border-primary focus:ring-1 focus:ring-primary font-body-md transition-all outline-none" placeholder="Buscar dispositivos por IMEI, nombre..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm">Todos (248)</button>
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant font-label-md text-label-md">Activos (230)</button>
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant font-label-md text-label-md">Inactivos (12)</button>
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant font-label-md text-label-md">Alertas (6)</button>
+</div>
+</div>
+</section>
+<!-- Device Grid (List Format on Mobile) -->
+<section class="flex flex-col gap-4">
+<!-- Device Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-3 transition-transform active:scale-[0.98] duration-150">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">router</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-label-md font-bold text-on-surface">Teltonika FMB920</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">IMEI: 862410041284XXX</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+<div class="flex flex-wrap gap-2 pt-2">
+<!-- Status Chips -->
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check_circle</span>
+                        Conectado
+                    </div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-tertiary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm">signal_cellular_4_bar</span>
+                        LTE Cat M1
+                    </div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-tertiary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm">battery_charging_full</span>
+                        98%
+                    </div>
+</div>
+<div class="mt-2 grid grid-cols-2 gap-4 border-t border-outline-variant pt-3">
+<div>
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Última Conexión</p>
+<p class="text-body-sm font-body-sm text-on-surface">Hace 2 mins</p>
+</div>
+<div class="text-right">
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Consumo Mes</p>
+<p class="text-body-sm font-body-sm text-on-surface">42.5 MB</p>
+</div>
+</div>
+</div>
+<!-- Device Card 2 (Alert State) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-3 transition-transform active:scale-[0.98] duration-150">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined">router</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-label-md font-bold text-on-surface">Queclink GV55</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">IMEI: 356810029173XXX</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+<div class="flex flex-wrap gap-2 pt-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">warning</span>
+                        Sin Señal
+                    </div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-tertiary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm">location_off</span>
+                        GPS Fallido
+                    </div>
+</div>
+<div class="mt-2 grid grid-cols-2 gap-4 border-t border-outline-variant pt-3">
+<div>
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Desconectado desde</p>
+<p class="text-body-sm font-body-sm text-error">Hace 5 horas</p>
+</div>
+<div class="text-right">
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Ubicación</p>
+<p class="text-body-sm font-body-sm text-on-surface">Última: CDMX</p>
+</div>
+</div>
+</div>
+<!-- Device Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-3 transition-transform active:scale-[0.98] duration-150">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">router</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-label-md font-bold text-on-surface">Ruptela HCV5</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">IMEI: 412415541284XXX</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+<div class="flex flex-wrap gap-2 pt-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">check_circle</span>
+                        Conectado
+                    </div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-tertiary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm">signal_cellular_alt</span>
+                        3G Global
+                    </div>
+</div>
+<div class="mt-2 grid grid-cols-2 gap-4 border-t border-outline-variant pt-3">
+<div>
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Última Conexión</p>
+<p class="text-body-sm font-body-sm text-on-surface">Hace 12 seg</p>
+</div>
+<div class="text-right">
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Uptime</p>
+<p class="text-body-sm font-body-sm text-on-surface">14d 2h</p>
+</div>
+</div>
+</div>
+<!-- Device Card 4 (Maintenance) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-3 transition-transform active:scale-[0.98] duration-150">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined">router</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-label-md font-bold text-on-surface">Teltonika RUT240</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">IMEI: 869910041284XXX</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+<div class="flex flex-wrap gap-2 pt-2">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm">pause_circle</span>
+                        Suspendido
+                    </div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-tertiary-container font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-sm">settings_backup_restore</span>
+                        Firmware Update
+                    </div>
+</div>
+<div class="mt-2 grid grid-cols-2 gap-4 border-t border-outline-variant pt-3">
+<div>
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Estado</p>
+<p class="text-body-sm font-body-sm text-on-surface">Mantenimiento</p>
+</div>
+<div class="text-right">
+<p class="text-label-xs font-label-xs text-on-surface-variant uppercase">Versión</p>
+<p class="text-body-sm font-body-sm text-on-surface">v2.4.1 (Latest)</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB: Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-xl shadow-lg flex items-center justify-center transition-transform active:scale-90 z-50">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+<!-- BottomNavBar (Mobile Shell Navigation) -->
+<!-- Applying Shared Component JSON Styles: BottomNavBar Mapping from TopAppBar logic for consistency -->
+<nav class="fixed bottom-0 left-0 right-0 h-20 bg-surface-container-lowest dark:bg-surface-container-low border-t border-outline-variant dark:border-outline flex items-center justify-around px-2 z-40">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-16 py-1 rounded-full flex items-center justify-center transition-colors group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant">dashboard</span>
+</div>
+<span class="text-label-xs font-label-xs text-on-surface-variant">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<!-- Active State Logic Applied: "Dispositivos" is active -->
+<div class="w-16 py-1 rounded-full flex items-center justify-center bg-primary-container text-on-primary-container">
+<span class="material-symbols-outlined active-nav-pill">router</span>
+</div>
+<span class="text-label-xs font-label-xs text-on-primary-container font-bold">Dispositivos</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-16 py-1 rounded-full flex items-center justify-center transition-colors group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant">sd_card</span>
+</div>
+<span class="text-label-xs font-label-xs text-on-surface-variant">SIMs</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-16 py-1 rounded-full flex items-center justify-center transition-colors group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant">group</span>
+</div>
+<span class="text-label-xs font-label-xs text-on-surface-variant">Clientes</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-16 py-1 rounded-full flex items-center justify-center transition-colors group-hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</div>
+<span class="text-label-xs font-label-xs text-on-surface-variant">Ajustes</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for button ripple effects
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('mousedown', function(e) {
+                const rect = this.getBoundingClientRect();
+                const ripple = document.createElement('span');
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                ripple.classList.add('absolute', 'rounded-full', 'bg-white/30', 'pointer-events-none', 'animate-ping');
+                
+                this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Search highlight interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/20');
+        });
+    </script>
+</body></html>

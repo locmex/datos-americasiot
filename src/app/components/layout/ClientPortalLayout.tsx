@@ -5,10 +5,12 @@ import { ClientAuthContext, ClientUser } from "../../lib/client-auth";
 import { AmericasIoTLogo } from "../AmericasIoTLogo";
 import { Icon } from "../ui/icon";
 
+// `shortLabel` es lo que se muestra en las tabs inferiores: en un ancho de
+// teléfono "Mis Dispositivos" no entra sin truncarse.
 const portalNav = [
-  { to: "/portal",          icon: "devices",      label: "Mis Dispositivos", end: true },
-  { to: "/portal/orders",   icon: "shopping_cart", label: "Pedidos" },
-  { to: "/portal/invoices", icon: "receipt_long",  label: "Mis Facturas" },
+  { to: "/portal",          icon: "devices",       label: "Mis Dispositivos", shortLabel: "Dispositivos", end: true },
+  { to: "/portal/orders",   icon: "shopping_cart", label: "Pedidos",          shortLabel: "Pedidos" },
+  { to: "/portal/invoices", icon: "receipt_long",  label: "Mis Facturas",     shortLabel: "Facturas" },
 ];
 
 // ─── Sidebar (desktop) ────────────────────────────────────────────────────────
@@ -76,41 +78,57 @@ function PortalSidebar() {
   );
 }
 
-// ─── Header + tabs (móvil) ────────────────────────────────────────────────────
+// ─── Header (móvil) ───────────────────────────────────────────────────────────
+// Ya no lleva las tabs: la navegación vive abajo, al alcance del pulgar.
 function PortalMobileHeader() {
   const ctx = useContext(ClientAuthContext)!;
 
   return (
-    <header className="md:hidden flex flex-col w-full px-container-margin bg-surface border-b border-outline-variant sticky top-0 z-40">
-      <div className="flex items-center justify-between h-16">
-        <AmericasIoTLogo height={24} forceLight />
-        <button
-          onClick={ctx.logout}
-          className="flex items-center gap-1.5 text-on-surface-variant hover:text-error transition-colors font-label-md text-label-md"
-        >
-          <Icon name="logout" />
-          Salir
-        </button>
-      </div>
-      <div className="flex gap-6 overflow-x-auto no-scrollbar">
-        {portalNav.map(({ to, label, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              `pb-2 whitespace-nowrap font-body-md text-body-md transition-colors ${
-                isActive
-                  ? "text-primary border-b-2 border-primary font-bold"
-                  : "text-on-surface-variant font-medium hover:text-primary"
-              }`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
-      </div>
+    <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between border-b border-outline-variant bg-surface px-container-margin">
+      <AmericasIoTLogo height={24} forceLight />
+      <button
+        onClick={ctx.logout}
+        className="flex items-center gap-1.5 text-label-md text-on-surface-variant transition-colors hover:text-error"
+      >
+        <Icon name="logout" />
+        Salir
+      </button>
     </header>
+  );
+}
+
+// ─── Tabs inferiores (móvil) ──────────────────────────────────────────────────
+// En un teléfono la navegación va abajo: es la única zona que el pulgar alcanza
+// sin recolocar la mano. Salir NO va acá — un logout entre pestañas se toca por
+// accidente y obliga a re-autenticar; se queda en el header.
+function PortalBottomNav() {
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-outline-variant bg-surface px-4"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      {portalNav.map(({ to, icon, label, end, shortLabel }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) =>
+            `flex flex-1 flex-col items-center gap-1 transition-colors ${
+              isActive ? "text-primary" : "text-on-surface-variant"
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <Icon name={icon} filled={isActive} />
+              <span className="text-label-xs text-[10px] leading-none">
+                {shortLabel ?? label}
+              </span>
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
   );
 }
 
@@ -193,12 +211,14 @@ function PortalRouter() {
 
   if (ctx.user) {
     return (
-      <div className="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col md:flex-row">
+      <div className="flex min-h-screen flex-col bg-surface text-body-md text-on-surface md:flex-row">
         <PortalSidebar />
         <PortalMobileHeader />
-        <main className="flex-1 md:ml-64 bg-background min-h-screen">
+        {/* pt-16 libra el header fijo; pb-24 libra las tabs inferiores */}
+        <main className="min-h-screen flex-1 bg-background pt-16 pb-24 md:ml-64 md:pt-0 md:pb-0">
           <Outlet />
         </main>
+        <PortalBottomNav />
       </div>
     );
   }
