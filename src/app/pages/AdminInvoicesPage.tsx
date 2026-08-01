@@ -8,6 +8,8 @@ import {
 } from "../lib/invoice-status";
 import { groupCharges } from "../lib/invoice-charges";
 import { generateInvoicePdf } from "../lib/invoice-pdf";
+import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
+import { TableCustomizer } from "../components/table/TableCustomizer";
 import { toast } from "sonner";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -45,6 +47,17 @@ interface Invoice {
 }
 
 const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"];
+
+// ── Columnas configurables ───────────────────────────────────────────────────
+type InvColKey = "Cliente" | "Período" | "Estado" | "SIMs" | "Total";
+
+const INVOICE_COLUMNS: ColumnDef<InvColKey>[] = [
+  { key: "Cliente", label: "Cliente", locked: true },
+  { key: "Período", label: "Período" },
+  { key: "Estado",  label: "Estado" },
+  { key: "SIMs",    label: "SIMs" },
+  { key: "Total",   label: "Total" },
+];
 
 function formatDate(ts: string): string {
   return new Date(ts).toLocaleString("es-MX", {
@@ -432,7 +445,7 @@ function InvoiceDetailPanel({
     "flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-label-xs transition-colors disabled:opacity-50";
 
   return (
-    <div className="flex h-[700px] flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg">
+    <div className="flex h-full flex-col overflow-hidden rounded-t-xl border border-outline-variant bg-surface-container-lowest shadow-lg lg:h-[700px] lg:rounded-xl">
       {/* Cabecera fija — resumen + acciones SIEMPRE visibles */}
       <div className="z-20 shrink-0 border-b border-outline-variant bg-surface-bright p-card-padding">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -577,6 +590,13 @@ export default function AdminInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "">("");
   const [selected, setSelected] = useState<Invoice | null>(null);
 
+  // Columnas configurables: en un teléfono la tabla no entra sin scroll lateral.
+  const cols = useTableColumns<InvColKey>("admin.invoices.columns", INVOICE_COLUMNS);
+  const ALIGN: Record<InvColKey, string> = {
+    "Cliente": "text-left", "Período": "text-left", "Estado": "text-left",
+    "SIMs": "text-right", "Total": "text-right",
+  };
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -610,6 +630,16 @@ export default function AdminInvoicesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <TableCustomizer
+            columns={cols.columns}
+            isVisible={cols.isVisible}
+            toggle={cols.toggle}
+            reset={cols.reset}
+            density={cols.density}
+            setDensity={cols.setDensity}
+            columnLines={cols.columnLines}
+            setColumnLines={cols.setColumnLines}
+          />
           <button
             onClick={load}
             title="Recargar"
@@ -660,15 +690,13 @@ export default function AdminInvoicesPage() {
               <thead className="sticky top-0 z-10 bg-surface-container-low">
                 <tr className="border-b border-outline-variant">
                   {[
-                    { label: "Cliente", align: "text-left" },
-                    { label: "Período", align: "text-left" },
-                    { label: "Estado", align: "text-left" },
-                    { label: "SIMs", align: "text-right" },
-                    { label: "Total", align: "text-right" },
-                  ].map(({ label, align }) => (
+                    ...cols.visibleColumns.map((c) => ({ label: c.label, align: ALIGN[c.key] })),
+                  ].map(({ label, align }, i) => (
                     <th
                       key={label}
-                      className={`px-4 py-3 text-label-xs tracking-wider whitespace-nowrap text-on-surface-variant uppercase ${align}`}
+                      className={`px-4 ${cols.densityClass} text-label-xs tracking-wider whitespace-nowrap text-on-surface-variant uppercase ${align} ${
+                        cols.columnLines ? "border-r border-outline-variant/50" : ""
+                      } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-low" : ""}`}
                     >
                       {label}
                     </th>
@@ -679,8 +707,8 @@ export default function AdminInvoicesPage() {
                 {loading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 5 }).map((_, j) => (
-                          <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
+                        {cols.visibleColumns.map((c) => (
+                          <td key={c.key} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                         ))}
                       </tr>
                     ))
@@ -692,20 +720,41 @@ export default function AdminInvoicesPage() {
                           selected?.id === invoice.id ? "bg-surface-container-highest/30" : ""
                         }`}
                       >
-                        <td className="px-4 py-3">
-                          <div className="text-label-md text-on-surface">{invoice.client_name}</div>
-                          <div className="font-mono text-label-xs text-on-surface-variant">
-                            #{invoice.id.slice(0, 8)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-on-surface-variant">
-                          {formatPeriod(invoice.period_year, invoice.period_month)}
-                        </td>
-                        <td className="px-4 py-3"><StatusChip status={invoice.status} /></td>
-                        <td className="px-4 py-3 text-right">{invoice.sim_count ?? "—"}</td>
-                        <td className="px-4 py-3 text-right text-label-md">
-                          {formatCurrency(invoice.total, invoice.currency)}
-                        </td>
+                        {cols.visibleColumns.map((c, i) => {
+                          const td = `px-4 ${cols.densityClass} ${ALIGN[c.key]} ${
+                            cols.columnLines ? "border-r border-outline-variant/50" : ""
+                          } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest" : ""}`;
+
+                          switch (c.key) {
+                            case "Cliente":
+                              return (
+                                <td key={c.key} className={td}>
+                                  <div className="text-label-md text-on-surface">{invoice.client_name}</div>
+                                  <div className="font-mono text-label-xs text-on-surface-variant">
+                                    #{invoice.id.slice(0, 8)}
+                                  </div>
+                                </td>
+                              );
+                            case "Período":
+                              return (
+                                <td key={c.key} className={`${td} text-on-surface-variant`}>
+                                  {formatPeriod(invoice.period_year, invoice.period_month)}
+                                </td>
+                              );
+                            case "Estado":
+                              return <td key={c.key} className={td}><StatusChip status={invoice.status} /></td>;
+                            case "SIMs":
+                              return <td key={c.key} className={td}>{invoice.sim_count ?? "—"}</td>;
+                            case "Total":
+                              return (
+                                <td key={c.key} className={`${td} text-label-md`}>
+                                  {formatCurrency(invoice.total, invoice.currency)}
+                                </td>
+                              );
+                            default:
+                              return null;
+                          }
+                        })}
                       </tr>
                     ))}
               </tbody>
@@ -722,10 +771,21 @@ export default function AdminInvoicesPage() {
           )}
         </div>
 
-        {/* Panel */}
+        {/* Panel.
+            Debajo de `lg` el grid es de una columna, así que el panel caería
+            al final de la tabla: tocás una fila y aparentemente no pasa nada.
+            Ahí se muestra como hoja a pantalla completa. */}
         <div className="lg:col-span-1">
           {selected ? (
-            <InvoiceDetailPanel invoice={selected} onClose={() => setSelected(null)} onUpdated={load} />
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-inverse-surface/40 lg:hidden"
+                onClick={() => setSelected(null)}
+              />
+              <div className="fixed inset-x-0 bottom-0 top-14 z-50 lg:static lg:inset-auto lg:z-auto">
+                <InvoiceDetailPanel invoice={selected} onClose={() => setSelected(null)} onUpdated={load} />
+              </div>
+            </>
           ) : (
             <div className="hidden h-[700px] flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest/50 text-center lg:flex">
               <Icon name="receipt_long" className="mb-3 text-[40px] text-outline-variant" />

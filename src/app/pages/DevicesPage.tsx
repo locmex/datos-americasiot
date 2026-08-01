@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
 import {
   RefreshCw, CheckCircle2, PauseCircle, Circle,
-  RotateCcw, PowerOff, MessageSquare, MoreVertical,
-  Lock, Unlock, Unlink, Trash2, Send, CheckCheck,
-  AlertTriangle, Power, X,
+  MessageSquare, Send, CheckCheck, AlertTriangle, X,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
 import { PageHeader, IconButton, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
+import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
+import { TableCustomizer } from "../components/table/TableCustomizer";
+import { RowActionsMenu } from "../components/table/RowActionsMenu";
 import { DeviceDetailModal, EmnifyEndpoint } from "../components/DeviceDetailModal";
 import { AddDeviceModal } from "../components/AddDeviceModal";
 
@@ -62,6 +62,35 @@ function getConnBadge(ep: EmnifyEndpoint) {
 }
 
 const PER_PAGE_OPTIONS = [5, 10, 25, 50];
+
+// ─── Columnas configurables ──────────────────────────────────────
+// La clave es la etiqueta porque el comparador de orden ya trabaja con ella.
+type DeviceColKey =
+  | "Nombre" | "Etiquetas" | "Estado" | "Conexión" | "ICCID"
+  | "IMEI" | "Operador" | "IP" | "País";
+
+const DEVICE_COLUMNS: ColumnDef<DeviceColKey>[] = [
+  { key: "Nombre",    label: "Nombre", locked: true },
+  { key: "Etiquetas", label: "Etiquetas" },
+  { key: "Estado",    label: "Estado" },
+  { key: "Conexión",  label: "Conexión" },
+  { key: "ICCID",     label: "ICCID" },
+  // Ya venían en la respuesta de emnify; hasta ahora solo se veían en el modal.
+  { key: "IMEI",     label: "IMEI",     hiddenByDefault: true },
+  { key: "Operador", label: "Operador", hiddenByDefault: true },
+  { key: "IP",       label: "IP",       hiddenByDefault: true },
+  { key: "País",     label: "País",     hiddenByDefault: true },
+];
+
+/** Clave que entiende el comparador. Sin entrada = columna no ordenable
+    (Conexión, Operador, IP y País se derivan de `_connectivity`). */
+const SORT_KEY: Partial<Record<DeviceColKey, string>> = {
+  "Nombre":    "name",
+  "Etiquetas": "tags",
+  "Estado":    "status",
+  "ICCID":     "iccid",
+  "IMEI":      "imei",
+};
 
 // ─── Toast ────────────────────────────────────────────────────────
 function Toast({ msg, type, onClose }: { msg: string; type: "ok" | "err"; onClose: () => void }) {
@@ -443,169 +472,12 @@ function SmsConsoleModal({
   );
 }
 
-// ─── Row Actions (inline + dropdown) ─────────────────────────────
-function RowActions({
-  ep,
-  onResetConn,
-  onToggleStatus,
-  onOpenSms,
-  onToggleImei,
-  onDetachSim,
-  onDelete,
-  loadingKey,
-}: {
-  ep: EmnifyEndpoint;
-  onResetConn: () => void;
-  onToggleStatus: () => void;
-  onOpenSms: () => void;
-  onToggleImei: () => void;
-  onDetachSim: () => void;
-  onDelete: () => void;
-  loadingKey: string | null;
-}) {
-  const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const dropRef = useRef<HTMLDivElement>(null);
-  const simStatusId = (ep.sim as any)?.status?.id ?? ep.status?.id ?? 0;
-  const isActive = simStatusId === 1;
-  const hasImeiLock = !!(ep as any).imei_lock;
-
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!open && btnRef.current) setRect(btnRef.current.getBoundingClientRect());
-    setOpen(o => !o);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      const portal = document.getElementById("row-actions-portal");
-      if (
-        (btnRef.current && btnRef.current.contains(e.target as Node)) ||
-        (portal && portal.contains(e.target as Node))
-      ) return;
-      setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const busy = (key: string) => loadingKey === key;
-
-  const iconBtn = (
-    label: string,
-    icon: React.ReactNode,
-    onClick: () => void,
-    color: string,
-    loading: boolean,
-  ) => (
-    <button
-      onClick={e => { e.stopPropagation(); onClick(); }}
-      disabled={loading}
-      className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-40"
-      style={{ color: loading ? "#9ca3af" : color }}
-      onMouseEnter={e => (e.currentTarget.style.background = `${color}18`)}
-      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-    >
-      {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : icon}
-    </button>
-  );
-
-  return (
-    <div className="flex items-center gap-0.5 justify-end" onClick={e => e.stopPropagation()}>
-      {/* Quick action: reset connectivity */}
-      {iconBtn(
-        "Restablecer conexión",
-        <RotateCcw className="w-3.5 h-3.5" />,
-        onResetConn,
-        "#6366f1",
-        busy("reset"),
-      )}
-
-      {/* Quick action: toggle device status */}
-      {iconBtn(
-        isActive ? "Desactivar dispositivo" : "Activar dispositivo",
-        isActive ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />,
-        onToggleStatus,
-        isActive ? "#d97706" : "#16a34a",
-        busy("status"),
-      )}
-
-      {/* Quick action: SMS console */}
-      {iconBtn(
-        "Abrir consola de SMS",
-        <MessageSquare className="w-3.5 h-3.5" />,
-        onOpenSms,
-        "#3ECF8E",
-        false,
-      )}
-
-      {/* Dropdown ⋮ */}
-      <div className="relative">
-        <button
-          ref={btnRef}
-          onClick={handleToggle}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-
-        {open && rect && createPortal(
-          <div
-            id="row-actions-portal"
-            ref={dropRef}
-            className="bg-white rounded-xl shadow-2xl border border-gray-100 py-1.5 min-w-[210px]"
-            style={{
-              position: "fixed",
-              top: rect.bottom + 4,
-              left: rect.right - 210,
-              zIndex: 9999,
-            }}
-          >
-            <button
-              onClick={e => { e.stopPropagation(); setOpen(false); onToggleImei(); }}
-              disabled={busy("imei")}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              {hasImeiLock
-                ? <Unlock className="w-4 h-4 text-gray-400 shrink-0" />
-                : <Lock   className="w-4 h-4 text-gray-400 shrink-0" />}
-              {hasImeiLock ? "Habilitar bloqueo IMEI" : "Deshabilitar bloqueo IMEI"}
-              {busy("imei") && <RefreshCw className="w-3 h-3 animate-spin ml-auto text-gray-400" />}
-            </button>
-
-            <button
-              onClick={e => { e.stopPropagation(); setOpen(false); onDetachSim(); }}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Unlink className="w-4 h-4 text-gray-400 shrink-0" />
-              Desvincular SIM
-            </button>
-
-            <div className="my-1 border-t border-gray-100" />
-
-            <button
-              onClick={e => { e.stopPropagation(); setOpen(false); onDelete(); }}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <Trash2 className="w-4 h-4 shrink-0" />
-              Eliminar
-            </button>
-          </div>,
-          document.body
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Row skeleton ─────────────────────────────────────────────────
-function RowSkeleton() {
+function RowSkeleton({ cells }: { cells: number }) {
   return (
-    <tr className="border-b border-gray-50">
-      {[1, 2, 3, 4, 5, 6].map(i => (
-        <td key={i} className="py-4 px-4"><Skeleton className="h-4 w-full" /></td>
+    <tr className="border-b border-outline-variant/50">
+      {Array.from({ length: cells }).map((_, i) => (
+        <td key={i} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
       ))}
     </tr>
   );
@@ -780,6 +652,7 @@ export default function DevicesPage() {
       if (sortKey === "status") { aVal = String((a.sim as any)?.status?.id ?? a.status?.id ?? 0); bVal = String((b.sim as any)?.status?.id ?? b.status?.id ?? 0); }
       if (sortKey === "iccid")  { aVal = a.sim?.iccid || ""; bVal = b.sim?.iccid || ""; }
       if (sortKey === "tags")   { aVal = (a.tags || []).join(","); bVal = (b.tags || []).join(","); }
+      if (sortKey === "imei")   { aVal = a.imei || ""; bVal = b.imei || ""; }
       const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: "base" });
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -789,12 +662,25 @@ export default function DevicesPage() {
     <SharedSortIcon active={sortKey === col} dir={sortDir} />
   );
 
+  // Columnas configurables, persistidas por usuario.
+  const cols = useTableColumns<DeviceColKey>("admin.devices.columns", DEVICE_COLUMNS);
+
   return (
     <div className="p-container-margin">
       <PageHeader
         title="Dispositivos"
         subtitle={`Endpoints registrados en emnify · ${total > 0 ? `${total.toLocaleString()} en total` : "—"}`}
       >
+        <TableCustomizer
+          columns={cols.columns}
+          isVisible={cols.isVisible}
+          toggle={cols.toggle}
+          reset={cols.reset}
+          density={cols.density}
+          setDensity={cols.setDensity}
+          columnLines={cols.columnLines}
+          setColumnLines={cols.setColumnLines}
+        />
         <IconButton icon="refresh" onClick={handleRefresh} title="Actualizar" spinning={refreshing} />
         <button
           onClick={() => setShowAddDevice(true)}
@@ -856,33 +742,34 @@ export default function DevicesPage() {
                     <th className="w-10 px-4 py-3 text-left">
                       <input type="checkbox" className="rounded border-outline-variant" disabled />
                     </th>
-                    {([
-                      { label: "Nombre",    key: "name",   sortable: true },
-                      { label: "Etiquetas", key: "tags",   sortable: true },
-                      { label: "Estado",    key: "status", sortable: true },
-                      { label: "Conexión",  key: "conn",   sortable: false },
-                      { label: "ICCID",     key: "iccid",  sortable: true },
-                    ] as const).map(({ label, key, sortable }) => (
-                      <th key={label}
-                        onClick={sortable ? () => handleSort(key) : undefined}
-                        className={`px-4 py-3 text-left text-label-xs tracking-wider whitespace-nowrap uppercase transition-colors ${
-                          sortable ? "cursor-pointer select-none hover:bg-surface-container" : ""
-                        } ${sortKey === key ? "text-primary" : "text-on-surface-variant"}`}>
-                        {label}{sortable && <SortIcon col={key} />}
-                      </th>
-                    ))}
-                    <th className="w-36 px-4 py-3 text-right text-label-xs tracking-wider whitespace-nowrap text-on-surface-variant uppercase">
+                    {cols.visibleColumns.map((c, i) => {
+                      const sk = SORT_KEY[c.key];
+                      return (
+                        <th key={c.key}
+                          onClick={sk ? () => handleSort(sk) : undefined}
+                          className={`px-4 ${cols.densityClass} text-left text-label-xs tracking-wider whitespace-nowrap uppercase transition-colors ${
+                            sk ? "cursor-pointer select-none hover:bg-surface-container" : ""
+                          } ${sk && sortKey === sk ? "text-primary" : "text-on-surface-variant"} ${
+                            cols.columnLines ? "border-r border-outline-variant/50" : ""
+                          } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-low" : ""}`}>
+                          {c.label}{sk && <SortIcon col={sk} />}
+                        </th>
+                      );
+                    })}
+                    {/* Fija: con scroll horizontal una acción fuera del viewport
+                        es una acción inalcanzable. */}
+                    <th className={`w-36 px-4 ${cols.densityClass} sticky right-0 z-10 bg-surface-container-low text-right text-label-xs tracking-wider whitespace-nowrap text-on-surface-variant uppercase`}>
                       Acciones
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading
-                    ? Array.from({ length: perPage > 10 ? 10 : perPage }).map((_, i) => <RowSkeleton key={i} />)
+                    ? Array.from({ length: perPage > 10 ? 10 : perPage }).map((_, i) => <RowSkeleton key={i} cells={cols.visibleColumns.length + 2} />)
                     : items.length === 0
                     ? (
                       <tr>
-                        <td colSpan={8} className="py-16 text-center">
+                        <td colSpan={cols.visibleColumns.length + 2} className="py-16 text-center">
                           <Icon name="router" className="mb-3 text-[48px] text-outline-variant" />
                           <p className="text-body-md text-on-surface-variant">No se encontraron dispositivos</p>
                         </td>
@@ -915,56 +802,123 @@ export default function DevicesPage() {
                             <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                               <input type="checkbox" className="rounded border-outline-variant" />
                             </td>
-                            <td className="px-4 py-3">
-                              <span className="text-label-md text-on-surface transition-colors group-hover:text-primary">
-                                {ep.name || ep.imei || `Endpoint #${ep.id}`}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              {(ep.tags || []).length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {(ep.tags || []).map(t => (
-                                    <span key={t} className="rounded-full bg-surface-container px-2 py-0.5 text-label-xs text-on-surface-variant">
-                                      {t}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-body-sm text-on-surface-variant">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-xs whitespace-nowrap"
-                                style={{ background: st.bg, color: st.color }}
-                              >
-                                <Icon name={st.symbol} className="text-[14px]" />
-                                {st.label}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="inline-flex items-center gap-1.5 text-label-xs whitespace-nowrap">
-                                <span
-                                  className={`h-2 w-2 shrink-0 rounded-full ${conn.online ? "pulse-dot" : ""}`}
-                                  style={{ background: conn.color }}
-                                />
-                                <span style={{ color: conn.color }}>{conn.label}</span>
-                              </span>
-                            </td>
-                            <td className="max-w-[180px] truncate px-4 py-3 font-mono text-body-sm tracking-tight text-on-surface-variant">
-                              {iccid}
-                            </td>
-                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
-                              <RowActions
-                                ep={ep}
-                                onResetConn={() => setConfirmAction({ type: "reset-conn", device: ep })}
-                                onToggleStatus={() => handleToggleStatus(ep)}
-                                onOpenSms={() => setSmsDevice(ep)}
-                                onToggleImei={() => handleToggleImei(ep)}
-                                onDetachSim={() => setConfirmAction({ type: "detach-sim", device: ep })}
-                                onDelete={() => setConfirmAction({ type: "delete", device: ep })}
-                                loadingKey={currentLoadingKey}
-                              />
+                            {cols.visibleColumns.map((c, i) => {
+                              const tdClass = `px-4 ${cols.densityClass} ${
+                                cols.columnLines ? "border-r border-outline-variant/50" : ""
+                              } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest group-hover:bg-surface-container-low" : ""}`;
+                              const mono = "font-mono text-body-sm tracking-tight text-on-surface-variant";
+                              const dash = <span className="text-body-sm text-on-surface-variant">—</span>;
+
+                              switch (c.key) {
+                                case "Nombre":
+                                  return (
+                                    <td key={c.key} className={tdClass}>
+                                      <span className="text-label-md text-on-surface transition-colors group-hover:text-primary">
+                                        {ep.name || ep.imei || `Endpoint #${ep.id}`}
+                                      </span>
+                                    </td>
+                                  );
+
+                                case "Etiquetas":
+                                  return (
+                                    <td key={c.key} className={tdClass}>
+                                      {(ep.tags || []).length > 0 ? (
+                                        <div className="flex flex-wrap gap-1">
+                                          {(ep.tags || []).map(t => (
+                                            <span key={t} className="rounded-full bg-surface-container px-2 py-0.5 text-label-xs text-on-surface-variant">
+                                              {t}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      ) : dash}
+                                    </td>
+                                  );
+
+                                case "Estado":
+                                  return (
+                                    <td key={c.key} className={tdClass}>
+                                      <span
+                                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-xs whitespace-nowrap"
+                                        style={{ background: st.bg, color: st.color }}
+                                      >
+                                        <Icon name={st.symbol} className="text-[14px]" />
+                                        {st.label}
+                                      </span>
+                                    </td>
+                                  );
+
+                                case "Conexión":
+                                  return (
+                                    <td key={c.key} className={tdClass}>
+                                      <span className="inline-flex items-center gap-1.5 text-label-xs whitespace-nowrap">
+                                        <span
+                                          className={`h-2 w-2 shrink-0 rounded-full ${conn.online ? "pulse-dot" : ""}`}
+                                          style={{ background: conn.color }}
+                                        />
+                                        <span style={{ color: conn.color }}>{conn.label}</span>
+                                      </span>
+                                    </td>
+                                  );
+
+                                case "ICCID":
+                                  return <td key={c.key} className={`${tdClass} ${mono} max-w-[180px] truncate`}>{iccid}</td>;
+
+                                case "IMEI":
+                                  return <td key={c.key} className={`${tdClass} ${mono} whitespace-nowrap`}>{ep.imei || dash}</td>;
+
+                                case "Operador":
+                                  return (
+                                    <td key={c.key} className={`${tdClass} text-body-sm whitespace-nowrap text-on-surface-variant`}>
+                                      {conn.operator || dash}
+                                    </td>
+                                  );
+
+                                case "IP":
+                                  return <td key={c.key} className={`${tdClass} ${mono} whitespace-nowrap`}>{conn.ip || dash}</td>;
+
+                                case "País":
+                                  return (
+                                    <td key={c.key} className={`${tdClass} text-body-sm whitespace-nowrap text-on-surface-variant`}>
+                                      {conn.country || dash}
+                                    </td>
+                                  );
+
+                                default:
+                                  return null;
+                              }
+                            })}
+
+                            <td
+                              className={`px-3 ${cols.densityClass} sticky right-0 z-10 bg-surface-container-lowest text-right group-hover:bg-surface-container-low`}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <div className="flex justify-end">
+                                {currentLoadingKey ? (
+                                  <span className="flex h-9 w-9 items-center justify-center">
+                                    <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                                  </span>
+                                ) : (
+                                  <RowActionsMenu
+                                    label={`Acciones de ${ep.name || ep.id}`}
+                                    actions={[
+                                      { icon: "sync", label: "Restablecer conexión",
+                                        onSelect: () => setConfirmAction({ type: "reset-conn", device: ep }) },
+                                      { icon: simStatusId === 1 ? "power_settings_new" : "play_circle",
+                                        label: simStatusId === 1 ? "Desactivar dispositivo" : "Activar dispositivo",
+                                        onSelect: () => handleToggleStatus(ep) },
+                                      { icon: "sms", label: "Abrir consola de SMS",
+                                        onSelect: () => setSmsDevice(ep) },
+                                      { icon: (ep as any).imei_lock ? "lock_open" : "lock",
+                                        label: (ep as any).imei_lock ? "Deshabilitar bloqueo IMEI" : "Habilitar bloqueo IMEI",
+                                        onSelect: () => handleToggleImei(ep) },
+                                      { icon: "link_off", label: "Desvincular SIM",
+                                        onSelect: () => setConfirmAction({ type: "detach-sim", device: ep }) },
+                                      { icon: "delete", label: "Eliminar", danger: true,
+                                        onSelect: () => setConfirmAction({ type: "delete", device: ep }) },
+                                    ]}
+                                  />
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -985,7 +939,7 @@ export default function DevicesPage() {
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
                     aria-label="Página anterior"
-                    className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
+                    className="tap-target flex items-center justify-center rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
                   >
                     <Icon name="chevron_left" className="text-[16px]" />
                   </button>
@@ -994,7 +948,7 @@ export default function DevicesPage() {
                       key={p}
                       onClick={() => setPage(p)}
                       aria-current={p === page ? "page" : undefined}
-                      className={`h-8 w-8 rounded-lg text-label-md transition-colors ${
+                      className={`tap-target h-8 w-8 rounded-lg text-label-md transition-colors ${
                         p === page
                           ? "btn-primary"
                           : "border border-outline-variant text-on-surface-variant hover:bg-surface-container"
@@ -1010,7 +964,7 @@ export default function DevicesPage() {
                     onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                     aria-label="Página siguiente"
-                    className="rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
+                    className="tap-target flex items-center justify-center rounded-lg border border-outline-variant p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-40"
                   >
                     <Icon name="chevron_right" className="text-[16px]" />
                   </button>

@@ -7,6 +7,8 @@ import {
   EmptyState, StatusSwitch, RowAction, Modal, Field, FormActions, fieldClass,
   FilterPills, ResultCount,
 } from "../components/admin/AdminUI";
+import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
+import { TableCustomizer } from "../components/table/TableCustomizer";
 import { toast } from "sonner";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -22,6 +24,21 @@ interface Plan {
 
 type PlanForm = { name: string; unit_price: string; currency: string };
 const emptyForm: PlanForm = { name: "", unit_price: "", currency: "MXN" };
+
+// ── Columnas configurables ───────────────────────────────────────────────────
+type PlanColKey = "Plan" | "Precio" | "Estado" | "Acciones";
+
+const PLAN_COLUMNS: ColumnDef<PlanColKey>[] = [
+  { key: "Plan",  label: "Plan", locked: true },
+  { key: "Precio",    label: "Precio" },
+  { key: "Estado",    label: "Estado" },
+  { key: "Acciones",  label: "Acciones", locked: true },
+];
+
+const ALIGN: Record<PlanColKey, string> = {
+  "Plan": "text-left", "Precio": "text-right",
+  "Estado": "text-left", "Acciones": "text-right",
+};
 
 // ─── Alta / edición ──────────────────────────────────────────────────────────
 function PlanModal({
@@ -136,6 +153,9 @@ export default function AdminPlansPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
+  // Columnas configurables: en un teléfono la tabla no entra sin scroll lateral.
+  const cols = useTableColumns<PlanColKey>("admin.plans.columns", PLAN_COLUMNS);
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -198,6 +218,16 @@ export default function AdminPlansPage() {
           </>
         }
       >
+        <TableCustomizer
+          columns={cols.columns}
+          isVisible={cols.isVisible}
+          toggle={cols.toggle}
+          reset={cols.reset}
+          density={cols.density}
+          setDensity={cols.setDensity}
+          columnLines={cols.columnLines}
+          setColumnLines={cols.setColumnLines}
+        />
         <IconButton icon="refresh" onClick={load} title="Recargar" spinning={loading} />
         <button
           onClick={openNew}
@@ -232,45 +262,65 @@ export default function AdminPlansPage() {
       >
         <table className="w-full">
           <TableHead
-            columns={[
-              { label: "Plan" },
-              { label: "Precio", align: "right" },
-              { label: "Estado" },
-              { label: "Acciones", align: "right" },
-            ]}
+            columns={cols.visibleColumns.map((c) => ({
+              label: c.label,
+              align: (ALIGN[c.key] === "text-right" ? "right" : "left") as "right" | "left",
+            }))}
           />
           <tbody className="divide-y divide-outline-variant/50 text-body-sm text-on-surface">
             {loading ? (
-              <TableSkeleton cols={4} rows={4} />
+              <TableSkeleton cols={cols.visibleColumns.length} rows={4} />
             ) : (
               filtered.map((plan) => (
                 <tr key={plan.id} className="transition-colors hover:bg-surface-container-low">
-                  <td className="px-4 py-3 text-label-md text-on-surface">{plan.name}</td>
-                  <td className="px-4 py-3 text-right text-label-md">
-                    {formatCurrency(plan.unit_price, plan.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusSwitch
-                      active={plan.active}
-                      busy={togglingId === plan.id}
-                      onToggle={() => handleToggleStatus(plan)}
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <RowAction
-                        icon="edit"
-                        title="Editar plan"
-                        onClick={() => { setEditing(plan); setShowModal(true); }}
-                      />
-                      <RowAction
-                        icon="delete"
-                        title="Eliminar plan"
-                        tone="danger"
-                        onClick={() => handleDelete(plan)}
-                      />
-                    </div>
-                  </td>
+                  {cols.visibleColumns.map((c, i) => {
+                    const td = `px-4 ${cols.densityClass} ${ALIGN[c.key]} ${
+                      cols.columnLines ? "border-r border-outline-variant/50" : ""
+                    } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest" : ""} ${
+                      c.key === "Acciones" ? "sticky right-0 z-10 bg-surface-container-lowest" : ""
+                    }`;
+
+                    switch (c.key) {
+                      case "Plan":
+                        return <td key={c.key} className={`${td} text-label-md text-on-surface`}>{plan.name}</td>;
+                      case "Precio":
+                        return (
+                          <td key={c.key} className={`${td} text-label-md`}>
+                            {formatCurrency(plan.unit_price, plan.currency)}
+                          </td>
+                        );
+                      case "Estado":
+                        return (
+                          <td key={c.key} className={td}>
+                            <StatusSwitch
+                              active={plan.active}
+                              busy={togglingId === plan.id}
+                              onToggle={() => handleToggleStatus(plan)}
+                            />
+                          </td>
+                        );
+                      case "Acciones":
+                        return (
+                          <td key={c.key} className={td}>
+                            <div className="flex items-center justify-end gap-1">
+                              <RowAction
+                                icon="edit"
+                                title="Editar plan"
+                                onClick={() => { setEditing(plan); setShowModal(true); }}
+                              />
+                              <RowAction
+                                icon="delete"
+                                title="Eliminar plan"
+                                tone="danger"
+                                onClick={() => handleDelete(plan)}
+                              />
+                            </div>
+                          </td>
+                        );
+                      default:
+                        return null;
+                    }
+                  })}
                 </tr>
               ))
             )}

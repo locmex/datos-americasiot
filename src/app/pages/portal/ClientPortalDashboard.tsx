@@ -17,6 +17,9 @@ import { toast } from "sonner";
 import { DeviceDetailModal, EmnifyEndpoint } from "../../components/DeviceDetailModal";
 import { BRAND, STATUS_TOKENS, type Tone } from "../../lib/status-tokens";
 import { Icon } from "../../components/ui/icon";
+import { useTableColumns, type ColumnDef } from "../../components/table/useTableColumns";
+import { TableCustomizer } from "../../components/table/TableCustomizer";
+import { RowActionsMenu } from "../../components/table/RowActionsMenu";
 
 // Colores de las dos series del gráfico de tráfico.
 // Se eligen con contraste de tono Y de luminosidad para que sigan siendo
@@ -61,6 +64,39 @@ function resolveRat(raw: any): string {
   if (u === "UMTS") return "3G";
   if (u === "GSM") return "2G";
   return desc || u;
+}
+
+// ─── Columnas de la tabla de dispositivos ────────────────────────────────────
+// La clave es la etiqueta porque el comparador de orden ya trabaja con ella;
+// cambiarla invalidaría la preferencia guardada de cada usuario sin necesidad.
+type DeviceColKey =
+  | "Dispositivo" | "Estado" | "Conexión" | "ICCID" | "IMEI"
+  | "IMSI" | "Operador" | "IP" | "Red";
+
+const DEVICE_COLUMNS: ColumnDef<DeviceColKey>[] = [
+  { key: "Dispositivo", label: "Dispositivo", locked: true },
+  { key: "Estado",      label: "Estado" },
+  { key: "Conexión",    label: "Conexión" },
+  { key: "ICCID",       label: "ICCID" },
+  { key: "IMEI",        label: "IMEI" },
+  // Estos datos ya venían del endpoint pero solo se veían en el modal de detalle.
+  { key: "IMSI",     label: "IMSI",     hiddenByDefault: true },
+  { key: "Operador", label: "Operador", hiddenByDefault: true },
+  { key: "IP",       label: "IP",       hiddenByDefault: true },
+  { key: "Red",      label: "Red",      hiddenByDefault: true },
+];
+
+function simOperator(sim: ClientSIM): string {
+  const c = sim.connectivity as any;
+  return c?.mno?.name || c?.operator?.name || "";
+}
+function simIp(sim: ClientSIM): string {
+  const p = (sim.connectivity as any)?.pdp_context;
+  return p?.ue_ip_address || p?.ip_address || "";
+}
+function simRat(sim: ClientSIM): string {
+  const c = sim.connectivity as any;
+  return resolveRat(c?.pdp_context?.rat_type ?? c?.rat_type ?? sim.rat_type);
 }
 
 function getPortalConnBadge(sim: ClientSIM): { label: string; online: boolean; color: string; bg: string } {
@@ -761,6 +797,9 @@ export default function ClientPortalDashboard() {
   // Dispositivos — search + sort + multi-select + rename + reset + status loading
   const [deviceSearch, setDeviceSearch] = useState("");
   const [deviceSort, setDeviceSort] = useState<{ col: string; dir: "asc" | "desc" }>({ col: "Dispositivo", dir: "asc" });
+
+  // Columnas de la tabla de dispositivos, persistidas por usuario.
+  const deviceCols = useTableColumns<DeviceColKey>("portal.devices.columns", DEVICE_COLUMNS);
   const [devicePage, setDevicePage] = useState(1);
   const [devicePerPage, setDevicePerPage] = useState(25);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1046,6 +1085,14 @@ export default function ClientPortalDashboard() {
       } else if (col === "IMEI") {
         va = a.endpoint?.imei_with_luhn || a.endpoint?.imei || a.imei || "";
         vb = b.endpoint?.imei_with_luhn || b.endpoint?.imei || b.imei || "";
+      } else if (col === "IMSI") {
+        va = a.imsi || ""; vb = b.imsi || "";
+      } else if (col === "Operador") {
+        va = simOperator(a); vb = simOperator(b);
+      } else if (col === "IP") {
+        va = simIp(a); vb = simIp(b);
+      } else if (col === "Red") {
+        va = simRat(a); vb = simRat(b);
       }
       return va < vb ? -mult : va > vb ? mult : 0;
     });
@@ -1129,8 +1176,20 @@ export default function ClientPortalDashboard() {
               )}
             </div>
 
-            {/* Conteo + actualizar */}
+            {/* Conteo + personalizar + actualizar */}
             <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+              {activeView === "devices" && (
+                <TableCustomizer
+                  columns={deviceCols.columns}
+                  isVisible={deviceCols.isVisible}
+                  toggle={deviceCols.toggle}
+                  reset={deviceCols.reset}
+                  density={deviceCols.density}
+                  setDensity={deviceCols.setDensity}
+                  columnLines={deviceCols.columnLines}
+                  setColumnLines={deviceCols.setColumnLines}
+                />
+              )}
               <div className="flex items-center gap-2 text-on-surface-variant">
                 <Icon name="sim_card" />
                 <span className="font-label-md text-label-md whitespace-nowrap">
@@ -1289,7 +1348,7 @@ export default function ClientPortalDashboard() {
                               </span>
                               <Icon
                                 name={sortKey === key && sortDir === "desc" ? "arrow_downward" : "arrow_upward"}
-                                className={`text-[14px] transition-opacity ${sortKey === key ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
+                                className={`hover-reveal text-[14px] transition-opacity ${sortKey === key ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
                               />
                             </button>
                           ) : (
@@ -1492,30 +1551,37 @@ export default function ClientPortalDashboard() {
                           />
                         </button>
                       </th>
-                      {(["Dispositivo", "Estado", "Conexión", "ICCID", "IMEI"] as const).map((h) => {
-                        const active = deviceSort.col === h;
+                      {deviceCols.visibleColumns.map((c, i) => {
+                        const active = deviceSort.col === c.key;
                         return (
-                          <th key={h} className="p-4 text-left whitespace-nowrap">
+                          <th
+                            key={c.key}
+                            className={`px-4 ${deviceCols.densityClass} text-left whitespace-nowrap ${
+                              deviceCols.columnLines ? "border-r border-hairline last:border-r-0" : ""
+                            } ${i === 0 ? "sticky left-0 z-10 bg-row-hover" : ""}`}
+                          >
                             <button
                               onClick={() => setDeviceSort((prev) =>
-                                prev.col === h
-                                  ? { col: h, dir: prev.dir === "asc" ? "desc" : "asc" }
-                                  : { col: h, dir: "asc" }
+                                prev.col === c.key
+                                  ? { col: c.key, dir: prev.dir === "asc" ? "desc" : "asc" }
+                                  : { col: c.key, dir: "asc" }
                               )}
                               className="flex items-center gap-1 group"
                             >
                               <span className={`font-label-xs text-label-xs uppercase tracking-wider transition-colors ${active ? "text-on-surface" : "text-on-surface-variant group-hover:text-on-surface"}`}>
-                                {h}
+                                {c.label}
                               </span>
                               <Icon
                                 name={active && deviceSort.dir === "desc" ? "arrow_downward" : "arrow_upward"}
-                                className={`text-[14px] transition-opacity ${active ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
+                                className={`hover-reveal text-[14px] transition-opacity ${active ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
                               />
                             </button>
                           </th>
                         );
                       })}
-                      <th className="p-4 text-right font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant whitespace-nowrap">
+                      {/* Fija a la derecha: con scroll horizontal, una acción que
+                          se va del viewport es una acción inalcanzable. */}
+                      <th className={`px-4 ${deviceCols.densityClass} sticky right-0 z-10 bg-row-hover text-right font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant whitespace-nowrap`}>
                         Acciones
                       </th>
                     </tr>
@@ -1546,110 +1612,160 @@ export default function ClientPortalDashboard() {
                             )}
                           </td>
 
-                          {/* Dispositivo — abre el detalle */}
-                          <td className="p-4">
-                            <button
-                              onClick={() => hasEp && handleOpenDevice(sim)}
-                              disabled={!hasEp}
-                              className="flex items-center gap-2 text-left disabled:opacity-60"
-                            >
-                              <Icon name="router" className="text-[16px] text-tertiary shrink-0" />
-                              <span className="min-w-0">
-                                <span className={`block font-label-md text-label-md truncate max-w-[180px] ${hasEp ? "text-primary hover:underline" : "text-on-surface-variant"}`}>
-                                  {sim.endpoint?.name || `Endpoint #${sim.endpointId || "—"}`}
-                                </span>
-                                <span className="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                                  SIM {sim.simId || "—"}
-                                </span>
-                              </span>
-                            </button>
-                          </td>
+                          {/* Celdas — se renderizan según las columnas que el
+                              usuario dejó visibles. */}
+                          {deviceCols.visibleColumns.map((c, i) => {
+                            const tdClass = `px-4 ${deviceCols.densityClass} ${
+                              deviceCols.columnLines ? "border-r border-hairline last:border-r-0" : ""
+                            } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest group-hover:bg-row-hover" : ""}`;
+                            const mono = "font-mono font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap";
+                            const naught = <span className="italic text-outline-variant">No disponible</span>;
 
-                          {/* Estado — pastilla clicable */}
-                          <td className="p-4">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); toggleDeviceStatus(sim, e.currentTarget); }}
-                                  disabled={statusLoadingIds.has(sim.iccid)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap font-label-xs text-label-xs transition-all active:scale-95 disabled:opacity-60 disabled:scale-100 hover:brightness-95"
-                                  style={{ background: st.bg, color: st.color }}
-                                >
-                                  {statusLoadingIds.has(sim.iccid) ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <st.icon className="w-3 h-3" />
-                                  )}
-                                  {st.label}
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{st.id === 1 ? "Click para suspender" : "Click para activar"}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </td>
+                            switch (c.key) {
+                              case "Dispositivo":
+                                return (
+                                  <td key={c.key} className={tdClass}>
+                                    <button
+                                      onClick={() => hasEp && handleOpenDevice(sim)}
+                                      disabled={!hasEp}
+                                      className="flex items-center gap-2 text-left disabled:opacity-60"
+                                    >
+                                      <Icon name="router" className="text-[16px] text-tertiary shrink-0" />
+                                      <span className="min-w-0">
+                                        <span className={`block font-label-md text-label-md truncate max-w-[180px] ${hasEp ? "text-primary hover:underline" : "text-on-surface-variant"}`}>
+                                          {sim.endpoint?.name || `Endpoint #${sim.endpointId || "—"}`}
+                                        </span>
+                                        <span className="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                                          SIM {sim.simId || "—"}
+                                        </span>
+                                      </span>
+                                    </button>
+                                  </td>
+                                );
 
-                          {/* Conexión — pill; el dot late cuando está online para que resalte */}
-                          <td className="p-4">
-                            {connectivityLoading && !sim.connectivity ? (
-                              <span className="inline-flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                                Cargando…
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-2 whitespace-nowrap">
-                                <span
-                                  className={`w-2 h-2 rounded-full shrink-0 ${conn.online ? "pulse-dot" : ""}`}
-                                  style={{ background: conn.color }}
+                              case "Estado":
+                                return (
+                                  <td key={c.key} className={tdClass}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); toggleDeviceStatus(sim, e.currentTarget); }}
+                                          disabled={statusLoadingIds.has(sim.iccid)}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap font-label-xs text-label-xs transition-all active:scale-95 disabled:opacity-60 disabled:scale-100 hover:brightness-95"
+                                          style={{ background: st.bg, color: st.color }}
+                                        >
+                                          {statusLoadingIds.has(sim.iccid) ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                          ) : (
+                                            <st.icon className="w-3 h-3" />
+                                          )}
+                                          {st.label}
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{st.id === 1 ? "Click para suspender" : "Click para activar"}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </td>
+                                );
+
+                              case "Conexión":
+                                return (
+                                  <td key={c.key} className={tdClass}>
+                                    {connectivityLoading && !sim.connectivity ? (
+                                      <span className="inline-flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Cargando…
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-2 whitespace-nowrap">
+                                        <span
+                                          className={`w-2 h-2 rounded-full shrink-0 ${conn.online ? "pulse-dot" : ""}`}
+                                          style={{ background: conn.color }}
+                                        />
+                                        <span className={conn.online ? "text-on-surface font-medium" : "text-on-surface-variant"}>
+                                          {conn.label}
+                                        </span>
+                                      </span>
+                                    )}
+                                  </td>
+                                );
+
+                              case "ICCID":
+                                return <td key={c.key} className={`${tdClass} ${mono}`}>{sim.iccid_with_luhn || sim.iccid || "—"}</td>;
+
+                              case "IMEI":
+                                return (
+                                  <td key={c.key} className={`${tdClass} ${mono}`}>
+                                    {sim.endpoint?.imei_with_luhn || sim.endpoint?.imei || sim.imei || naught}
+                                  </td>
+                                );
+
+                              case "IMSI":
+                                return <td key={c.key} className={`${tdClass} ${mono}`}>{sim.imsi || naught}</td>;
+
+                              case "Operador":
+                                return (
+                                  <td key={c.key} className={`${tdClass} font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap`}>
+                                    {simOperator(sim) || naught}
+                                  </td>
+                                );
+
+                              case "IP":
+                                return <td key={c.key} className={`${tdClass} ${mono}`}>{simIp(sim) || naught}</td>;
+
+                              case "Red":
+                                return (
+                                  <td key={c.key} className={`${tdClass} font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap`}>
+                                    {simRat(sim) || naught}
+                                  </td>
+                                );
+
+                              default:
+                                return null;
+                            }
+                          })}
+
+                          {/* Acciones tras un ⋮: en táctil no hay hover que
+                              revele iconos sueltos, y así la columna queda fija
+                              aunque la tabla scrollee en horizontal. */}
+                          <td className={`px-4 ${deviceCols.densityClass} sticky right-0 z-10 bg-surface-container-lowest group-hover:bg-row-hover text-right`}>
+                            <div className="flex justify-end">
+                              {isResetting ? (
+                                <span className="flex h-9 w-9 items-center justify-center">
+                                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                </span>
+                              ) : (
+                                <RowActionsMenu
+                                  label={`Acciones de ${sim.endpoint?.name || sim.iccid}`}
+                                  actions={[
+                                    {
+                                      icon: "info",
+                                      label: "Ver detalle",
+                                      disabled: !hasEp,
+                                      onSelect: () => handleOpenDevice(sim),
+                                    },
+                                    {
+                                      icon: "sync",
+                                      label: "Restablecer conexión",
+                                      disabled: !hasEp,
+                                      onSelect: (el) => el && handleResetConnectivity(sim, el),
+                                    },
+                                    {
+                                      icon: "sms",
+                                      label: "Abrir consola de SMS",
+                                      disabled: !hasEp,
+                                      onSelect: () => setSmsTarget(sim),
+                                    },
+                                    {
+                                      icon: st.id === 1 ? "pause_circle" : "play_circle",
+                                      label: st.id === 1 ? "Suspender dispositivo" : "Activar dispositivo",
+                                      disabled: statusLoadingIds.has(sim.iccid),
+                                      onSelect: (el) => el && toggleDeviceStatus(sim, el),
+                                    },
+                                  ]}
                                 />
-                                <span className={conn.online ? "text-on-surface font-medium" : "text-on-surface-variant"}>
-                                  {conn.label}
-                                </span>
-                              </span>
-                            )}
-                          </td>
-
-                          {/* ICCID */}
-                          <td className="p-4 font-mono font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
-                            {sim.iccid_with_luhn || sim.iccid || "—"}
-                          </td>
-
-                          {/* IMEI */}
-                          <td className="p-4 font-mono font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
-                            {sim.endpoint?.imei_with_luhn || sim.endpoint?.imei || sim.imei
-                              || <span className="italic text-outline-variant">No disponible</span>}
-                          </td>
-
-                          {/* Acciones — visibles al pasar el cursor (siempre visibles en táctil) */}
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={(e) => handleResetConnectivity(sim, e.currentTarget)}
-                                    disabled={!hasEp || isResetting}
-                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors disabled:opacity-40"
-                                  >
-                                    {isResetting
-                                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                                      : <Icon name="sync" className="text-[18px]" />}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Refrescar conexión</p></TooltipContent>
-                              </Tooltip>
-
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => setSmsTarget(sim)}
-                                    disabled={!hasEp}
-                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors disabled:opacity-40"
-                                  >
-                                    <Icon name="sms" className="text-[18px]" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Enviar SMS</p></TooltipContent>
-                              </Tooltip>
+                              )}
                             </div>
                           </td>
                         </tr>

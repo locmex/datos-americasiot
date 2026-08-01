@@ -206,7 +206,7 @@ function OrderDetailPanel({
   };
 
   return (
-    <div className="flex h-[700px] flex-col overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg">
+    <div className="flex h-full flex-col overflow-hidden rounded-t-xl border border-outline-variant bg-surface-container-lowest shadow-lg lg:h-[700px] lg:rounded-xl">
       {/* Cabecera fija — estado, envío y acciones siempre visibles */}
       <div className="z-20 shrink-0 border-b border-outline-variant bg-surface-bright p-card-padding">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -473,9 +473,19 @@ export default function AdminOrdersPage() {
           )}
         </TableCard>
 
+        {/* Debajo de `lg` el grid es de una columna: sin esto el panel cae al
+            final de la tabla y tocar una fila parece no hacer nada. */}
         <div className="lg:col-span-1">
           {selected ? (
-            <OrderDetailPanel order={selected} onClose={() => setSelected(null)} onUpdated={load} />
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-inverse-surface/40 lg:hidden"
+                onClick={() => setSelected(null)}
+              />
+              <div className="fixed inset-x-0 bottom-0 top-14 z-50 lg:static lg:inset-auto lg:z-auto">
+                <OrderDetailPanel order={selected} onClose={() => setSelected(null)} onUpdated={load} />
+              </div>
+            </>
           ) : (
             <div className="hidden h-[700px] flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest/50 text-center lg:flex">
               <Icon name="shopping_cart" className="mb-3 text-[40px] text-outline-variant" />

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AmericasIoT - Mis Facturas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#bbcabe",
+                    "on-error-container": "#93000a",
+                    "on-secondary-container": "#00714e",
+                    "surface-variant": "#d3e4fe",
+                    "primary-fixed": "#71fcb6",
+                    "inverse-primary": "#51df9c",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#111c2d",
+                    "on-background": "#0b1c30",
+                    "secondary-fixed": "#85f8c4",
+                    "primary-fixed-dim": "#51df9c",
+                    "tertiary-fixed": "#d8e3fb",
+                    "on-primary-fixed-variant": "#005233",
+                    "secondary": "#006c4a",
+                    "on-primary-container": "#005434",
+                    "primary": "#006c45",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "primary-container": "#3ecf8e",
+                    "on-tertiary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "secondary-fixed-dim": "#68dba9",
+                    "secondary-container": "#82f5c1",
+                    "on-tertiary-container": "#3e495c",
+                    "on-secondary": "#ffffff",
+                    "outline": "#6c7a70",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-container": "#adb8cf",
+                    "on-tertiary-fixed-variant": "#3c475a",
+                    "surface-container-high": "#dce9ff",
+                    "surface": "#f8f9ff",
+                    "on-surface": "#0b1c30",
+                    "on-secondary-fixed": "#002114",
+                    "background": "#f8f9ff",
+                    "tertiary-fixed-dim": "#bcc7de",
+                    "surface-tint": "#006c45",
+                    "tertiary": "#545f73",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary-fixed": "#002112",
+                    "on-secondary-fixed-variant": "#005137",
+                    "surface-bright": "#f8f9ff",
+                    "surface-container": "#e5eeff",
+                    "on-surface-variant": "#3d4a41",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "32px",
+                    "base": "4px",
+                    "gutter": "16px",
+                    "card-padding": "20px",
+                    "container-margin": "24px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Inter"],
+                    "label-xs": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-md": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "label-xs": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700"}],
+                    "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "display-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F2F4F7; /* Level 0 Canvas */
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid #E8E8ED;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .invoice-expand-enter {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s ease-out;
+        }
+        .invoice-expand-active {
+            max-height: 500px;
+            opacity: 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="bg-surface border-b border-outline-variant fixed top-0 w-full z-50">
+<div class="flex flex-col w-full h-[100px] px-container-margin max-w-[1280px] mx-auto justify-center">
+<div class="flex items-center justify-between">
+<span class="font-display-md text-display-md font-bold text-primary">AmericasIoT</span>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a corporate fleet manager in a modern office, soft high-key lighting, bright light-mode aesthetic, serene and authoritative mood, consistent with a premium industrial IoT platform's visual identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCv7-pCv7rkCaRU8TuROoAByodGbOFShvLeAYZlsEcWlDzZ33wYVUkFb7jqyl0MQrQxd22reoREznWLNHT_BsZnEiAiACQa-bf8iTpRMa-4eGPFQW6lD4pQ63OqyHBcWdNI9MOsK4KlaBBzvG0SRIDq5N5UPFWAu-jsgCEVPRJ_qnbBjmMhHsffsSlXaJoYLOaXmIiHG2vZpGEDIubbyfnTamGzO9GivnlPPjE9C52ZmrfnJ_E-Tk"/>
+</div>
+</div>
+</div>
+<!-- Desktop Nav (Hidden on Mobile) -->
+<nav class="hidden md:flex gap-8 mt-2">
+<a class="text-on-surface-variant font-medium pb-2 hover:text-primary transition-colors" href="#">Mis Dispositivos</a>
+<a class="text-on-surface-variant font-medium pb-2 hover:text-primary transition-colors" href="#">Pedidos</a>
+<a class="text-primary border-b-2 border-primary font-bold pb-2" href="#">Mis Facturas</a>
+</nav>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pt-[120px] pb-24 px-container-margin max-w-[1280px] mx-auto">
+<!-- Header Section -->
+<div class="mb-section-gap">
+<h1 class="font-display-md text-display-md text-on-surface mb-2">Mis Facturas</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Consulta tu historial de pagos y estados de facturación.</p>
+</div>
+<!-- Summary Cards (Bento Style for Mobile) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-section-gap">
+<!-- Balance Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-2 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl">account_balance_wallet</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">SALDO PENDIENTE</span>
+<div class="flex items-end gap-2">
+<span class="font-display-md text-display-md font-bold text-on-surface">$1,240.00</span>
+<span class="font-label-md text-label-md text-error mb-1">Vence en 4 días</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="font-body-sm text-body-sm">Fecha de corte: 30 Oct 2023</span>
+</div>
+</div>
+<!-- Last Payment Card -->
+<div class="bg-secondary-container border border-outline-variant rounded-xl p-card-padding flex flex-col gap-2 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-6xl">check_circle</span>
+</div>
+<span class="font-label-md text-label-md text-on-secondary-container">ÚLTIMO PAGO RECIBIDO</span>
+<div class="flex items-end gap-2">
+<span class="font-display-md text-display-md font-bold text-on-secondary-container">$980.50</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-secondary-container">
+<span class="material-symbols-outlined text-sm">event_available</span>
+<span class="font-body-sm text-body-sm">Pagado el 05 Oct 2023</span>
+</div>
+</div>
+</div>
+<!-- Billing History List -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between mb-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Historial Reciente</h2>
+<button class="text-primary font-label-md flex items-center gap-1">
+                    Ver todo <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Invoice Item 1 (Unpaid) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm transition-all active:scale-[0.98]">
+<div class="p-4 flex items-center justify-between cursor-pointer" onclick="toggleInvoice('inv-1')">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-error-container">receipt_long</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">FACT-2023-010</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Octubre 2023</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface">$1,240.00</span>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container/20 text-error">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+<span class="text-[10px] font-bold uppercase">Pendiente</span>
+</div>
+</div>
+</div>
+<!-- Expandable Details -->
+<div class="hidden border-t border-outline-variant bg-surface p-4" id="inv-1">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-body-sm text-on-surface-variant">Cargos por Servicio IoT (200 SIMs)</span>
+<span class="font-body-sm text-on-surface">$1,000.00</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-sm text-on-surface-variant">Excedentes de Datos</span>
+<span class="font-body-sm text-on-surface">$240.00</span>
+</div>
+<div class="pt-2 mt-2 border-t border-outline border-dashed flex justify-between font-bold">
+<span class="font-label-md text-on-surface">Total Facturado</span>
+<span class="font-label-md text-primary">$1,240.00</span>
+</div>
+<div class="mt-2 flex gap-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high border border-outline-variant text-on-surface font-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span> PDF
+                            </button>
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high border border-outline-variant text-on-surface font-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">receipt</span> XML
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Invoice Item 2 (Paid) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm transition-all active:scale-[0.98]">
+<div class="p-4 flex items-center justify-between cursor-pointer" onclick="toggleInvoice('inv-2')">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">task_alt</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">FACT-2023-009</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Septiembre 2023</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface">$980.50</span>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span class="text-[10px] font-bold uppercase">Pagada</span>
+</div>
+</div>
+</div>
+<div class="hidden border-t border-outline-variant bg-surface p-4" id="inv-2">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-body-sm text-on-surface-variant">Cargos por Servicio IoT (180 SIMs)</span>
+<span class="font-body-sm text-on-surface">$900.00</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-sm text-on-surface-variant">Mantenimiento de Red</span>
+<span class="font-body-sm text-on-surface">$80.50</span>
+</div>
+<div class="pt-2 mt-2 border-t border-outline border-dashed flex justify-between font-bold">
+<span class="font-label-md text-on-surface">Total Facturado</span>
+<span class="font-label-md text-primary">$980.50</span>
+</div>
+<div class="mt-2 flex gap-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high border border-outline-variant text-on-surface font-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span> PDF
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Invoice Item 3 (Paid) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm transition-all active:scale-[0.98]">
+<div class="p-4 flex items-center justify-between cursor-pointer" onclick="toggleInvoice('inv-3')">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">task_alt</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">FACT-2023-008</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Agosto 2023</span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface">$950.00</span>
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span class="text-[10px] font-bold uppercase">Pagada</span>
+</div>
+</div>
+</div>
+<div class="hidden border-t border-outline-variant bg-surface p-4" id="inv-3">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between">
+<span class="font-body-sm text-on-surface-variant">Cargos por Servicio IoT (190 SIMs)</span>
+<span class="font-body-sm text-on-surface">$950.00</span>
+</div>
+<div class="pt-2 mt-2 border-t border-outline border-dashed flex justify-between font-bold">
+<span class="font-label-md text-on-surface">Total Facturado</span>
+<span class="font-label-md text-primary">$950.00</span>
+</div>
+<div class="mt-2 flex gap-2">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-high border border-outline-variant text-on-surface font-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span> PDF
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Information Notice -->
+<div class="mt-section-gap p-4 rounded-xl border border-outline-variant bg-surface-container-high/30 flex gap-4">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                Para realizar pagos, por favor contacte a su ejecutivo de cuenta o realice una transferencia a las cuentas autorizadas indicadas en su factura PDF. Este portal es exclusivamente de consulta.
+            </p>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant flex justify-around items-center h-16 px-4 z-50">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">devices</span>
+<span class="font-label-xs text-[10px]">Dispositivos</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-xs text-[10px]">Pedidos</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-label-xs text-[10px] font-bold">Facturas</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-xs text-[10px]">Salir</span>
+</a>
+</nav>
+<!-- Side Navigation Bar (Desktop version, hidden on mobile) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 bg-surface border-r border-outline-variant py-6 px-4 z-40 mt-[100px]">
+<div class="flex flex-col gap-1 mb-8">
+<span class="font-label-md text-label-md text-primary">Portal Cliente</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Hola, Usuario 👋</span>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-low rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">devices</span>
+<span class="font-label-md">Mis Dispositivos</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-low rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-md">Pedidos</span>
+</a>
+<a class="bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-label-md">Mis Facturas</span>
+</a>
+</nav>
+<button class="mt-auto px-4 py-3 flex items-center gap-3 text-error hover:bg-error-container/10 rounded-lg transition-all">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md">Cerrar Sesión</span>
+</button>
+</aside>
+<script>
+        function toggleInvoice(id) {
+            const element = document.getElementById(id);
+            const isHidden = element.classList.contains('hidden');
+            
+            // Close all others
+            document.querySelectorAll('[id^="inv-"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+
+            if (isHidden) {
+                element.classList.remove('hidden');
+            } else {
+                element.classList.add('hidden');
+            }
+        }
+        
+        // Initial setup to ensure layout is correct on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('AmericasIoT Portal Ready');
+        });
+    </script>
+</body></html>

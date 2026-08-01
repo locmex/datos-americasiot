@@ -158,21 +158,23 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
                 <div className="font-display-md text-display-md text-primary">
                   {formatCurrency(product.price, product.currency)}
                 </div>
+                {/* Objetivos de 44px: es la interacción principal del catálogo
+                    y en un teléfono errar entre − y + es constante. */}
                 <div className="flex items-center bg-surface-container rounded-lg border border-hairline overflow-hidden shrink-0">
                   <button
                     onClick={() => setQty(product.id, qty - 1)}
                     disabled={qty === 0}
-                    className="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors disabled:opacity-30"
+                    className="flex h-11 w-11 items-center justify-center text-on-surface transition-colors hover:bg-surface-variant active:bg-surface-variant disabled:opacity-30"
                     aria-label={`Quitar una unidad de ${product.name}`}
                   >
                     −
                   </button>
-                  <span className="px-2 font-label-md text-label-md w-8 text-center bg-surface-container-lowest">
+                  <span className="h-11 w-10 flex items-center justify-center font-label-md text-label-md bg-surface-container-lowest">
                     {qty}
                   </span>
                   <button
                     onClick={() => setQty(product.id, qty + 1)}
-                    className="px-3 py-1 hover:bg-surface-variant text-on-surface transition-colors"
+                    className="flex h-11 w-11 items-center justify-center text-on-surface transition-colors hover:bg-surface-variant active:bg-surface-variant"
                     aria-label={`Agregar una unidad de ${product.name}`}
                   >
                     +
@@ -185,9 +187,11 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
       </div>
 
       {/* Carrito flotante — anclado al borde inferior, dentro del área de contenido
-          (el `md:pl-64` compensa el ancho de la sidebar para que quede centrado). */}
+          (el `md:pl-64` compensa el ancho de la sidebar para que quede centrado).
+          En móvil se levanta por encima de las tabs inferiores (h-16); en
+          escritorio no hay tabs, así que vuelve a bottom-6. */}
       {cartEntries.length > 0 && (
-        <div className="fixed bottom-6 left-0 right-0 px-4 md:pl-64 z-40 pointer-events-none">
+        <div className="fixed bottom-20 left-0 right-0 px-4 md:bottom-6 md:pl-64 z-40 pointer-events-none">
           <div className="mx-auto max-w-2xl bg-surface-container-lowest rounded-2xl border border-hairline p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto"
             style={{ boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.08)" }}
           >
@@ -218,7 +222,7 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="btn-primary px-6 py-2 rounded-lg font-label-md text-label-md transition-colors whitespace-nowrap flex items-center gap-2 disabled:opacity-60"
+                className="btn-primary px-6 min-h-[44px] rounded-lg font-label-md text-label-md transition-colors whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon name="send" className="text-[18px]" />}
                 {submitting ? "Enviando…" : "Realizar Pedido"}
@@ -303,7 +307,7 @@ function HistoryTab() {
       <div className="flex justify-end">
         <button
           onClick={load}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-hairline bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md text-label-md"
+          className="flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg border border-hairline bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low transition-colors font-label-md text-label-md"
         >
           <Icon name="refresh" className="text-[16px]" /> Actualizar
         </button>
@@ -333,7 +337,7 @@ function HistoryTab() {
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full font-label-xs text-label-xs shrink-0 whitespace-nowrap"
                   style={{ color: cfg.color, background: cfg.bg }}
                 >
-                  <cfg.icon className="w-3.5 h-3.5" />
+                  <Icon name={cfg.symbol} className="text-[14px]" />
                   {cfg.label}
                 </span>
               </div>
@@ -385,7 +389,7 @@ function HistoryTab() {
                     <button
                       onClick={() => handleReceived(order)}
                       disabled={busyId === order.id}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg btn-primary font-label-md text-label-md transition-colors disabled:opacity-60"
+                      className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-lg btn-primary font-label-md text-label-md transition-colors disabled:opacity-60"
                     >
                       {busyId === order.id
                         ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -397,7 +401,7 @@ function HistoryTab() {
                     <button
                       onClick={() => handleCancel(order)}
                       disabled={busyId === order.id}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-hairline text-error hover:bg-error-container/30 font-label-md text-label-md transition-colors disabled:opacity-60"
+                      className="flex-1 flex items-center justify-center gap-1.5 min-h-[44px] rounded-lg border border-hairline text-error hover:bg-error-container/30 font-label-md text-label-md transition-colors disabled:opacity-60"
                     >
                       {busyId === order.id
                         ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -456,7 +460,7 @@ export default function ClientOrdersPage() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`pb-2 font-label-md text-label-md transition-colors border-b-2 -mb-px ${
+                className={`flex min-h-[44px] items-end pb-2 font-label-md text-label-md transition-colors border-b-2 -mb-px ${
                   activeTab === id
                     ? "text-primary border-primary font-bold"
                     : "text-on-surface-variant border-transparent hover:text-primary"

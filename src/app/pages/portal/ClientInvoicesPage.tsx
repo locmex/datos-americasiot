@@ -104,15 +104,22 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
   };
 
   return (
-    <article className="bg-surface-container-lowest border border-hairline rounded-xl overflow-hidden transition-colors">
-      {/* Fila principal */}
+    <article className="bg-surface-container-lowest border border-hairline rounded-xl overflow-hidden transition-all active:scale-[0.99] sm:active:scale-100">
+      {/* Fila principal.
+          Móvil: dos columnas — [icono + identificador] · [monto + estado].
+          Escritorio: se despliega en cuatro zonas con la acción de PDF a mano. */}
       <div
         onClick={handleToggle}
-        className="p-card-padding flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 cursor-pointer hover:bg-row-hover transition-colors"
+        className="p-card-padding flex items-center justify-between gap-4 cursor-pointer hover:bg-row-hover transition-colors"
       >
-        <div className="flex items-center gap-4 w-full sm:w-1/3 min-w-0">
-          <div className="bg-surface-container-high w-12 h-12 rounded-lg flex items-center justify-center text-on-surface shrink-0">
-            <Icon name="description" />
+        <div className="flex items-center gap-4 min-w-0 flex-1 sm:w-1/3 sm:flex-none">
+          {/* El cuadro toma el color del estado: se reconoce la factura vencida
+              de un vistazo, sin leer el chip. */}
+          <div
+            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: cfg.bg, color: cfg.color }}
+          >
+            <Icon name={cfg.symbol} />
           </div>
           <div className="min-w-0">
             <h3 className="font-label-md text-label-md text-on-surface capitalize">
@@ -124,7 +131,7 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
           </div>
         </div>
 
-        <div className="w-1/2 sm:w-1/4">
+        <div className="hidden sm:block sm:w-1/4">
           <div className="font-body-md text-body-md font-semibold text-on-surface">
             {formatCurrency(invoice.total, invoice.currency)}
           </div>
@@ -135,7 +142,11 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
           </p>
         </div>
 
-        <div className="w-1/2 sm:w-1/4 flex justify-end sm:justify-start">
+        {/* Móvil: monto sobre chip, alineados a la derecha */}
+        <div className="flex flex-col items-end gap-1 shrink-0 sm:w-1/4 sm:items-start sm:gap-0">
+          <span className="font-label-md text-label-md text-on-surface sm:hidden">
+            {formatCurrency(invoice.total, invoice.currency)}
+          </span>
           <span
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-label-xs text-label-xs whitespace-nowrap"
             style={{ color: cfg.color, background: cfg.bg }}
@@ -145,16 +156,20 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
           </span>
         </div>
 
-        <div className="w-full sm:w-auto flex justify-end gap-1 items-center">
+        <div className="flex justify-end gap-1 items-center shrink-0">
+          {/* El PDF solo aquí en escritorio: en táctil no hay hover que lo
+              revele como acción, así que en móvil vive en el detalle. */}
           {canDownload && (
             <button
               onClick={handlePdf}
-              className="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
+              className="hidden sm:block p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
               title="Descargar comprobante PDF"
             >
               <Icon name="download" className="text-[20px]" />
             </button>
           )}
+          {/* Señal de "esto se expande" — imprescindible en móvil, donde no
+              hay hover que lo insinúe. */}
           <Icon
             name="expand_more"
             className={`text-[20px] text-outline-variant transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -280,6 +295,18 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
                   </div>
                 )}
               </div>
+
+              {/* Acción en móvil: objetivo táctil de 44px, ancho completo.
+                  En escritorio la acción ya está en la fila colapsada. */}
+              {canDownload && (
+                <button
+                  onClick={handlePdf}
+                  className="sm:hidden mt-6 w-full min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-surface-container-high border border-hairline font-label-md text-label-md text-on-surface transition-colors active:bg-surface-container"
+                >
+                  <Icon name="download" className="text-[18px]" />
+                  Descargar PDF
+                </button>
+              )}
             </div>
           )}
         </div>

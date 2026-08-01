@@ -52,7 +52,7 @@ export function IconButton({
       disabled={disabled}
       title={title}
       aria-label={title}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-surface transition-colors disabled:opacity-50 ${tones}`}
+      className={`tap-target flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-surface transition-colors disabled:opacity-50 ${tones}`}
     >
       <Icon name={icon} className={`text-[18px] ${spinning ? "animate-spin" : ""}`} />
     </button>
@@ -115,7 +115,7 @@ export function ErrorBanner({ message, onRetry }: { message: string; onRetry?: (
       {onRetry && (
         <button
           onClick={onRetry}
-          className="rounded-lg bg-error px-3 py-1.5 text-label-md text-on-error transition-opacity hover:opacity-90"
+          className="tap-target rounded-lg bg-error px-3 py-1.5 text-label-md text-on-error transition-opacity hover:opacity-90"
         >
           Reintentar
         </button>
@@ -146,7 +146,7 @@ export function FilterPills<T extends string>({
             key={o.value}
             onClick={() => onChange(o.value)}
             aria-pressed={selected}
-            className={`rounded-lg px-3 py-1.5 text-label-md transition-colors ${
+            className={`tap-target rounded-lg px-3 py-1.5 text-label-md transition-colors ${
               selected
                 ? "btn-primary"
                 : "border border-outline-variant bg-surface text-on-surface-variant hover:bg-surface-container"
@@ -285,7 +285,7 @@ export function StatusSwitch({
       title={`Click para ${active ? "desactivar" : "activar"}`}
       onClick={onToggle}
       disabled={busy}
-      className="group inline-flex items-center gap-2 rounded-lg py-1 pr-2 pl-1 transition-colors hover:bg-surface-container disabled:opacity-50"
+      className="tap-target group inline-flex items-center gap-2 rounded-lg py-1 pr-2 pl-1 transition-colors hover:bg-surface-container disabled:opacity-50"
     >
       <span
         className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
@@ -331,7 +331,7 @@ export function RowAction({
       onClick={onClick}
       title={title}
       aria-label={title}
-      className={`rounded-lg p-2 transition-colors ${tones}`}
+      className={`tap-target flex items-center justify-center rounded-lg p-2 transition-colors ${tones}`}
     >
       <Icon name={icon} className="text-[18px]" />
     </button>
@@ -381,7 +381,7 @@ export function Modal({
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+            className="tap-target flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
           >
             <Icon name="close" className="text-[18px]" />
           </button>
@@ -407,14 +407,14 @@ export function FormActions({
       <button
         type="button"
         onClick={onCancel}
-        className="flex-1 rounded-lg border border-outline-variant bg-surface px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container"
+        className="tap-target flex-1 rounded-lg border border-outline-variant bg-surface px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container"
       >
         Cancelar
       </button>
       <button
         type="submit"
         disabled={submitting}
-        className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-label-md transition-colors disabled:opacity-50"
+        className="btn-primary tap-target flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-label-md transition-colors disabled:opacity-50"
       >
         <Icon name={submitting ? "progress_activity" : icon} className={`text-[18px] ${submitting ? "animate-spin" : ""}`} />
         {submitting ? (submittingLabel ?? "Guardando…") : submitLabel}

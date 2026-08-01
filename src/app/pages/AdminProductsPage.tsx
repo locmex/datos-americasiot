@@ -7,6 +7,8 @@ import {
   EmptyState, StatusSwitch, RowAction, Modal, Field, FormActions, fieldClass,
   FilterPills, ResultCount,
 } from "../components/admin/AdminUI";
+import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
+import { TableCustomizer } from "../components/table/TableCustomizer";
 import { toast } from "sonner";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -23,6 +25,21 @@ interface Product {
 
 type ProductForm = { name: string; price: string; description: string; currency: string };
 const emptyForm: ProductForm = { name: "", price: "", description: "", currency: "MXN" };
+
+// ── Columnas configurables ───────────────────────────────────────────────────
+type ProdColKey = "Producto" | "Precio" | "Estado" | "Acciones";
+
+const PRODUCT_COLUMNS: ColumnDef<ProdColKey>[] = [
+  { key: "Producto",  label: "Producto", locked: true },
+  { key: "Precio",    label: "Precio" },
+  { key: "Estado",    label: "Estado" },
+  { key: "Acciones",  label: "Acciones", locked: true },
+];
+
+const ALIGN: Record<ProdColKey, string> = {
+  "Producto": "text-left", "Precio": "text-right",
+  "Estado": "text-left", "Acciones": "text-right",
+};
 
 // ─── Alta / edición ──────────────────────────────────────────────────────────
 function ProductModal({
@@ -154,6 +171,9 @@ export default function AdminProductsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
+  // Columnas configurables: en un teléfono la tabla no entra sin scroll lateral.
+  const cols = useTableColumns<ProdColKey>("admin.products.columns", PRODUCT_COLUMNS);
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -218,6 +238,16 @@ export default function AdminProductsPage() {
           </>
         }
       >
+        <TableCustomizer
+          columns={cols.columns}
+          isVisible={cols.isVisible}
+          toggle={cols.toggle}
+          reset={cols.reset}
+          density={cols.density}
+          setDensity={cols.setDensity}
+          columnLines={cols.columnLines}
+          setColumnLines={cols.setColumnLines}
+        />
         <IconButton icon="refresh" onClick={load} title="Recargar" spinning={loading} />
         <button
           onClick={openNew}
@@ -252,52 +282,74 @@ export default function AdminProductsPage() {
       >
         <table className="w-full">
           <TableHead
-            columns={[
-              { label: "Producto" },
-              { label: "Precio", align: "right" },
-              { label: "Estado" },
-              { label: "Acciones", align: "right" },
-            ]}
+            columns={cols.visibleColumns.map((c) => ({
+              label: c.label,
+              align: (ALIGN[c.key] === "text-right" ? "right" : "left") as "right" | "left",
+            }))}
           />
           <tbody className="divide-y divide-outline-variant/50 text-body-sm text-on-surface">
             {loading ? (
-              <TableSkeleton cols={4} rows={4} />
+              <TableSkeleton cols={cols.visibleColumns.length} rows={4} />
             ) : (
               filtered.map((product) => (
                 <tr key={product.id} className="transition-colors hover:bg-surface-container-low">
-                  <td className="px-4 py-3">
-                    <div className="text-label-md text-on-surface">{product.name}</div>
-                    {product.description && (
-                      <div className="mt-0.5 max-w-md truncate text-body-sm text-on-surface-variant">
-                        {product.description}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right text-label-md">
-                    {formatCurrency(product.price, product.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusSwitch
-                      active={product.status === "active"}
-                      busy={togglingId === product.id}
-                      onToggle={() => handleToggleStatus(product)}
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <RowAction
-                        icon="edit"
-                        title="Editar producto"
-                        onClick={() => { setEditing(product); setShowModal(true); }}
-                      />
-                      <RowAction
-                        icon="delete"
-                        title="Eliminar producto"
-                        tone="danger"
-                        onClick={() => handleDelete(product)}
-                      />
-                    </div>
-                  </td>
+                  {cols.visibleColumns.map((c, i) => {
+                    const td = `px-4 ${cols.densityClass} ${ALIGN[c.key]} ${
+                      cols.columnLines ? "border-r border-outline-variant/50" : ""
+                    } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest" : ""} ${
+                      c.key === "Acciones" ? "sticky right-0 z-10 bg-surface-container-lowest" : ""
+                    }`;
+
+                    switch (c.key) {
+                      case "Producto":
+                        return (
+                          <td key={c.key} className={td}>
+                            <div className="text-label-md text-on-surface">{product.name}</div>
+                            {product.description && (
+                              <div className="mt-0.5 max-w-md truncate text-body-sm text-on-surface-variant">
+                                {product.description}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      case "Precio":
+                        return (
+                          <td key={c.key} className={`${td} text-label-md`}>
+                            {formatCurrency(product.price, product.currency)}
+                          </td>
+                        );
+                      case "Estado":
+                        return (
+                          <td key={c.key} className={td}>
+                            <StatusSwitch
+                              active={product.status === "active"}
+                              busy={togglingId === product.id}
+                              onToggle={() => handleToggleStatus(product)}
+                            />
+                          </td>
+                        );
+                      case "Acciones":
+                        return (
+                          <td key={c.key} className={td}>
+                            <div className="flex items-center justify-end gap-1">
+                              <RowAction
+                                icon="edit"
+                                title="Editar producto"
+                                onClick={() => { setEditing(product); setShowModal(true); }}
+                              />
+                              <RowAction
+                                icon="delete"
+                                title="Eliminar producto"
+                                tone="danger"
+                                onClick={() => handleDelete(product)}
+                              />
+                            </div>
+                          </td>
+                        );
+                      default:
+                        return null;
+                    }
+                  })}
                 </tr>
               ))
             )}

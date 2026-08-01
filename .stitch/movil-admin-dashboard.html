@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        /* Custom Scrollbar for better UI */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bbcabe;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#bbcabe",
+                    "on-error-container": "#93000a",
+                    "on-secondary-container": "#00714e",
+                    "surface-variant": "#d3e4fe",
+                    "primary-fixed": "#71fcb6",
+                    "inverse-primary": "#51df9c",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#111c2d",
+                    "on-background": "#0b1c30",
+                    "secondary-fixed": "#85f8c4",
+                    "primary-fixed-dim": "#51df9c",
+                    "tertiary-fixed": "#d8e3fb",
+                    "on-primary-fixed-variant": "#005233",
+                    "secondary": "#006c4a",
+                    "on-primary-container": "#005434",
+                    "primary": "#006c45",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "primary-container": "#3ecf8e",
+                    "on-tertiary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "secondary-fixed-dim": "#68dba9",
+                    "secondary-container": "#82f5c1",
+                    "on-tertiary-container": "#3e495c",
+                    "on-secondary": "#ffffff",
+                    "outline": "#6c7a70",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-container": "#adb8cf",
+                    "on-tertiary-fixed-variant": "#3c475a",
+                    "surface-container-high": "#dce9ff",
+                    "surface": "#f8f9ff",
+                    "on-surface": "#0b1c30",
+                    "on-secondary-fixed": "#002114",
+                    "background": "#f8f9ff",
+                    "tertiary-fixed-dim": "#bcc7de",
+                    "surface-tint": "#006c45",
+                    "tertiary": "#545f73",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary-fixed": "#002112",
+                    "on-secondary-fixed-variant": "#005137",
+                    "surface-bright": "#f8f9ff",
+                    "surface-container": "#e5eeff",
+                    "on-surface-variant": "#3d4a41",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "32px",
+                    "base": "4px",
+                    "gutter": "16px",
+                    "card-padding": "20px",
+                    "container-margin": "24px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Inter"],
+                    "label-xs": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-md": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "label-xs": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "700"}],
+                    "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-md": ["13px", {"lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "display-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- Sidebar (Collapsible for Mobile) -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface dark:bg-surface-dim z-50 transform -translate-x-full transition-transform duration-300 ease-in-out border-r border-outline-variant dark:border-outline flex flex-col py-container-margin px-base" id="sidebar">
+<div class="flex items-center justify-between mb-8 px-4">
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed">AmericasIoT</h1>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors" onclick="toggleSidebar()">
+<span class="material-symbols-outlined text-on-surface-variant">close</span>
+</button>
+</div>
+<nav class="flex-1 space-y-1 overflow-y-auto px-2">
+<!-- Nav Items from JSON -->
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-surface-container-high dark:bg-surface-container-highest transition-transform duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="router">router</span>
+<span class="font-body-md text-body-md">Dispositivos</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="sd_card">sd_card</span>
+<span class="font-body-md text-body-md">Inventario SIMs</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+<span class="font-body-md text-body-md">Asignación</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md text-body-md">Clientes</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-body-md text-body-md">Pedidos</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md text-body-md">Productos</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-body-md text-body-md">Facturación</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span class="font-body-md text-body-md">Planes</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-4 px-2 space-y-1">
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Ajustes</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg text-error hover:bg-error-container/10 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md text-body-md">Cerrar Sesión</span>
+</a>
+</div>
+</aside>
+<!-- Overlay -->
+<div class="fixed inset-0 bg-black/50 z-40 hidden backdrop-blur-sm" id="overlay" onclick="toggleSidebar()"></div>
+<!-- Main Content Wrapper -->
+<div class="min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="h-16 flex items-center justify-between px-4 bg-surface-container-lowest border-b border-outline-variant fixed top-0 w-full z-30">
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors" onclick="toggleSidebar()">
+<span class="material-symbols-outlined text-on-surface-variant">menu</span>
+</button>
+<span class="font-headline-sm text-headline-sm font-black text-on-surface">AmericasIoT</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-cover bg-center border border-outline-variant" data-alt="Close-up professional portrait of a tech administrator in a clean office environment with high-key lighting, emphasizing professional expertise and trust. The overall aesthetic is minimalist, sleek, and high-quality, reflecting the AmericasIoT brand identity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhEcTachDMA1WGt0TLvtd4zeZojOtLtSMo-v6p-2CKu3-m6GJnb2-JHaYiyTWaA56fsdndqNWaMxHdx3-9aN2lStfmKwR4a1IfCevZipENqGNqC6SaAW6jOF0TWV76nG2vsjoTyCPPygzXDTpFh8UgnbLR__rF9NKKBgPrOZmZKJ2-Es5QPFQSDIQ0KPt_fI0-qC1-y91WSPCfHKXKkeqS38Kle5Wqy0_JAjlP8fJoQMmrsjy2JK4')"></div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 mt-16 px-4 py-6 pb-24 overflow-y-auto">
+<!-- Cache Amber Banner -->
+<div class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-pulse-subtle">
+<span class="material-symbols-outlined text-amber-600 mt-0.5">warning</span>
+<div>
+<p class="font-label-md text-label-md text-amber-800 font-bold">Datos en Caché (Últimos 15 min)</p>
+<p class="font-body-sm text-body-sm text-amber-700">La sincronización en tiempo real puede tardar. Los valores mostrados son aproximados.</p>
+</div>
+</div>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+<!-- Card 1 -->
+<div class="bg-white border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/10 rounded-lg">router</span>
+<span class="font-label-xs text-label-xs text-on-secondary-container bg-secondary-container px-2 py-0.5 rounded-full">+12%</span>
+</div>
+<div class="mt-4">
+<h3 class="font-body-sm text-body-sm text-on-surface-variant">SIMs Activas</h3>
+<p class="font-display-md text-display-md font-bold mt-1">1,284</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary p-2 bg-secondary/10 rounded-lg">signal_cellular_alt</span>
+<span class="font-label-xs text-label-xs text-on-error-container bg-error-container px-2 py-0.5 rounded-full">-3%</span>
+</div>
+<div class="mt-4">
+<h3 class="font-body-sm text-body-sm text-on-surface-variant">Consumo Total</h3>
+<p class="font-display-md text-display-md font-bold mt-1">84.2 GB</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-white border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error p-2 bg-error/10 rounded-lg">error_outline</span>
+</div>
+<div class="mt-4">
+<h3 class="font-body-sm text-body-sm text-on-surface-variant">Alertas Críticas</h3>
+<p class="font-display-md text-display-md font-bold mt-1">07</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-white border border-outline-variant rounded-xl p-card-padding flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-tertiary-container p-2 bg-tertiary-container/30 rounded-lg">speed</span>
+</div>
+<div class="mt-4">
+<h3 class="font-body-sm text-body-sm text-on-surface-variant">Latencia Prom.</h3>
+<p class="font-display-md text-display-md font-bold mt-1">42ms</p>
+</div>
+</div>
+</div>
+<!-- Bento Section: Main Chart -->
+<div class="bg-white border border-outline-variant rounded-xl p-card-padding mb-6 overflow-hidden relative">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h2 class="font-headline-sm text-headline-sm">Consumo de Datos</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Uso de red acumulado hoy</p>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Simple Graph Visualization Placeholder -->
+<div class="h-48 w-full flex items-end gap-2 px-2">
+<div class="w-full bg-primary/20 rounded-t-lg relative" style="height: 40%"></div>
+<div class="w-full bg-primary/30 rounded-t-lg relative" style="height: 65%"></div>
+<div class="w-full bg-primary/40 rounded-t-lg relative" style="height: 50%"></div>
+<div class="w-full bg-primary/60 rounded-t-lg relative" style="height: 85%"></div>
+<div class="w-full bg-primary/80 rounded-t-lg relative" style="height: 70%"></div>
+<div class="w-full bg-primary rounded-t-lg relative" style="height: 95%">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-on-surface text-white text-[10px] px-2 py-1 rounded-md">8.4GB</div>
+</div>
+</div>
+<div class="flex justify-between mt-4 font-label-xs text-label-xs text-on-surface-variant opacity-60">
+<span>08:00</span>
+<span>12:00</span>
+<span>16:00</span>
+<span>20:00</span>
+<span>Ahora</span>
+</div>
+</div>
+<!-- Last 6h Traffic List -->
+<div class="bg-white border border-outline-variant rounded-xl overflow-hidden mb-6">
+<div class="px-card-padding py-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<h2 class="font-label-md text-label-md uppercase tracking-wider text-on-surface">Tráfico Últimas 6h</h2>
+<span class="font-label-xs text-label-xs text-primary font-bold">En Vivo</span>
+</div>
+<div class="divide-y divide-outline-variant">
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<div>
+<p class="font-label-md text-label-md">SIM-5421-BR</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hace 2m • San Pablo</p>
+</div>
+</div>
+<p class="font-label-md text-label-md font-bold">124 KB</p>
+</div>
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div>
+<p class="font-label-md text-label-md">SIM-9802-MX</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hace 12m • CDMX</p>
+</div>
+</div>
+<p class="font-label-md text-label-md font-bold">2.1 MB</p>
+</div>
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div>
+<p class="font-label-md text-label-md">SIM-1123-AR</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hace 25m • B. Aires</p>
+</div>
+</div>
+<p class="font-label-md text-label-md font-bold">850 KB</p>
+</div>
+<div class="p-4 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<div>
+<p class="font-label-md text-label-md">SIM-7734-CL</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hace 1h • Santiago</p>
+</div>
+</div>
+<p class="font-label-md text-label-md font-bold text-error">Timeout</p>
+</div>
+</div>
+<button class="w-full py-3 font-label-md text-label-md text-primary border-t border-outline-variant hover:bg-primary/5 transition-colors">
+                    Ver Reporte Completo
+                </button>
+</div>
+</main>
+<!-- Bottom Navigation for Quick Access -->
+<nav class="fixed bottom-0 w-full h-16 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-around z-40 md:hidden">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold">Inicio</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">router</span>
+<span class="text-[10px]">Equipos</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">sd_card</span>
+<span class="text-[10px]">SIMs</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px]">Analytics</span>
+</a>
+</nav>
+<!-- Floating Action Button -->
+<button class="fixed right-6 bottom-20 bg-primary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-30">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+</div>
+<script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            
+            if (isOpen) {
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        // Add a subtle interaction to metric cards
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('mousedown', () => card.style.transform = 'scale(0.98)');
+            card.addEventListener('mouseup', () => card.style.transform = 'scale(1)');
+        });
+    </script>
+</body></html>
