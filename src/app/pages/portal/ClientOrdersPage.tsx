@@ -187,7 +187,9 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
       {/* Carrito flotante — anclado al borde inferior, dentro del área de contenido
           (el `md:pl-64` compensa el ancho de la sidebar para que quede centrado). */}
       {cartEntries.length > 0 && (
-        <div className="fixed bottom-6 left-0 right-0 px-4 md:pl-64 z-40 pointer-events-none">
+        {/* En móvil se levanta por encima de las tabs inferiores (h-16); en
+            escritorio no hay tabs, así que vuelve a bottom-6. */}
+        <div className="fixed bottom-20 left-0 right-0 px-4 md:bottom-6 md:pl-64 z-40 pointer-events-none">
           <div className="mx-auto max-w-2xl bg-surface-container-lowest rounded-2xl border border-hairline p-4 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-auto"
             style={{ boxShadow: "0px 10px 15px -3px rgba(0,0,0,0.08)" }}
           >
