@@ -263,7 +263,7 @@ export default function DashboardPage() {
             {greeting}, {user?.name?.split(" ")[0] || "Admin"} 👋
           </h1>
           <p className="text-body-lg text-on-surface-variant">
-            Resumen de conectividad IoT · {user?.organisation || "emnify"}
+            Resumen de conectividad IoT
           </p>
         </div>
         <button
@@ -298,9 +298,9 @@ export default function DashboardPage() {
       {/* ── Métricas ──────────────────────────────────────── */}
       <div className="mb-section-gap grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Total SIMs en emnify" icon="sim_card"
+          label="Total SIMs" icon="sim_card"
           value={stats?.totalSims?.toLocaleString("es-MX") ?? "—"}
-          subtitle="Chips en inventario emnify" loading={statsLoading}
+          subtitle="Chips en inventario" loading={statsLoading}
         />
         <MetricCard
           label="SIMs Activas" icon="check_circle" tone="success"

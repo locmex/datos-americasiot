@@ -669,7 +669,7 @@ export default function DevicesPage() {
     <div className="p-container-margin">
       <PageHeader
         title="Dispositivos"
-        subtitle={`Endpoints registrados en emnify · ${total > 0 ? `${total.toLocaleString()} en total` : "—"}`}
+        subtitle={`Endpoints registrados · ${total > 0 ? `${total.toLocaleString()} en total` : "—"}`}
       >
         <TableCustomizer
           columns={cols.columns}
