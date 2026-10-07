@@ -4,13 +4,16 @@ import { clientApi } from "../../lib/api";
 import { ClientAuthContext, ClientUser } from "../../lib/client-auth";
 import { AmericasIoTLogo } from "../AmericasIoTLogo";
 import { Icon } from "../ui/icon";
+import { BILLING_ENABLED } from "../../lib/features";
 
 // `shortLabel` es lo que se muestra en las tabs inferiores: en un ancho de
 // teléfono "Mis Dispositivos" no entra sin truncarse.
 const portalNav = [
   { to: "/portal",          icon: "devices",       label: "Mis Dispositivos", shortLabel: "Dispositivos", end: true },
   { to: "/portal/orders",   icon: "shopping_cart", label: "Pedidos",          shortLabel: "Pedidos" },
-  { to: "/portal/invoices", icon: "receipt_long",  label: "Mis Facturas",     shortLabel: "Facturas" },
+  ...(BILLING_ENABLED
+    ? [{ to: "/portal/invoices", icon: "receipt_long", label: "Mis Facturas", shortLabel: "Facturas" }]
+    : []),
 ];
 
 // ─── Sidebar (desktop) ────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import AdminInvoicesPage from "./pages/AdminInvoicesPage";
 import ClientPortalDashboard from "./pages/portal/ClientPortalDashboard";
 import ClientOrdersPage from "./pages/portal/ClientOrdersPage";
 import ClientInvoicesPage from "./pages/portal/ClientInvoicesPage";
+import { BILLING_ENABLED } from "./lib/features";
 
 function AdminRoot() {
   return (
@@ -46,8 +47,10 @@ export const router = createHashRouter([
           { path: "assignment", Component: AssignmentPage },
           { path: "products",   Component: AdminProductsPage },
           { path: "orders",     Component: AdminOrdersPage   },
-          { path: "plans",      Component: AdminPlansPage    },
-          { path: "invoices",   Component: AdminInvoicesPage },
+          ...(BILLING_ENABLED ? [
+            { path: "plans",    Component: AdminPlansPage    },
+            { path: "invoices", Component: AdminInvoicesPage },
+          ] : []),
           { path: "*",          element: <Navigate to="/dashboard" replace /> },
         ],
       },
@@ -62,7 +65,7 @@ export const router = createHashRouter([
     children: [
       { index: true, Component: ClientPortalDashboard },
       { path: "orders", Component: ClientOrdersPage },
-      { path: "invoices", Component: ClientInvoicesPage },
+      ...(BILLING_ENABLED ? [{ path: "invoices", Component: ClientInvoicesPage }] : []),
       // Legacy /portal/login → back to unified login
       { path: "login", element: <Navigate to="/" replace /> },
       { path: "*",     element: <Navigate to="/portal" replace /> },
