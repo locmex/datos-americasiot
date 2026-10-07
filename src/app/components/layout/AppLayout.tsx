@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { useAuth } from "../../lib/auth-context";
 import { AmericasIoTLogo } from "../AmericasIoTLogo";
 import { Icon } from "../ui/icon";
+import { BILLING_ENABLED } from "../../lib/features";
 
 const bottomNav = [
   { to: "/dashboard",  icon: "dashboard",      label: "Dashboard", end: true },
@@ -13,8 +14,10 @@ const bottomNav = [
   { to: "/clients",    icon: "group",          label: "Clientes" },
   { to: "/orders",     icon: "shopping_cart",  label: "Pedidos" },
   { to: "/products",   icon: "inventory_2",    label: "Productos" },
-  { to: "/invoices",   icon: "receipt_long",   label: "Facturación" },
-  { to: "/plans",      icon: "layers",         label: "Planes" },
+  ...(BILLING_ENABLED ? [
+    { to: "/invoices", icon: "receipt_long", label: "Facturación" },
+    { to: "/plans",    icon: "layers",       label: "Planes" },
+  ] : []),
 ];
 
 const pageTitles: Record<string, string> = {
