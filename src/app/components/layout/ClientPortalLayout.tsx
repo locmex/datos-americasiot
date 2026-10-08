@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Outlet, Navigate, NavLink, useLocation } from "react-router";
 import { clientApi } from "../../lib/api";
 import { ClientAuthContext, ClientUser } from "../../lib/client-auth";
-import { AmericasIoTLogo } from "../AmericasIoTLogo";
+import { BrandLockup } from "../BrandLockup";
 import { Icon } from "../ui/icon";
 import { BILLING_ENABLED } from "../../lib/features";
 
@@ -24,41 +24,48 @@ function PortalSidebar() {
     || "C";
 
   return (
-    <nav className="hidden md:flex flex-col h-screen py-6 px-4 bg-surface border-r border-outline-variant fixed left-0 top-0 w-64 z-50">
-      <div className="mb-8 px-4">
-        <AmericasIoTLogo height={28} forceLight />
+    <nav
+      className="hidden md:flex flex-col h-screen py-6 px-3 fixed left-0 top-0 w-64 z-50"
+      style={{ background: "#1a0450", color: "#b6abc9" }}
+      aria-label="Secciones"
+    >
+      <div className="mb-8 px-2">
+        <BrandLockup />
       </div>
 
       {/* Usuario */}
       <div className="flex items-center gap-3 px-4 mb-8">
-        <div className="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant shrink-0 flex items-center justify-center font-bold text-on-secondary-container">
+        <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center font-bold text-white" style={{ background: "#35109c" }}>
           {initial}
         </div>
         <div className="min-w-0">
-          <p className="font-label-md text-label-md text-on-surface truncate">
-            Hola, {ctx.user?.name?.split(" ")[0] ?? "Cliente"} 👋
+          <p className="font-label-md text-label-md text-white truncate">
+            Hola, {ctx.user?.name?.split(" ")[0] ?? "Cliente"}
           </p>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Portal Cliente</p>
+          <p className="font-body-sm text-body-sm" style={{ color: "#b6abc9" }}>Portal del cliente</p>
         </div>
       </div>
 
       {/* Navegación */}
-      <div className="flex-1 flex flex-col gap-2">
+      <div className="flex-1 flex flex-col gap-0.5">
         {portalNav.map(({ to, icon, label, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `rounded-lg px-4 py-2 flex items-center gap-3 font-label-md text-label-md transition-all ${
+              `relative rounded-lg px-4 py-2 flex items-center gap-3 font-label-md text-label-md transition-colors ${
                 isActive
-                  ? "bg-secondary-container text-on-secondary-container"
-                  : "text-on-surface-variant hover:bg-surface-container-high"
+                  ? "bg-white/10 text-white"
+                  : "text-[#b6abc9] hover:bg-white/5 hover:text-white"
               }`
             }
           >
             {({ isActive }) => (
               <>
+                {isActive && (
+                  <span aria-hidden="true" className="absolute top-1.5 bottom-1.5 -left-3 w-[3px] rounded-r" style={{ background: "#22e4c8" }} />
+                )}
                 <Icon name={icon} filled={isActive} />
                 {label}
               </>
@@ -68,10 +75,10 @@ function PortalSidebar() {
       </div>
 
       {/* Salir */}
-      <div className="mt-auto px-4">
+      <div className="mt-auto border-t border-white/10 pt-3">
         <button
           onClick={ctx.logout}
-          className="w-full flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-error transition-colors rounded-lg font-label-md text-label-md"
+          className="w-full flex items-center gap-3 px-4 py-2 text-[#b6abc9] hover:bg-white/5 hover:text-white transition-colors rounded-lg font-label-md text-label-md"
         >
           <Icon name="logout" />
           Cerrar sesión
@@ -87,11 +94,14 @@ function PortalMobileHeader() {
   const ctx = useContext(ClientAuthContext)!;
 
   return (
-    <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between border-b border-outline-variant bg-surface px-container-margin">
-      <AmericasIoTLogo height={24} forceLight />
+    <header
+      className="md:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between px-container-margin"
+      style={{ background: "#1a0450" }}
+    >
+      <BrandLockup size="sm" />
       <button
         onClick={ctx.logout}
-        className="flex items-center gap-1.5 text-label-md text-on-surface-variant transition-colors hover:text-error"
+        className="flex items-center gap-1.5 text-label-md text-[#d8cffa] transition-colors hover:text-white"
       >
         <Icon name="logout" />
         Salir

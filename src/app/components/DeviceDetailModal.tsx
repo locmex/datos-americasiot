@@ -315,7 +315,7 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
         <button
           onClick={fetchLocation}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-          style={{ background: "#3ECF8E" }}
+          style={{ background: "#270779" }}
         >
           <RefreshCw className="w-3.5 h-3.5" /> Reintentar
         </button>
@@ -327,12 +327,12 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
   if (!data || (!hasCoords && !hasCellData && !data.country)) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-gray-50 py-16 text-center px-6">
-        <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center">
-          <MapPin className="w-8 h-8 text-teal-300" />
+        <div className="w-16 h-16 rounded-full bg-violet-50 flex items-center justify-center">
+          <MapPin className="w-8 h-8 text-violet-300" />
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-600">Sin información de ubicación</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-outline mt-1">
             El dispositivo no ha reportado datos de red celular aún.
           </p>
         </div>
@@ -358,8 +358,8 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
             style={{
               background: data.location_source === "cell_tower"
-                ? "rgba(62,207,142,0.12)" : "rgba(234,179,8,0.12)",
-              color: data.location_source === "cell_tower" ? "#0d9488" : "#a16207",
+                ? "rgba(22,163,74,0.10)" : "rgba(234,179,8,0.12)",
+              color: data.location_source === "cell_tower" ? "#15803d" : "#a16207",
             }}
           >
             {data.location_source === "cell_tower"
@@ -368,7 +368,7 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
             }
           </div>
           {data.last_updated && (
-            <span className="text-xs text-gray-400 flex items-center gap-1">
+            <span className="text-xs text-outline flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {formatDate(data.last_updated)}
             </span>
@@ -408,7 +408,7 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-gray-200 shadow text-gray-700 hover:bg-gray-50 whitespace-nowrap"
             >
-              <Navigation className="w-3.5 h-3.5 text-teal-500" />
+              <Navigation className="w-3.5 h-3.5 text-violet-600" />
               Ver en mapa
             </a>
             {accuracy && (
@@ -435,7 +435,7 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           {
-            icon: <Globe className="w-4 h-4 text-teal-500" />,
+            icon: <Globe className="w-4 h-4 text-violet-600" />,
             label: "País",
             value: data.country || "—",
           },
@@ -461,7 +461,7 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
           >
             <div className="flex items-center gap-1.5">
               {icon}
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-outline">{label}</span>
             </div>
             <span className="text-sm font-semibold text-gray-800 font-mono break-all">{value}</span>
           </div>
@@ -471,12 +471,12 @@ function LocationMap({ endpoint }: { endpoint: EmnifyEndpoint }) {
       {/* ── Coordinates row ─────────��───────────────────────── */}
       {hasCoords && (
         <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
-          <MapPin className="w-4 h-4 text-teal-500 shrink-0" />
+          <MapPin className="w-4 h-4 text-violet-600 shrink-0" />
           <span className="text-gray-500 text-xs">Coordenadas:</span>
           <span className="font-mono text-sm font-semibold text-gray-800">
             {data.lat!.toFixed(6)}, {data.lng!.toFixed(6)}
           </span>
-          <span className="text-xs text-gray-400 ml-auto">
+          <span className="text-xs text-outline ml-auto">
             {data.location_source === "cell_tower"
               ? "Torre celular (emnify)"
               : "Centroide estimado del país"}
@@ -519,7 +519,7 @@ function UsageMiniChart({ data }: { data: { date: string; label?: string; tx?: n
           <Database className="w-4 h-4 text-gray-300" />
         </div>
         <div className="text-center leading-tight">
-          <p className="text-xs font-semibold text-gray-400">Sin datos registrados</p>
+          <p className="text-xs font-semibold text-outline">Sin datos registrados</p>
           <p className="text-[10px] text-gray-300 mt-0.5">No hay tráfico en este período</p>
         </div>
       </div>
@@ -542,8 +542,8 @@ function UsageMiniChart({ data }: { data: { date: string; label?: string; tx?: n
           labelFormatter={(v: string) => (v || "").slice(5)}
           contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e5e7eb" }}
         />
-        <Bar key="bar-tx" dataKey="tx" name="TX" fill="#6366f1" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-        <Bar key="bar-rx" dataKey="rx" name="RX" fill="#3ECF8E" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+        <Bar key="bar-tx" dataKey="tx" name="TX" fill="#4a20c4" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+        <Bar key="bar-rx" dataKey="rx" name="RX" fill="#22b8a3" radius={[3, 3, 0, 0]} isAnimationActive={false} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -658,13 +658,13 @@ function TabGeneral({
       <div className="space-y-5">
         {/* Estado */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Estado</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-3">Estado</p>
           <div className="flex items-center gap-3">
             <button
               onClick={handleToggle}
               disabled={toggling || !onToggleStatus}
               className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50"
-              style={{ background: simStatusId === 1 ? "#3ECF8E" : "#d1d5db" }}
+              style={{ background: simStatusId === 1 ? "#16a34a" : "#d1d5db" }}
             >
               <span
                 className="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200"
@@ -679,7 +679,7 @@ function TabGeneral({
 
         {/* Servicios */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Servicios</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-3">Servicios</p>
           <div className="space-y-2">
             {services.map(({ label, active }) => (
               <div key={label} className="flex items-center justify-between">
@@ -702,7 +702,7 @@ function TabGeneral({
         <div>
           {/* Header: title + reset button */}
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Conexión</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-outline">Conexión</p>
             {onResetConnectivity && (
               <button
                 onClick={handleResetConnectivity}
@@ -727,7 +727,7 @@ function TabGeneral({
               ) : conn.statusId === 2 ? (
                 <Wifi className="w-5 h-5" style={{ color: conn.color }} />
               ) : (
-                <WifiOff className="w-5 h-5 text-gray-400" />
+                <WifiOff className="w-5 h-5 text-outline" />
               )}
               <span className="text-lg font-bold" style={{ color: conn.statusId === 0 ? "#94a3b8" : "#111827" }}>
                 {conn.statusId === 1
@@ -739,7 +739,7 @@ function TabGeneral({
               {/* Info tooltip anchor */}
               <span
                 title={`Estado de conectividad emnify\n0 = Offline\n1 = Online (sesión PDP activa)\n2 = Attached (sin sesión de datos)\n\nÚltima verificación: ${conn.lastCheck ? formatDate(conn.lastCheck) : "—"}`}
-                className="cursor-help text-gray-300 hover:text-gray-400 transition-colors"
+                className="cursor-help text-gray-300 hover:text-outline transition-colors"
               >
                 <InfoIcon />
               </span>
@@ -748,7 +748,7 @@ function TabGeneral({
             {/* Operator + country flag */}
             {conn.operator && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Globe className="w-4 h-4 text-gray-400 shrink-0" />
+                <Globe className="w-4 h-4 text-outline shrink-0" />
                 <span>{conn.operator}</span>
                 {(endpoint.runtime_data?.country?.name || conn.operatorCountry) && (
                   <span className="text-gray-500">
@@ -768,8 +768,8 @@ function TabGeneral({
               <span
                 className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md"
                 style={{
-                  background: conn.statusId === 0 ? "rgba(148,163,184,0.10)" : "rgba(62,207,142,0.10)",
-                  color: conn.statusId === 0 ? "#94a3b8" : "#0d9488",
+                  background: conn.statusId === 0 ? "rgba(148,163,184,0.10)" : "rgba(22,163,74,0.10)",
+                  color: conn.statusId === 0 ? "#6b6680" : "#15803d",
                 }}
               >
                 <Signal className="w-3 h-3" />
@@ -782,7 +782,7 @@ function TabGeneral({
 
             {/* Last location update */}
             {conn.lastCheck && (
-              <p className="text-xs text-gray-400 flex items-center gap-1.5">
+              <p className="text-xs text-outline flex items-center gap-1.5">
                 <Calendar className="w-3 h-3" />
                 Último location update: {formatDate(conn.lastCheck)}
               </p>
@@ -791,15 +791,15 @@ function TabGeneral({
             {/* IP address */}
             {conn.ipAddress && (
               <p className="text-xs text-gray-500 font-mono flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-gray-400" />
+                <Shield className="w-3.5 h-3.5 text-outline" />
                 {conn.ipAddress}
               </p>
             )}
 
             {/* PDP session duration badge — real elapsed time */}
             {pdpStart && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-teal-50 text-teal-700 rounded-full px-3 py-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-green-50 text-green-700 rounded-full px-3 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
                 Contexto PDP active: {pdpDuration(pdpStart)}
               </span>
             )}
@@ -817,7 +817,7 @@ function TabGeneral({
 
       {/* ── Col 2: Dispositivo info ── */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Dispositivo</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-3">Dispositivo</p>
         <div className="space-y-3">
           {[
             { label: "ID del dispositivo", value: endpoint.id },
@@ -826,26 +826,26 @@ function TabGeneral({
             { label: "Bloqueo de IMEI",    value: endpoint.imei_lock ? "Activo" : "Inactivo" },
           ].map(({ label, value }) => (
             <div key={label}>
-              <p className="text-[10px] text-gray-400">{label}</p>
+              <p className="text-[10px] text-outline">{label}</p>
               <p className="text-sm font-medium text-gray-800 font-mono truncate">{String(value)}</p>
             </div>
           ))}
 
           <div className="pt-2 border-t border-gray-100">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Políticas</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-2">Políticas</p>
             {[
               { label: "Política de servicio",  value: endpoint.service_profile?.name  || "Default Policy" },
               { label: "Política de cobertura", value: endpoint.tariff_profile?.name   || "—" },
             ].map(({ label, value }) => (
               <div key={label} className="mb-2">
-                <p className="text-[10px] text-gray-400">{label}</p>
+                <p className="text-[10px] text-outline">{label}</p>
                 <p className="text-sm text-gray-700">{value}</p>
               </div>
             ))}
           </div>
 
           <div className="pt-2 border-t border-gray-100">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">SIM</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-2">SIM</p>
             {endpoint.sim?.id ? (
               [
                 { label: "ICCID",  value: endpoint.sim?.iccid_with_luhn || endpoint.sim?.iccid || "—" },
@@ -853,13 +853,13 @@ function TabGeneral({
                 { label: "MSISDN", value: endpoint.sim?.msisdn || "—" },
               ].map(({ label, value }) => (
                 <div key={label} className="mb-2">
-                  <p className="text-[10px] text-gray-400">{label}</p>
-                  <p className="text-xs font-mono text-teal-600 break-all">{value}</p>
+                  <p className="text-[10px] text-outline">{label}</p>
+                  <p className="text-xs font-mono text-violet-700 break-all">{value}</p>
                 </div>
               ))
             ) : (
               <div className="flex flex-col items-start gap-1.5">
-                <p className="text-xs text-gray-400 italic">Sin SIM asignada</p>
+                <p className="text-xs text-outline italic">Sin SIM asignada</p>
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-full">
                   <CreditCard className="w-3 h-3" /> Asigna una SIM desde el tab correspondiente
                 </span>
@@ -870,7 +870,7 @@ function TabGeneral({
           {/* Tags */}
           {(endpoint.tags || []).length > 0 && (
             <div className="pt-2 border-t border-gray-100">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-2 flex items-center gap-1">
                 <Tag className="w-3 h-3" /> Etiquetas
               </p>
               <div className="flex flex-wrap gap-1">
@@ -885,7 +885,7 @@ function TabGeneral({
 
       {/* ── Col 3: Uso ── */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Uso — Esta semana</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-outline mb-3">Uso — Esta semana</p>
         {weekLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" /><Skeleton className="h-28 w-full" />
@@ -894,21 +894,21 @@ function TabGeneral({
           <>
             <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center gap-1.5 text-xs">
-                <ArrowUp className="w-3.5 h-3.5 text-indigo-500" />
+                <ArrowUp className="w-3.5 h-3.5 text-[#4a20c4]" />
                 <span className="font-semibold text-gray-700">{formatMB(totalTx)}</span>
-                <span className="text-gray-400">TX</span>
+                <span className="text-outline">TX</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs">
-                <ArrowDown className="w-3.5 h-3.5 text-teal-500" />
+                <ArrowDown className="w-3.5 h-3.5 text-[#22b8a3]" />
                 <span className="font-semibold text-gray-700">{formatMB(totalRx)}</span>
-                <span className="text-gray-400">RX</span>
+                <span className="text-outline">RX</span>
               </div>
             </div>
             <UsageMiniChart data={weekStats} />
             {(totalTx > 0 || totalRx > 0) && (
-              <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-500 inline-block" /> TX</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-teal-400 inline-block" /> RX</span>
+              <div className="mt-2 flex items-center gap-3 text-[10px] text-outline">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#4a20c4] inline-block" /> TX</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#22b8a3] inline-block" /> RX</span>
               </div>
             )}
           </>
@@ -952,7 +952,7 @@ function TabEvents({ fetchEvents }: { fetchEvents: Props["fetchEvents"] }) {
           <thead>
             <tr className="border-b border-gray-100">
               {["Fecha", "Severidad", "Tipo de evento", "Operador", "País"].map(h => (
-                <th key={h} className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
+                <th key={h} className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-outline whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -975,7 +975,7 @@ function TabEvents({ fetchEvents }: { fetchEvents: Props["fetchEvents"] }) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-500">Sin eventos registrados</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Este dispositivo no tiene eventos aún</p>
+                    <p className="text-xs text-outline mt-0.5">Este dispositivo no tiene eventos aún</p>
                   </div>
                 </div>
               </td></tr>
@@ -1019,7 +1019,7 @@ function TabEvents({ fetchEvents }: { fetchEvents: Props["fetchEvents"] }) {
               onClick={() => setPage(p)}
               className="w-7 h-7 rounded-lg text-xs font-medium transition-colors"
               style={{
-                background: p === page ? "#3ECF8E" : "transparent",
+                background: p === page ? "#270779" : "transparent",
                 color: p === page ? "#fff" : "#6b7280",
                 border: p === page ? "none" : "1px solid #e5e7eb",
               }}
@@ -1083,7 +1083,7 @@ function TabStats({ fetchStats }: { fetchStats: Props["fetchStats"] }) {
         <select
           value={period}
           onChange={e => setPeriod(e.target.value)}
-          className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-200"
+          className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-200"
         >
           {Object.entries(PERIOD_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
@@ -1097,7 +1097,7 @@ function TabStats({ fetchStats }: { fetchStats: Props["fetchStats"] }) {
           <thead>
             <tr className="border-b border-gray-100">
               {["FECHA (UTC)", "SUBIDA", "DESCARGA", "TOTAL", "SMS MT", "SMS MO"].map(h => (
-                <th key={h} className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
+                <th key={h} className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-outline whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
@@ -1120,7 +1120,7 @@ function TabStats({ fetchStats }: { fetchStats: Props["fetchStats"] }) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-500">Sin datos registrados</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-outline mt-0.5">
                       {items.length === 0
                         ? "No hay estadísticas para este período"
                         : "Este dispositivo no ha generado tráfico aún"}
@@ -1162,14 +1162,14 @@ const SIM_STATUSES = [
   { id: "all", label: "Todos",      color: "#6b7280" },
   { id: "1",   label: "Activa",     color: "#16a34a" },
   { id: "2",   label: "Suspendida", color: "#d97706" },
-  { id: "0",   label: "Emitida",    color: "#6366f1" },
+  { id: "0",   label: "Disponible", color: "#6b6680" },
 ] as const;
 
 function simStatusInfo(s: any): { label: string; color: string } {
   const id = s.status?.id ?? 0;
   if (id === 1) return { label: "Activa",     color: "#16a34a" };
   if (id === 2) return { label: "Suspendida", color: "#d97706" };
-  return              { label: "Emitida",     color: "#6366f1" };
+  return              { label: "Disponible",  color: "#6b6680" };
 }
 
 // ─── Confirmation Dialog ──────────────────────────────────────────
@@ -1186,7 +1186,7 @@ function ConfirmAssignDialog({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.50)" }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg,#3ECF8E,#6366f1)" }} />
+        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg,#270779,#22e4c8)" }} />
         <div className="p-6">
           <div className="flex items-center justify-center mb-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -1203,15 +1203,15 @@ function ConfirmAssignDialog({
           </p>
           <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 mb-5 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">ICCID</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-outline">ICCID</span>
               <span className="text-xs font-mono font-semibold text-gray-700 break-all text-right max-w-[65%]">{iccid}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">MSISDN</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-outline">MSISDN</span>
               <span className="text-xs font-mono text-gray-600">{msisdn}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Estado SIM</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-outline">Estado SIM</span>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
                 style={{ background: `${st.color}18`, color: st.color }}>
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.color }} />
@@ -1231,7 +1231,7 @@ function ConfirmAssignDialog({
             </button>
             <button onClick={onConfirm} disabled={assigning}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg,#3ECF8E,#6366f1)" }}>
+              style={{ background: "linear-gradient(135deg,#270779,#4a20c4)" }}>
               {assigning
                 ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Asignando...</>
                 : <><CheckCircle2 className="w-3.5 h-3.5" /> Confirmar</>}
@@ -1330,7 +1330,7 @@ function TabAssignSim({
           </div>
           <div>
             <h3 className="text-sm font-bold text-gray-800">Asignar SIM al dispositivo</h3>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-outline">
               {sims.length} SIM{sims.length !== 1 ? "s" : ""} sin asignar en tu inventario
             </p>
           </div>
@@ -1338,7 +1338,7 @@ function TabAssignSim({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline pointer-events-none" />
           <input
             type="text"
             value={search}
@@ -1400,7 +1400,7 @@ function TabAssignSim({
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-500">Sin SIMs disponibles</p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-outline mt-0.5">
                 {search || statusFilter !== "all"
                   ? "Ninguna SIM coincide con los filtros aplicados"
                   : "Todas las SIMs ya están asignadas a un dispositivo"}
@@ -1413,7 +1413,7 @@ function TabAssignSim({
               <tr className="border-b border-gray-100 bg-gray-50/60 sticky top-0">
                 <th className="py-3 px-4 w-8" />
                 {["ICCID", "MSISDN", "Estado", "SIM ID"].map(h => (
-                  <th key={h} className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-outline whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -1452,7 +1452,7 @@ function TabAssignSim({
                         {st.label}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-xs text-gray-400 font-mono">#{sim.id}</td>
+                    <td className="py-3.5 px-4 text-xs text-outline font-mono">#{sim.id}</td>
                   </tr>
                 );
               })}
@@ -1464,7 +1464,7 @@ function TabAssignSim({
       {/* ── Footer ── */}
       <div className="shrink-0 border-t border-gray-100 px-5 py-3.5 flex items-center justify-between gap-4 bg-gray-50/60">
         <div className="flex items-center gap-2">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-outline">
             {filtered.length > 0
               ? `${page * PER + 1}–${Math.min((page + 1) * PER, filtered.length)} de ${filtered.length}`
               : "0 SIMs"}
@@ -1475,7 +1475,7 @@ function TabAssignSim({
                 className="p-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-100">
                 <ChevronLeft className="w-3.5 h-3.5 text-gray-500" />
               </button>
-              <span className="text-xs text-gray-400 px-1">{page + 1}/{totalPages}</span>
+              <span className="text-xs text-outline px-1">{page + 1}/{totalPages}</span>
               <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
                 className="p-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-100">
                 <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
@@ -1494,7 +1494,7 @@ function TabAssignSim({
             onClick={() => { setAssignErr(null); setShowConfirm(true); }}
             disabled={!selected}
             className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
-            style={{ background: selected ? "linear-gradient(135deg,#3ECF8E,#6366f1)" : "#d1d5db" }}
+            style={{ background: selected ? "linear-gradient(135deg,#270779,#4a20c4)" : "#d1d5db" }}
           >
             <CreditCard className="w-3.5 h-3.5" /> Asignar SIM
           </button>
@@ -1600,18 +1600,18 @@ export function DeviceDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <Cpu className="w-5 h-5 text-teal-500 shrink-0" />
+            <Cpu className="w-5 h-5 text-violet-600 shrink-0" />
             <h2 className="text-base font-bold text-gray-900 truncate">{endpoint.name || endpoint.imei || `Endpoint #${endpoint.id}`}</h2>
             {endpoint.status?.id === 1 ? (
               <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
             ) : endpoint.status?.id === 2 ? (
               <PauseCircle className="w-4 h-4 text-amber-500 shrink-0" />
             ) : (
-              <Circle className="w-4 h-4 text-gray-400 shrink-0" />
+              <Circle className="w-4 h-4 text-outline shrink-0" />
             )}
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-outline" />
           </button>
         </div>
 
@@ -1625,7 +1625,7 @@ export function DeviceDetailModal({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className="px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap shrink-0 flex items-center gap-1.5"
-                style={{ color: isActive ? "#3ECF8E" : isAssignSim ? "#6366f1" : "#6b7280" }}
+                style={{ color: isActive ? "#4a20c4" : isAssignSim ? "#6366f1" : "#6b7280" }}
               >
                 {isAssignSim && <CreditCard className="w-3.5 h-3.5" />}
                 {tab.label}
@@ -1635,14 +1635,14 @@ export function DeviceDetailModal({
                 )}
                 {isActive && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full"
-                    style={{ background: isAssignSim ? "#6366f1" : "#3ECF8E" }} />
+                    style={{ background: isAssignSim ? "#6366f1" : "#4a20c4" }} />
                 )}
               </button>
             );
           })}
           {isAdmin && (
             <div className="ml-auto shrink-0">
-              <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-teal-600 px-3 py-2 rounded-lg hover:bg-teal-50 transition-colors">
+              <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-violet-700 px-3 py-2 rounded-lg hover:bg-violet-50 transition-colors">
                 <Download className="w-3.5 h-3.5" />
                 Exportar
               </button>
