@@ -1,5 +1,36 @@
-/* Tipografía del design system (Stitch: "AmericasIoT Management System") */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Monoespaciada para ICCID, IMEI e IMSI (la UI va en Volte, ver abajo) */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 /* Iconografía — Material Symbols Outlined, con ejes de peso y relleno */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+/* Volte: tipografía de la marca Americas IoT (la misma de la landing).
+   Auto-hospedada en public/fonts. No existe Volte Light: los pesos son 400–700. */
+@font-face {
+  font-family: "Volte";
+  src: url("/fonts/Volte-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Volte";
+  src: url("/fonts/Volte-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Volte";
+  src: url("/fonts/Volte-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Volte";
+  src: url("/fonts/Volte-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

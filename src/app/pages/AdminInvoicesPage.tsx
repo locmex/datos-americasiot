@@ -763,7 +763,7 @@ export default function AdminInvoicesPage() {
 
           {!loading && filtered.length === 0 && !error && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Icon name="receipt_long" className="mb-3 text-[48px] text-outline-variant" />
+              <Icon name="receipt_long" className="mb-3 text-[48px] text-outline" />
               <p className="text-body-md text-on-surface-variant">
                 {search || statusFilter ? "Sin resultados" : "Aún no hay facturas generadas"}
               </p>
@@ -788,7 +788,7 @@ export default function AdminInvoicesPage() {
             </>
           ) : (
             <div className="hidden h-[700px] flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest/50 text-center lg:flex">
-              <Icon name="receipt_long" className="mb-3 text-[40px] text-outline-variant" />
+              <Icon name="receipt_long" className="mb-3 text-[40px] text-outline" />
               <p className="text-body-md text-on-surface-variant">Seleccioná una factura</p>
               <p className="mt-1 text-body-sm text-on-surface-variant">
                 El desglose y las acciones aparecen acá

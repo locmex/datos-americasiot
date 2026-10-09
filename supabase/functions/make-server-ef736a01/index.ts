@@ -5,6 +5,7 @@ import * as kv from "./kv_store.tsx";
 import { db, buildTrackingUrl } from "./db.tsx";
 import { syncSimPeriod } from "./billing/sim-periods.ts";
 import { computeProrationFactor, startOfM, startNext } from "./billing/proration.ts";
+import { iccid19, queryClientSims } from "./portal/client-sims.ts";
 
 const app = new Hono();
 app.use("*", logger(console.log));
@@ -15,6 +16,19 @@ app.use("/*", cors({
   exposeHeaders: ["Content-Length"],
   maxAge: 600,
 }));
+
+// Tras un cambio exitoso del estado o del dispositivo de una SIM, se descarta
+// la caché de SIMs del portal (ver fetchAllAccountSims). Se hace DESPUÉS de la
+// operación: si se hiciera antes, otra petición podría volver a llenarla con
+// el estado viejo mientras emnify aplica el cambio.
+const SIM_MUTATION_PATH =
+  /\/make-server-ef736a01\/(emnify\/sims\/[^/]+\/status|emnify\/endpoints(\/[^/]+(\/sim|\/assign-sim)?)?|client\/sims\/[^/]+\/status|client\/devices\/[^/]+\/name)$/;
+app.use("/make-server-ef736a01/*", async (c, next) => {
+  await next();
+  if (c.req.method !== "GET" && c.res.status < 400 && SIM_MUTATION_PATH.test(c.req.path)) {
+    invalidateAccountSims();
+  }
+});
 
 const EMNIFY_BASE = "https://cdn.emnify.net/api/v1";
 // El endpoint de registro en lote (batch) no está disponible en la CDN;
@@ -2470,12 +2484,187 @@ async function insertOrderHistory(
 }
 
 // ────────────────────────────────────────────────
+// CLIENT PORTAL — SIMs paginadas en el servidor
+// GET /client/sims?page=1&per_page=25&view=devices|sims&status=1&q=texto
+//                 &sort=name|status|iccid|imei|imsi&dir=asc|desc[&all=1]
+//
+// En vez de consultar a emnify SIM por SIM, trae TODAS las SIMs de la cuenta
+// en bloque (/sim de 100 en 100, en paralelo) y cruza con los chips del
+// cliente. Así el filtro, la búsqueda, el orden y los conteos se aplican sobre
+// todas sus SIMs y solo viaja la página pedida. Los datos son los del momento
+// de la petición (sin caché), igual que la ruta sin paginar.
+// ────────────────────────────────────────────────
+// emnify limita la concurrencia: con más de ~8 peticiones simultáneas responde
+// 429 (ver el BATCH_SIZE = 8 de la ruta sin paginar). Todo lo del portal que
+// pega a emnify en paralelo pasa por estos helpers.
+const EMNIFY_MAX_CONCURRENCY = 6;
+const EMNIFY_RETRY_DELAYS_MS = [500, 1000, 2000];
+
+/** emnifyFetch con reintentos ante 429 / 5xx / fallo de red (espera creciente). */
+async function emnifyFetchRetry(path: string, options: RequestInit = {}, baseUrl = EMNIFY_BASE) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await emnifyFetch(path, options, baseUrl);
+    } catch (e: any) {
+      const status = Number(/emnify (\d{3})/.exec(String(e?.message))?.[1] ?? 0);
+      const retriable = status === 429 || status >= 500 || status === 0;
+      if (!retriable || attempt >= EMNIFY_RETRY_DELAYS_MS.length) throw e;
+      await new Promise((r) => setTimeout(r, EMNIFY_RETRY_DELAYS_MS[attempt]));
+    }
+  }
+}
+
+/** map con un máximo de `limit` tareas a la vez. */
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+
+async function fetchAllAccountSimsFresh(): Promise<{ sims: any[]; pages: number }> {
+  const pick = (d: any): any[] => (Array.isArray(d) ? d : (d?.items || []));
+  const REQUESTED = 100;
+  const MAX_PAGES = 60;
+  const getPage = async (page: number): Promise<any[]> =>
+    pick((await emnifyFetchRetry(`/sim?page=${page}&per_page=${REQUESTED}`)).data);
+
+  const first = await emnifyFetchRetry(`/sim?page=1&per_page=${REQUESTED}`);
+  const firstItems = pick(first.data);
+  // emnify puede devolver menos de lo pedido por página: se calcula con el
+  // tamaño real de la primera página, no con el solicitado.
+  const pageSize = firstItems.length || REQUESTED;
+  if (first.totalCount != null) {
+    const pages = Math.min(Math.ceil(first.totalCount / pageSize), MAX_PAGES);
+    const rest = await mapLimit(
+      Array.from({ length: Math.max(pages - 1, 0) }, (_, i) => i + 2),
+      EMNIFY_MAX_CONCURRENCY,
+      (page) => getPage(page),
+    );
+    return { sims: firstItems.concat(...rest), pages };
+  }
+  // Sin total en las cabeceras: secuencial hasta una página incompleta.
+  let all = firstItems;
+  let page = 1;
+  while (all.length && all.length % pageSize === 0 && page < MAX_PAGES) {
+    const items = await getPage(++page);
+    if (!items.length) break;
+    all = all.concat(items);
+    if (items.length < pageSize) break;
+  }
+  return { sims: all, pages: page };
+}
+
+// Caché corta (20 s) de todas las SIMs de la cuenta, compartida por todos los
+// clientes de esta instancia. Guarda la PROMESA: si llegan dos peticiones a la
+// vez, la segunda espera a la primera en lugar de lanzar otras ~16 llamadas.
+// Se invalida cuando alguien cambia el estado o el dispositivo de una SIM.
+const ACCOUNT_SIMS_TTL_MS = 20_000;
+let accountSimsCache: { at: number; data: Promise<{ sims: any[]; pages: number }> } | null = null;
+
+function invalidateAccountSims() {
+  accountSimsCache = null;
+}
+
+async function fetchAllAccountSims(): Promise<{ sims: any[]; pages: number; cached: boolean }> {
+  const now = Date.now();
+  if (accountSimsCache && now - accountSimsCache.at < ACCOUNT_SIMS_TTL_MS) {
+    return { ...(await accountSimsCache.data), cached: true };
+  }
+  const entry = { at: now, data: fetchAllAccountSimsFresh() };
+  accountSimsCache = entry;
+  try {
+    return { ...(await entry.data), cached: false };
+  } catch (e) {
+    // Un error no se guarda: la siguiente petición vuelve a intentar.
+    if (accountSimsCache === entry) accountSimsCache = null;
+    throw e;
+  }
+}
+
+async function clientSimsPaged(c: any, session: any) {
+  const t0 = Date.now();
+  const q = (c.req.query("q") || "").trim().toLowerCase();
+  const view = c.req.query("view") === "devices" ? "devices" : "sims";
+  const statusParam = c.req.query("status") ?? "";
+  const statusFilter = statusParam !== "" && Number.isFinite(Number(statusParam)) ? Number(statusParam) : null;
+  const sort = c.req.query("sort") || (view === "devices" ? "name" : "iccid");
+  const dir: 1 | -1 = c.req.query("dir") === "desc" ? -1 : 1;
+  const all = c.req.query("all") === "1";
+  const page = Math.max(parseInt(c.req.query("page") || "1", 10) || 1, 1);
+  const perPage = Math.min(Math.max(parseInt(c.req.query("per_page") || "25", 10) || 25, 1), 100);
+
+  const allChips = await kv.getByPrefix("chip:");
+  const myChips = allChips.filter((chip: any) => chip.clientId === session.clientId);
+  const tKv = Date.now();
+
+  let account: { sims: any[]; pages: number; cached: boolean };
+  try {
+    account = await fetchAllAccountSims();
+  } catch (e: any) {
+    console.log("client/sims paged: emnify error:", e.message);
+    return c.json({ error: "No se pudo consultar EMNIFY. Intenta de nuevo en unos segundos." }, 502);
+  }
+  const tEmnify = Date.now();
+
+  const byIccid = new Map(account.sims.map((sim: any) => [iccid19(sim.iccid), sim]));
+  const endpointUpdates: Promise<unknown>[] = [];
+
+  const rows = myChips.map((chip: any) => {
+    const sim = byIccid.get(iccid19(chip.iccid)) ?? null;
+    const ep = sim?.endpoint ?? null;
+    // La conectividad se pide por endpointId guardado en el chip: se mantiene al día.
+    if (ep?.id && chip.endpointId !== ep.id) {
+      endpointUpdates.push(kv.set(`chip:${chip.iccid}`, { ...chip, endpointId: ep.id }).catch(() => {}));
+    }
+    return {
+      iccid: chip.iccid,
+      iccid_with_luhn: sim?.iccid_with_luhn || addLuhnDigit(chip.iccid),
+      simId: sim?.id ?? null,
+      status: sim?.status ?? { id: 0, description: sim ? "Unknown" : "No encontrada en EMNIFY" },
+      endpoint: ep ? { ...ep, name: chip.customName || ep.name || null } : null,
+      endpointId: ep?.id ?? null,
+      imsi: sim?.imsi ?? null,
+      imei: ep?.imei ? String(ep.imei) : null,
+      usage: null,
+      connectivity: null,
+      rat_type: null,
+      localData: chip,
+    };
+  });
+  await Promise.allSettled(endpointUpdates);
+
+  const { sims, total, counts } = queryClientSims(
+    rows,
+    { view, status: statusFilter, q, sort, dir, page, perPage, all },
+    normalizeImei,
+  );
+
+  console.log(
+    `client/sims paged: cliente=${session.clientId} sims=${rows.length} filtradas=${total} ` +
+    `pagina=${page} | kv=${tKv - t0}ms emnify=${tEmnify - tKv}ms (${account.cached ? "caché" : `${account.pages} págs`}, ${account.sims.length} SIMs) total=${Date.now() - t0}ms`
+  );
+
+  return c.json({ sims, total, page, per_page: perPage, counts });
+}
+
+// ────────────────────────────────────────────────
 // CLIENT PORTAL — Get my SIMs (with emnify data)
 // ────────────────────────────────────���───────────
 app.get("/make-server-ef736a01/client/sims", async (c) => {
   try {
     const session = await requireClientSession(c);
     if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    // Con ?page= el servidor filtra, ordena, cuenta y pagina (ver clientSimsPaged).
+    // Sin parámetros responde como siempre: todas las SIMs del cliente.
+    if (c.req.query("page")) return await clientSimsPaged(c, session);
 
     const allChips = await kv.getByPrefix("chip:");
     const myChips = allChips.filter((chip: any) => chip.clientId === session.clientId);
@@ -2587,30 +2776,27 @@ app.get("/make-server-ef736a01/client/sims/connectivity", async (c) => {
     if (!session) return c.json({ error: "Unauthorized" }, 401);
 
     const allChips = await kv.getByPrefix("chip:");
+    // ?endpoints=1,2,3 limita la consulta a esos dispositivos (los de la página
+    // que el portal acaba de recibir). Siempre se filtra sobre los chips del
+    // propio cliente, así que no permite consultar dispositivos ajenos.
+    const wanted = new Set(
+      (c.req.query("endpoints") || "").split(",").map((v) => v.trim()).filter(Boolean),
+    );
     const myChips = allChips.filter(
-      (chip: any) => chip.clientId === session.clientId && chip.endpointId
+      (chip: any) =>
+        chip.clientId === session.clientId && chip.endpointId &&
+        (wanted.size === 0 || wanted.has(String(chip.endpointId)))
     );
 
-    const BATCH_SIZE = 20;
     const connectivity: Record<string, any> = {};
-
-    for (let i = 0; i < myChips.length; i += BATCH_SIZE) {
-      const batch = myChips.slice(i, i + BATCH_SIZE);
-      await Promise.allSettled(
-        batch.map(async (chip: any) => {
-          try {
-            const { data: conn } = await emnifyFetch(
-              `/endpoint/${chip.endpointId}/connectivity`, {}, EMNIFY_BASE
-            );
-            if (conn) {
-              connectivity[String(chip.endpointId)] = conn;
-            }
-          } catch (e: any) {
-            console.log(`connectivity error endpoint ${chip.endpointId}:`, e.message);
-          }
-        })
-      );
-    }
+    await mapLimit(myChips, EMNIFY_MAX_CONCURRENCY, async (chip: any) => {
+      try {
+        const { data: conn } = await emnifyFetchRetry(`/endpoint/${chip.endpointId}/connectivity`);
+        if (conn) connectivity[String(chip.endpointId)] = conn;
+      } catch (e: any) {
+        console.log(`connectivity error endpoint ${chip.endpointId}:`, e.message);
+      }
+    });
 
     return c.json({ connectivity });
   } catch (e: any) {

@@ -10,6 +10,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
+import { Iccid } from "../components/Iccid";
 import { PageHeader, IconButton, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
 import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
 import { TableCustomizer } from "../components/table/TableCustomizer";
@@ -43,8 +44,8 @@ interface SIM {
 
 // ── Status config ─────────────────────────────────────────────────
 const STATUS_CFG: Record<number, { label: string; color: string; icon: React.FC<any>; symbol: string }> = {
-  0: { label: "Emitida",      color: "#94a3b8", icon: Circle,       symbol: "circle" },
-  1: { label: "Activada",     color: "#22c55e", icon: CheckCircle2, symbol: "check_circle" },
+  0: { label: "Disponible",   color: "#6b6680", icon: Circle,       symbol: "circle" },
+  1: { label: "Activa",       color: "#16a34a", icon: CheckCircle2, symbol: "check_circle" },
   2: { label: "Suspendida",   color: "#f59e0b", icon: PauseCircle,  symbol: "pause_circle" },
   3: { label: "Desactivada",  color: "#ef4444", icon: XCircle,      symbol: "cancel" },
   5: { label: "Modo Prueba",  color: "#8b5cf6", icon: AlertCircle,  symbol: "science" },
@@ -78,8 +79,8 @@ const SIM_SORT_KEY: Partial<Record<SimColKey, string>> = {
 // Status filter options shown as pills
 const STATUS_FILTERS = [
   { id: null,  label: "Todos" },
-  { id: 0,     label: "Emitida" },
-  { id: 1,     label: "Activada" },
+  { id: 0,     label: "Disponible" },
+  { id: 1,     label: "Activa" },
   { id: 2,     label: "Suspendida" },
   { id: 5,     label: "Modo Prueba" },
 ];
@@ -170,13 +171,13 @@ function EventsTab({ simId }: { simId: string | number }) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1.5 text-xs">
           <span className="font-medium" style={{ color: "#6b6b80" }}>Actualización en tiempo real</span>
-          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "#3ECF8E" }} />
+          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "#16a34a" }} />
         </div>
         <div className="flex items-center gap-2">
-          {total > 0 && <span className="text-xs" style={{ color: "#adadb8" }}>{total.toLocaleString()} eventos</span>}
+          {total > 0 && <span className="text-xs" style={{ color: "#6b6680" }}>{total.toLocaleString()} eventos</span>}
           <button onClick={() => load(page, perPage)}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium"
-            style={{ background: "#f5f5f7", color: "#3ECF8E", border: "1px solid #e8e8ed" }}>
+            style={{ background: "#f5f5f7", color: "#4a20c4", border: "1px solid #e8e8ed" }}>
             <Download className="w-3 h-3" />Exportar
           </button>
         </div>
@@ -191,7 +192,7 @@ function EventsTab({ simId }: { simId: string | number }) {
           </button>
         ))}
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-          style={{ background: "rgba(62,207,142,0.10)", border: "1px solid rgba(62,207,142,0.25)", color: "#0d8f5c" }}>
+          style={{ background: "rgba(74,32,196,0.10)", border: "1px solid rgba(74,32,196,0.25)", color: "#4a20c4" }}>
           + Añadir filtro
         </button>
       </div>
@@ -211,7 +212,7 @@ function EventsTab({ simId }: { simId: string | number }) {
               <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e8e8ed" }}>
                 {["Fecha", "Severidad", "Tipo de evento", "Operador"].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left font-semibold uppercase tracking-wider"
-                    style={{ color: "#8e8ea0", fontSize: "10px" }}>{h}</th>
+                    style={{ color: "#6b6680", fontSize: "10px" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -227,7 +228,7 @@ function EventsTab({ simId }: { simId: string | number }) {
                     </tr>
                   ))
                 : events.length === 0
-                ? <tr><td colSpan={4} className="px-4 py-8 text-center text-xs" style={{ color: "#adadb8" }}>No se encontraron eventos</td></tr>
+                ? <tr><td colSpan={4} className="px-4 py-8 text-center text-xs" style={{ color: "#6b6680" }}>No se encontraron eventos</td></tr>
                 : events.map((ev, i) => {
                     const sevName = ev.severity?.description || ev.severity?.name || "info";
                     const sStyle  = getSev(sevName);
@@ -263,7 +264,7 @@ function EventsTab({ simId }: { simId: string | number }) {
       {/* Pagination */}
       {total > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-xs" style={{ color: "#adadb8" }}>
+          <span className="text-xs" style={{ color: "#6b6680" }}>
             Mostrando {((page - 1) * perPage) + 1}–{Math.min(page * perPage, total)} de {total}
           </span>
           <div className="flex items-center gap-2">
@@ -282,16 +283,16 @@ function EventsTab({ simId }: { simId: string | number }) {
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map((p) => (
                 <button key={p} onClick={() => { setPage(p); load(p, perPage); }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium"
-                  style={{ background: p === page ? "#3ECF8E" : "#fff", color: p === page ? "#fff" : "#6b6b80",
-                    border: `1px solid ${p === page ? "#3ECF8E" : "#e8e8ed"}`, fontWeight: p === page ? 700 : 400 }}>
+                  style={{ background: p === page ? "#270779" : "#fff", color: p === page ? "#fff" : "#6b6b80",
+                    border: `1px solid ${p === page ? "#4a20c4" : "#e8e8ed"}`, fontWeight: p === page ? 700 : 400 }}>
                   {p}
                 </button>
               ))}
               {totalPages > 7 && <>
-                <span className="text-xs px-1" style={{ color: "#adadb8" }}>...</span>
+                <span className="text-xs px-1" style={{ color: "#6b6680" }}>...</span>
                 <button onClick={() => { setPage(totalPages); load(totalPages, perPage); }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium"
-                  style={{ background: page === totalPages ? "#3ECF8E" : "#fff", color: page === totalPages ? "#fff" : "#6b6b80", border: "1px solid #e8e8ed" }}>
+                  style={{ background: page === totalPages ? "#270779" : "#fff", color: page === totalPages ? "#fff" : "#6b6b80", border: "1px solid #e8e8ed" }}>
                   {totalPages}
                 </button>
               </>}
@@ -461,7 +462,7 @@ function StatsTab({ sim }: { sim: any }) {
             <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e8e8ed" }}>
               {COLS.map((col) => (
                 <th key={col.key} className="px-4 py-2.5 text-left font-semibold uppercase tracking-wider whitespace-nowrap"
-                  style={{ color: "#8e8ea0", fontSize: "10px", width: col.w }}>{col.label}</th>
+                  style={{ color: "#6b6680", fontSize: "10px", width: col.w }}>{col.label}</th>
               ))}
             </tr>
           </thead>
@@ -477,7 +478,7 @@ function StatsTab({ sim }: { sim: any }) {
                   </tr>
                 ))
               : rows.length === 0 && !error
-              ? <tr><td colSpan={COLS.length} className="px-4 py-8 text-center text-xs" style={{ color: "#adadb8" }}>
+              ? <tr><td colSpan={COLS.length} className="px-4 py-8 text-center text-xs" style={{ color: "#6b6680" }}>
                   Sin datos para este período
                   {debugPath && <div className="mt-1 font-mono opacity-60">{debugPath}</div>}
                 </td></tr>
@@ -566,7 +567,7 @@ function DetailPanel({
               <h3 className="text-sm font-bold" style={{ color: "#1a1a1a" }}>
                 {sim.endpoint?.name || simTypeName}
               </h3>
-              <p className="text-xs font-mono mt-0.5" style={{ color: "#adadb8" }}>{sim.iccid}</p>
+              <p className="text-xs font-mono mt-0.5" style={{ color: "#6b6680" }}>{sim.iccid}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {sim.status?.id === 1 && (
@@ -587,7 +588,7 @@ function DetailPanel({
               )}
               <button onClick={onClose}
                 className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
-                style={{ background: "#f5f5f7", color: "#adadb8" }}>
+                style={{ background: "#f5f5f7", color: "#6b6680" }}>
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -599,8 +600,8 @@ function DetailPanel({
               <button key={t.id} onClick={() => setTab(t.id)}
                 className="px-4 py-2 text-sm font-medium transition-all border-b-2 -mb-[2px]"
                 style={{
-                  borderColor: tab === t.id ? "#3ECF8E" : "transparent",
-                  color:       tab === t.id ? "#0d8f5c" : "#8e8ea0",
+                  borderColor: tab === t.id ? "#270779" : "transparent",
+                  color:       tab === t.id ? "#4a20c4" : "#8e8ea0",
                   fontWeight:  tab === t.id ? 600 : 400,
                 }}>
                 {t.label}
@@ -624,9 +625,9 @@ function DetailPanel({
                   { label: "Cliente asignado",   value: sim.localData?.clientName || "Sin asignar", highlight: !!sim.localData?.clientName },
                 ].map(({ label, value, link, highlight }) => (
                   <div key={label} className="space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: "#c7c7cc" }}>{label}</p>
+                    <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: "#8f8aa3" }}>{label}</p>
                     <p className={`text-xs font-mono break-all ${link ? "underline cursor-pointer" : ""}`}
-                      style={{ color: link ? "#3b82f6" : highlight ? "#3ECF8E" : "#1a1a1a", fontWeight: highlight ? 600 : 400 }}>
+                      style={{ color: link ? "#3b82f6" : highlight ? "#4a20c4" : "#1a1a1a", fontWeight: highlight ? 600 : 400 }}>
                       {String(value)}
                     </p>
                   </div>
@@ -639,7 +640,7 @@ function DetailPanel({
                     <Wifi className="w-3.5 h-3.5" />Solo celular
                   </div>
                   <SimCardSvg />
-                  <div className="text-xs space-y-0.5 self-start w-full" style={{ color: "#adadb8" }}>
+                  <div className="text-xs space-y-0.5 self-start w-full" style={{ color: "#6b6680" }}>
                     <p className="font-medium mb-1" style={{ color: "#6b6b80" }}>Uso</p>
                     <p>• Mini (2FF)</p><p>• Micro (3FF)</p><p>• Nano (4FF)</p>
                   </div>
@@ -725,7 +726,7 @@ function AddSimModal({ open, onClose, onAdded }: { open: boolean; onClose: () =>
                   : "Registrar Lote de SIMs"}
               </h3>
               {mode === "choose" && (
-                <p className="text-xs text-gray-400 mt-0.5">Selecciona el tipo de registro</p>
+                <p className="text-xs text-outline mt-0.5">Selecciona el tipo de registro</p>
               )}
             </div>
           </div>
@@ -740,8 +741,8 @@ function AddSimModal({ open, onClose, onAdded }: { open: boolean; onClose: () =>
             <button onClick={() => setMode("bic1")}
               className="flex items-start gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-green-300 hover:bg-green-50/50 transition-all text-left group">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform"
-                style={{ background: "rgba(62,207,142,0.12)" }}>
-                <CreditCard className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+                style={{ background: "rgba(74,32,196,0.12)" }}>
+                <CreditCard className="w-5 h-5" style={{ color: "#4a20c4" }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900">SIM Individual</p>
@@ -753,8 +754,8 @@ function AddSimModal({ open, onClose, onAdded }: { open: boolean; onClose: () =>
             <button onClick={() => setMode("bic2")}
               className="flex items-start gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-green-300 hover:bg-green-50/50 transition-all text-left group">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform"
-                style={{ background: "rgba(62,207,142,0.12)" }}>
-                <Download className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+                style={{ background: "rgba(74,32,196,0.12)" }}>
+                <Download className="w-5 h-5" style={{ color: "#4a20c4" }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900">Lote de SIMs</p>
@@ -763,7 +764,7 @@ function AddSimModal({ open, onClose, onAdded }: { open: boolean; onClose: () =>
               <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-green-400 shrink-0 mt-1 transition-colors" />
             </button>
 
-            <button onClick={handleClose} className="mt-1 text-xs text-gray-400 hover:text-gray-600 transition-colors py-1">
+            <button onClick={handleClose} className="mt-1 text-xs text-outline hover:text-gray-600 transition-colors py-1">
               Cancelar
             </button>
           </div>
@@ -785,7 +786,7 @@ function AddSimModal({ open, onClose, onAdded }: { open: boolean; onClose: () =>
                 autoFocus
                 className="w-full px-4 py-3 text-sm font-mono rounded-xl border-2 border-gray-200 focus:outline-none focus:border-green-400 bg-gray-50 tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal placeholder:font-sans"
               />
-              <p className="text-[11px] text-gray-400 mt-1.5 leading-snug">
+              <p className="text-[11px] text-outline mt-1.5 leading-snug">
                 {mode === "bic1"
                   ? "El código BIC1 se encuentra impreso en la tarjeta SIM física."
                   : "El código BIC2 se encuentra en la etiqueta del empaque del lote de SIMs."}
@@ -811,7 +812,7 @@ function AddSimModal({ open, onClose, onAdded }: { open: boolean; onClose: () =>
                   onClick={mode === "bic1" ? handleBic1 : handleBic2}
                   disabled={loading || !bic.trim()}
                   className="flex-1 text-sm font-semibold text-black"
-                  style={{ background: "#3ECF8E" }}
+                  style={{ background: "#270779" }}
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />}
                   Registrar
@@ -882,12 +883,12 @@ function AssignClientModal({
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "rgba(62,207,142,0.12)" }}>
-              <UserCheck className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+              style={{ background: "rgba(74,32,196,0.12)" }}>
+              <UserCheck className="w-5 h-5" style={{ color: "#4a20c4" }} />
             </div>
             <div>
               <h3 className="font-bold text-gray-900 text-base">Asignar cliente</h3>
-              <p className="text-xs text-gray-400 mt-0.5 font-mono truncate max-w-[180px]">
+              <p className="text-xs text-outline mt-0.5 font-mono truncate max-w-[180px]">
                 {displayIccid(sim)}
               </p>
             </div>
@@ -901,13 +902,13 @@ function AssignClientModal({
         {/* Search */}
         <div className="px-4 pt-4 pb-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-outline pointer-events-none" />
             <input
               ref={searchRef}
               value={clientSearch}
               onChange={(e) => setClientSearch(e.target.value)}
               placeholder="Buscar cliente…"
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200"
             />
           </div>
         </div>
@@ -917,11 +918,11 @@ function AssignClientModal({
           {clients.length === 0 ? (
             <div className="text-center py-8">
               <Users className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">No hay clientes registrados</p>
-              <p className="text-xs text-gray-400 mt-1">Ve al módulo de Clientes para agregar uno</p>
+              <p className="text-sm text-outline">No hay clientes registrados</p>
+              <p className="text-xs text-outline mt-1">Ve al módulo de Clientes para agregar uno</p>
             </div>
           ) : filteredClients.length === 0 ? (
-            <p className="text-center py-6 text-sm text-gray-400">Sin resultados</p>
+            <p className="text-center py-6 text-sm text-outline">Sin resultados</p>
           ) : (
             filteredClients.map((c) => {
               const isSelected = c.id === clientId;
@@ -932,22 +933,22 @@ function AssignClientModal({
                   onClick={() => { setClientId(c.id); setClientName(c.name); }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 text-left transition-all"
                   style={{
-                    background: isSelected ? "rgba(62,207,142,0.10)" : "transparent",
-                    border: isSelected ? "1px solid rgba(62,207,142,0.3)" : "1px solid transparent",
+                    background: isSelected ? "rgba(74,32,196,0.10)" : "transparent",
+                    border: isSelected ? "1px solid rgba(74,32,196,0.3)" : "1px solid transparent",
                   }}
                 >
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ background: "rgba(62,207,142,0.18)", color: "#059669" }}
+                    style={{ background: "rgba(74,32,196,0.18)", color: "#4a20c4" }}
                   >
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.company || c.email}</p>
+                    <p className="text-xs text-outline truncate">{c.company || c.email}</p>
                   </div>
                   {isSelected && (
-                    <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#3ECF8E" }} />
+                    <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#4a20c4" }} />
                   )}
                 </button>
               );
@@ -965,7 +966,7 @@ function AssignClientModal({
             onClick={handleSubmit}
             disabled={!clientId || loading || clients.length === 0}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-            style={{ background: "#3ECF8E", color: "#000" }}
+            style={{ background: "#270779", color: "#fff" }}
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
             {loading ? "Asignando…" : "Asignar"}
@@ -1212,9 +1213,9 @@ export default function InventoryPage() {
                 aria-pressed
                 className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-label-xs transition-colors"
                 style={{
-                  background: `${cfg?.color ?? "#3ECF8E"}20`,
-                  borderColor: cfg?.color ?? "#3ECF8E",
-                  color: cfg?.color ?? "#006c45",
+                  background: `${cfg?.color ?? "#4a20c4"}20`,
+                  borderColor: cfg?.color ?? "#4a20c4",
+                  color: cfg?.color ?? "#4a20c4",
                 }}
               >
                 {cfg && <Icon name={cfg.symbol} className="text-[14px]" />}
@@ -1239,7 +1240,7 @@ export default function InventoryPage() {
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <CreditCard className="w-12 h-12 text-gray-200 mb-3" />
                 <p className="text-gray-500 font-medium">No se encontraron SIMs</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-outline mt-1">
                   {search ? "Intenta con otro término de búsqueda" : "Verifica tu conexión con emnify"}
                 </p>
               </div>
@@ -1277,7 +1278,7 @@ export default function InventoryPage() {
                         )}
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-outline shrink-0" /> : <ChevronDown className="w-4 h-4 text-outline shrink-0" />}
                   </button>
 
                   {/* Expanded detail on mobile */}
@@ -1309,7 +1310,7 @@ export default function InventoryPage() {
                         )}
                         <button
                           onClick={() => setExpandedIccid(null)}
-                          className="px-3 py-2 rounded-lg text-xs text-gray-400 border border-gray-200"
+                          className="px-3 py-2 rounded-lg text-xs text-outline border border-gray-200"
                         >
                           Cerrar
                         </button>
@@ -1325,7 +1326,7 @@ export default function InventoryPage() {
                           { label: "Cliente", value: sim.localData?.clientName || "Sin asignar" },
                         ].map(({ label, value }) => (
                           <div key={label}>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</p>
+                            <p className="text-[10px] text-outline uppercase tracking-wide">{label}</p>
                             <p className="text-xs font-mono text-gray-800 break-all mt-0.5">{String(value)}</p>
                           </div>
                         ))}
@@ -1397,15 +1398,13 @@ export default function InventoryPage() {
                               cols.columnLines ? "border-r border-outline-variant/50" : ""
                             } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest" : ""}`;
                             const mono = "font-mono text-body-sm tracking-tight text-on-surface-variant";
-                            const dash = <span className="text-body-sm text-outline-variant">—</span>;
+                            const dash = <span className="text-body-sm text-outline">—</span>;
 
                             switch (c.key) {
                               case "ICCID":
                                 return (
                                   <td key={c.key} className={tdClass}>
-                                    <code className="font-mono text-body-sm tracking-tight text-on-surface">
-                                      {displayIccid(sim)}
-                                    </code>
+                                    <Iccid value={displayIccid(sim)} className="text-body-sm" />
                                   </td>
                                 );
 
@@ -1429,7 +1428,7 @@ export default function InventoryPage() {
                                   <td key={c.key} className={tdClass} onClick={(e) => e.stopPropagation()}>
                                     {sim.localData?.clientName ? (
                                       <div className="flex items-center gap-2">
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-xs text-on-primary-container">
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-xs text-primary">
                                           {sim.localData.clientName.charAt(0).toUpperCase()}
                                         </div>
                                         <span className="max-w-[140px] truncate text-label-md text-on-surface">
@@ -1490,7 +1489,7 @@ export default function InventoryPage() {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <CreditCard className="w-12 h-12 text-gray-200 mb-3" />
             <p className="text-gray-500 font-medium">No se encontraron SIMs</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-outline mt-1">
               {search ? "Intenta con otro término de búsqueda" : "Verifica tu conexión con emnify"}
             </p>
           </div>
@@ -1510,22 +1509,22 @@ export default function InventoryPage() {
                   key={p}
                   onClick={() => goToPage(p)}
                   className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
-                  style={{ background: p === page ? "#3ECF8E" : "transparent", color: p === page ? "#fff" : "#6b7280", border: p === page ? "none" : "1px solid #e5e7eb" }}
+                  style={{ background: p === page ? "#270779" : "transparent", color: p === page ? "#fff" : "#6b7280", border: p === page ? "none" : "1px solid #e5e7eb" }}
                 >
                   {p + 1}
                 </button>
               ))}
-              {totalPages > 5 && page < totalPages - 3 && <span className="text-gray-400 text-xs px-1">…{totalPages}</span>}
+              {totalPages > 5 && page < totalPages - 3 && <span className="text-outline text-xs px-1">…{totalPages}</span>}
               <button onClick={() => goToPage(page + 1)} disabled={page >= totalPages - 1} className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors">
                 <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">SIMs por página</span>
+              <span className="text-xs text-outline">SIMs por página</span>
               <select
                 value={perPage}
                 onChange={e => handlePerPageChange(Number(e.target.value))}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-200"
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-200"
               >
                 {PER_PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
               </select>

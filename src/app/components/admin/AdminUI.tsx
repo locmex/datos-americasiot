@@ -256,7 +256,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Icon name={icon} className="mb-3 text-[48px] text-outline-variant" />
+      <Icon name={icon} className="mb-3 text-[48px] text-outline" />
       <p className="text-body-md text-on-surface-variant">{title}</p>
       {hint && <p className="mt-1 text-body-sm text-on-surface-variant">{hint}</p>}
       {action && <div className="mt-4">{action}</div>}

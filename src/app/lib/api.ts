@@ -21,6 +21,12 @@ async function request<T = any>(method: string, path: string, body?: any): Promi
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const data = await res.json();
+  // Un 401 del propio login es "credenciales incorrectas", no "sesión
+  // expirada": se devuelve el mensaje al formulario sin redirigir. Si se
+  // redirigiera, la página se recarga y el usuario nunca ve el error.
+  if (res.status === 401 && path === "/auth/login") {
+    throw new Error(data.error || "Correo o contraseña incorrectos.");
+  }
   if (res.status === 401) {
     // Session expired or invalid — clear and redirect to admin login
     localStorage.removeItem("iot_session_id");
@@ -188,6 +194,24 @@ export const api = {
 };
 
 // ── Client Portal API (uses portal_session_id) ───────────────────────────────
+export interface ClientSimsQuery {
+  page: number;
+  perPage?: number;
+  view?: "devices" | "sims";
+  /** 0 disponible · 1 activa · 2 suspendida · 3 desactivada */
+  status?: number | null;
+  q?: string;
+  sort?: "name" | "status" | "iccid" | "imei" | "imsi";
+  dir?: "asc" | "desc";
+  /** Sin paginar (exportar CSV) */
+  all?: boolean;
+}
+
+export interface ClientSimsCounts {
+  total: number;
+  devices: number;
+  status: Record<number, number>;
+}
 function getPortalSessionId(): string {
   return localStorage.getItem("portal_session_id") || "";
 }
@@ -223,8 +247,24 @@ export const clientApi = {
   me: () => clientRequest("GET", "/auth/me"),
 
   // Client portal operations
-  getMySims: () => clientRequest("GET", "/client/sims"),
-  getSimsConnectivity: () => clientRequest("GET", "/client/sims/connectivity"),
+  // Sin argumentos trae todas (comportamiento original). Con `page`, el servidor
+  // filtra, busca, ordena, cuenta y devuelve solo esa página + los conteos.
+  getMySims: (opts?: ClientSimsQuery) => {
+    if (!opts) return clientRequest("GET", "/client/sims");
+    const qs = new URLSearchParams({ page: String(opts.page), per_page: String(opts.perPage ?? 25) });
+    if (opts.view) qs.set("view", opts.view);
+    if (opts.status != null) qs.set("status", String(opts.status));
+    if (opts.q?.trim()) qs.set("q", opts.q.trim());
+    if (opts.sort) qs.set("sort", opts.sort);
+    if (opts.dir) qs.set("dir", opts.dir);
+    if (opts.all) qs.set("all", "1");
+    return clientRequest("GET", `/client/sims?${qs}`);
+  },
+  // Sin argumentos consulta todos los dispositivos; con ids, solo esos.
+  getSimsConnectivity: (endpointIds?: (string | number)[]) =>
+    clientRequest("GET", endpointIds?.length
+      ? `/client/sims/connectivity?endpoints=${endpointIds.map(String).join(",")}`
+      : "/client/sims/connectivity"),
   getDeviceDetail: (endpointId: string | number) =>
     clientRequest("GET", `/client/devices/${endpointId}`),
   getDeviceEvents: (endpointId: string | number, page = 1, perPage = 5) =>
