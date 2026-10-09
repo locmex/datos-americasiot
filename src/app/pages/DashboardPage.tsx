@@ -4,9 +4,9 @@ import { useAuth } from "../lib/auth-context";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
 
-// Mismos roles de color que el portal del cliente: TX verde de marca, RX azul.
-const TX_COLOR = "#3ECF8E";
-const RX_COLOR = "#3b82f6";
+// Mismos roles de color que el portal del cliente.
+const TX_COLOR = "#4a20c4"; // enviado: morado de marca
+const RX_COLOR = "#22b8a3"; // recibido: cian de señal (tono legible sobre blanco)
 
 // ─── Tipos ────────────────────────────────────────────────────────
 interface Stats {
@@ -48,86 +48,37 @@ function formatBytes(b: number): string {
   return `${parseFloat((b / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-// ─── Tarjeta de métrica ───────────────────────────────────────────
-function MetricCard({
-  label, value, subtitle, icon, tone = "neutral", loading,
+// ─── Celda de la tira de métricas ─────────────────────────────────
+// Las cuatro cifras van en UNA tarjeta con divisores: se leen como un
+// resumen, no como cuatro objetos que compiten entre sí.
+function KpiCell({
+  label, value, note, icon, tone = "neutral", loading,
 }: {
   label: string;
   value: string | number;
-  subtitle: string;
+  note: string;
   icon: string;
   tone?: "neutral" | "success" | "warning";
   loading: boolean;
 }) {
-  const toneClasses = {
-    neutral: { value: "text-on-surface",  note: "text-on-surface-variant", chip: "text-tertiary" },
-    success: { value: "text-primary",     note: "text-primary",            chip: "bg-primary/10 text-primary rounded p-1" },
-    warning: { value: "text-on-warning",  note: "text-on-warning",         chip: "bg-warning/10 text-on-warning rounded p-1" },
-  }[tone];
-
+  const iconColor = { neutral: "text-on-surface-variant", success: "text-[#15803d]", warning: "text-on-warning" }[tone];
   return (
-    <div className="flex flex-col justify-between rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding transition-colors hover:bg-surface-bright">
-      <div className="mb-4 flex items-start justify-between gap-2">
-        <p className="text-body-sm tracking-wider text-on-surface-variant uppercase">
-          {label}
-        </p>
-        <span className={toneClasses.chip}>
-          <Icon name={icon} className="text-[16px]" />
-        </span>
-      </div>
+    <div className="flex flex-col gap-1.5 p-card-padding">
+      <p className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+        <Icon name={icon} className={`text-[16px] ${iconColor}`} />
+        {label}
+      </p>
       {loading ? (
         <div className="space-y-2">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-3.5 w-28" />
         </div>
       ) : (
-        <div>
-          <h3 className={`text-display-lg ${toneClasses.value}`}>{value}</h3>
-          <p className={`mt-1 text-body-sm ${toneClasses.note}`}>{subtitle}</p>
-        </div>
+        <>
+          <p className="text-[28px] leading-none font-semibold tracking-tight text-on-surface tabular-nums">{value}</p>
+          <p className="text-body-sm text-on-surface-variant">{note}</p>
+        </>
       )}
-    </div>
-  );
-}
-
-// ─── Dona TX / RX ─────────────────────────────────────────────────
-function UsageDonut({ tx, rx, total }: { tx: number; rx: number; total: number }) {
-  const R = 70;
-  const C = 2 * Math.PI * R;
-  const txFrac = total > 0 ? tx / total : 0;
-  const rxFrac = total > 0 ? rx / total : 0;
-
-  return (
-    <div className="relative mx-auto h-48 w-48">
-      <svg viewBox="0 0 176 176" className="h-full w-full -rotate-90">
-        <circle cx="88" cy="88" r={R} fill="none" strokeWidth="16" className="stroke-surface-container" />
-        {total > 0 && (
-          <>
-            <circle
-              cx="88" cy="88" r={R} fill="none" strokeWidth="16" stroke={TX_COLOR}
-              strokeDasharray={`${txFrac * C} ${C}`} strokeLinecap="butt"
-            />
-            <circle
-              cx="88" cy="88" r={R} fill="none" strokeWidth="16" stroke={RX_COLOR}
-              strokeDasharray={`${rxFrac * C} ${C}`} strokeDashoffset={-txFrac * C} strokeLinecap="butt"
-            />
-          </>
-        )}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        {total > 0 ? (
-          <>
-            <span className="text-display-md leading-tight text-on-surface">
-              {formatBytes(total).split(" ")[0]}
-            </span>
-            <span className="text-body-md text-on-surface-variant">
-              {formatBytes(total).split(" ")[1]} totales
-            </span>
-          </>
-        ) : (
-          <span className="text-body-md text-on-surface-variant">Sin datos</span>
-        )}
-      </div>
     </div>
   );
 }
@@ -146,7 +97,7 @@ function TrafficChart({ data }: { data: { label: string; tx: number; rx: number 
   const allZero = data.every((d) => d.tx === 0 && d.rx === 0);
 
   return (
-    <div className="flex h-48 items-end justify-between gap-2 border-b border-outline-variant pb-2">
+    <div className="flex h-44 items-end justify-between gap-2 border-b border-outline-variant pb-2">
       {data.map((d, i) => {
         const txPct = allZero ? 0 : Math.max(2, (d.tx / maxVal) * 100);
         const rxPct = allZero ? 0 : Math.max(2, (d.rx / maxVal) * 100);
@@ -254,70 +205,72 @@ export default function DashboardPage() {
     ? Math.round((Date.now() - new Date(usage.cachedAt).getTime()) / 60000)
     : null;
 
+  const pct = (n?: number) =>
+    stats?.totalSims && n != null ? `${Math.round((n / stats.totalSims) * 100)}% del total` : "";
+
   return (
     <div className="p-container-margin">
       {/* ── Encabezado ────────────────────────────────────── */}
-      <div className="mb-section-gap flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="mb-1 text-display-md text-on-background">
-            {greeting}, {user?.name?.split(" ")[0] || "Admin"} 👋
+            {greeting}, {user?.name?.split(" ")[0] || "Admin"}
           </h1>
-          <p className="text-body-lg text-on-surface-variant">
-            Resumen de conectividad IoT
+          <p className="text-body-md text-on-surface-variant">
+            Conectividad de la red EMNIFY
+            {cachedMins != null && !usageLoading ? ` · actualizado hace ${cachedMins} min` : ""}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 rounded-lg btn-primary px-4 py-2 text-label-md shadow-sm transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2 text-label-md text-on-surface transition-colors hover:bg-surface-container-low disabled:opacity-50"
         >
           <Icon name="refresh" className={`text-[18px] ${refreshing ? "animate-spin" : ""}`} />
           Actualizar
         </button>
       </div>
 
+      {/* ── Métricas: una sola tira ───────────────────────── */}
+      <div className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-outline-variant bg-outline-variant lg:grid-cols-4 [&>*]:bg-surface-container-lowest">
+        <KpiCell
+          label="SIMs en EMNIFY" icon="sim_card"
+          value={stats?.totalSims?.toLocaleString("es-MX") ?? "—"}
+          note="Chips en inventario" loading={statsLoading}
+        />
+        <KpiCell
+          label="Activas" icon="check_circle" tone="success"
+          value={displayActive?.toLocaleString("es-MX") ?? "—"}
+          note={pct(displayActive) || "Con datos activos"} loading={kpiLoading}
+        />
+        <KpiCell
+          label="Suspendidas" icon="pause_circle" tone="warning"
+          value={displaySuspended?.toLocaleString("es-MX") ?? "—"}
+          note={pct(displaySuspended) || "Temporalmente inactivas"} loading={kpiLoading}
+        />
+        <KpiCell
+          label="Clientes" icon="groups"
+          value={stats?.totalClients?.toLocaleString("es-MX") ?? "—"}
+          note="Registrados en el panel" loading={statsLoading}
+        />
+      </div>
+
       {/* ── Banner de caché ───────────────────────────────── */}
       {usage?.stale && !usageLoading && (
-        <div className="mb-section-gap flex flex-wrap items-center justify-between gap-4 rounded-lg border border-outline-variant bg-surface-variant p-4">
-          <div className="flex items-center gap-3">
-            <Icon name="info" className="text-outline" />
-            <p className="text-body-md text-on-surface">
-              Mostrando datos del caché ({cachedMins}m). El recálculo completo puede tardar ~30 segundos.
-            </p>
-          </div>
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg px-4 py-2.5 text-body-sm" style={{ background: "#fdf3e1", color: "#92400e" }}>
+          <Icon name="schedule" className="text-[18px]" />
+          <p className="flex-1">
+            <strong className="font-semibold">Datos de hace {cachedMins} min.</strong> El recálculo completo tarda unos 30 segundos.
+          </p>
           <button
             onClick={handleRecalculate}
             disabled={recalculating}
-            className="rounded border border-outline-variant bg-surface px-3 py-1.5 text-label-md whitespace-nowrap text-on-surface transition-colors hover:bg-surface-container disabled:opacity-50"
+            className="rounded-md border border-current px-3 py-1 text-label-md whitespace-nowrap transition-opacity hover:opacity-80 disabled:opacity-50"
           >
             {recalculating ? "Recalculando…" : "Recalcular ahora"}
           </button>
         </div>
       )}
-
-      {/* ── Métricas ──────────────────────────────────────── */}
-      <div className="mb-section-gap grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          label="Total SIMs" icon="sim_card"
-          value={stats?.totalSims?.toLocaleString("es-MX") ?? "—"}
-          subtitle="Chips en inventario" loading={statsLoading}
-        />
-        <MetricCard
-          label="SIMs Activas" icon="check_circle" tone="success"
-          value={displayActive?.toLocaleString("es-MX") ?? "—"}
-          subtitle="Con datos activos" loading={kpiLoading}
-        />
-        <MetricCard
-          label="SIMs Suspendidas" icon="pause_circle" tone="warning"
-          value={displaySuspended?.toLocaleString("es-MX") ?? "—"}
-          subtitle="Temporalmente inactivas" loading={kpiLoading}
-        />
-        <MetricCard
-          label="Clientes Registrados" icon="groups"
-          value={stats?.totalClients?.toLocaleString("es-MX") ?? "—"}
-          subtitle="En este portal" loading={statsLoading}
-        />
-      </div>
 
       {/* ── Error de consumo ──────────────────────────────── */}
       {usageError ? (
@@ -326,7 +279,7 @@ export default function DashboardPage() {
             <Icon name="error" className="text-error" />
             <div>
               <p className="text-label-md text-on-error-container">
-                Error cargando consumo de datos
+                No se pudo cargar el consumo de datos
               </p>
               <p className="mt-0.5 text-body-sm text-on-error-container">{usageError}</p>
             </div>
@@ -341,82 +294,95 @@ export default function DashboardPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-gutter lg:grid-cols-3">
-          {/* Consumo de datos */}
-          <div className="flex flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding lg:col-span-1">
-            <h3 className="mb-6 text-headline-sm text-on-surface">Consumo de Datos</h3>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+          {/* Volumen del mes + tráfico */}
+          <div className="flex flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-label-md text-on-surface">
+                Volumen de datos{usage?.month ? ` · ${usage.month}` : ""}
+              </h3>
+              <span className="text-body-sm text-on-surface-variant">
+                {usage?.endpointsWithStats ?? "—"} de {usage?.totalEndpoints?.toLocaleString("es-MX") ?? "—"} endpoints con tráfico
+              </span>
+            </div>
 
             {usageLoading ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-6">
-                <Skeleton className="h-48 w-48 rounded-full" />
-                <Skeleton className="h-16 w-full rounded-lg" />
-              </div>
+              <Skeleton className="mb-6 h-12 w-64" />
             ) : (
-              <div className="flex flex-1 flex-col justify-center">
-                <UsageDonut
-                  tx={usage?.txBytes ?? 0}
-                  rx={usage?.rxBytes ?? 0}
-                  total={usage?.totalBytes ?? 0}
-                />
-                <div className="mt-6 flex justify-around rounded-lg bg-surface-container-low p-3">
-                  <div className="flex items-center gap-2">
-                    <Icon name="arrow_upward" style={{ color: TX_COLOR }} />
-                    <div>
-                      <p className="text-label-xs text-on-surface-variant uppercase">TX enviado</p>
-                      <p className="text-label-md text-on-surface">{formatBytes(usage?.txBytes ?? 0)}</p>
-                    </div>
+              <div className="mb-6 flex flex-wrap items-end gap-x-8 gap-y-3">
+                <p className="text-[40px] leading-none font-semibold tracking-tight text-on-surface tabular-nums">
+                  {formatBytes(usage?.totalBytes ?? 0).split(" ")[0]}
+                  <span className="ml-1.5 text-body-lg font-normal text-on-surface-variant">
+                    {formatBytes(usage?.totalBytes ?? 0).split(" ")[1]}
+                  </span>
+                </p>
+                <div className="flex gap-6 pb-1">
+                  <div>
+                    <p className="flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+                      <span className="h-2.5 w-2.5 rounded-sm" style={{ background: TX_COLOR }} />Enviado
+                    </p>
+                    <p className="text-label-md text-on-surface tabular-nums">{formatBytes(usage?.txBytes ?? 0)}</p>
                   </div>
-                  <div className="w-px bg-outline-variant" />
-                  <div className="flex items-center gap-2">
-                    <Icon name="arrow_downward" style={{ color: RX_COLOR }} />
-                    <div>
-                      <p className="text-label-xs text-on-surface-variant uppercase">RX recibido</p>
-                      <p className="text-label-md text-on-surface">{formatBytes(usage?.rxBytes ?? 0)}</p>
-                    </div>
+                  <div>
+                    <p className="flex items-center gap-1.5 text-body-sm text-on-surface-variant">
+                      <span className="h-2.5 w-2.5 rounded-sm" style={{ background: RX_COLOR }} />Recibido
+                    </p>
+                    <p className="text-label-md text-on-surface tabular-nums">{formatBytes(usage?.rxBytes ?? 0)}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="mt-6 border-t border-outline-variant pt-4 text-center">
-              <p className="text-body-sm text-on-surface-variant">
-                Endpoints con datos:{" "}
-                <strong className="text-on-surface">
-                  {usage?.endpointsWithStats ?? "—"} / {usage?.totalEndpoints ?? "—"}
-                </strong>
-              </p>
-            </div>
+            <p className="mb-3 text-body-sm text-on-surface-variant">Tráfico de las últimas 6 horas</p>
+            {usageLoading ? (
+              <div className="flex h-44 items-end gap-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="flex-1 rounded" style={{ height: `${30 + i * 10}%` }} />
+                ))}
+              </div>
+            ) : (
+              <TrafficChart data={usage?.trafficHourly ?? []} />
+            )}
           </div>
 
-          {/* Estado + tráfico */}
-          <div className="flex flex-col gap-gutter lg:col-span-2">
+          {/* Estado de dispositivos */}
+          <div className="flex flex-col gap-4">
             <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
-              <h3 className="mb-4 text-headline-sm text-on-surface">Estado de Dispositivos</h3>
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <h3 className="text-label-md text-on-surface">Estado de los dispositivos</h3>
+                {!usageLoading && (
+                  <span className="text-body-sm text-on-surface-variant">
+                    {(online + disabled + offline).toLocaleString("es-MX")} en total
+                  </span>
+                )}
+              </div>
 
               {usageLoading ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-4 w-full rounded-full" />
-                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-full rounded-full" />
+                  <Skeleton className="h-10 w-2/3" />
                 </div>
               ) : (
                 <>
-                  <div className="mb-3 flex h-4 w-full overflow-hidden rounded-full bg-surface-container">
-                    <div className="h-full bg-primary" style={{ width: `${(online / deviceTotal) * 100}%` }} />
+                  <div className="mb-4 flex h-3 w-full gap-0.5 overflow-hidden rounded-full">
+                    <div className="h-full" style={{ width: `${(online / deviceTotal) * 100}%`, background: "#16a34a" }} />
                     <div className="h-full bg-warning" style={{ width: `${(disabled / deviceTotal) * 100}%` }} />
-                    <div className="h-full bg-outline" style={{ width: `${(offline / deviceTotal) * 100}%` }} />
+                    <div className="h-full bg-surface-container-high" style={{ width: `${(offline / deviceTotal) * 100}%` }} />
                   </div>
-                  <div className="flex flex-wrap gap-6">
+                  <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: "Online",        count: online,   dot: "bg-primary", icon: "check_circle" },
-                      { label: "Deshabilitado", count: disabled, dot: "bg-warning", icon: "pause_circle" },
-                      { label: "Offline",       count: offline,  dot: "bg-outline", icon: "circle" },
-                    ].map(({ label, count, dot, icon }) => (
-                      <div key={label} className="flex items-center gap-2">
-                        <span className={`h-3 w-3 rounded-full ${dot}`} />
-                        <Icon name={icon} className="text-[16px] text-on-surface-variant" />
-                        <span className="text-body-sm text-on-surface">
-                          {label} ({count.toLocaleString("es-MX")})
-                        </span>
+                      { label: "En línea",       count: online,   icon: "check_circle", color: "#15803d" },
+                      { label: "Deshabilitados", count: disabled, icon: "pause_circle", color: "#b45309" },
+                      { label: "Sin conexión",   count: offline,  icon: "do_not_disturb_on", color: "#57536a" },
+                    ].map(({ label, count, icon, color }) => (
+                      <div key={label}>
+                        <p className="flex items-center gap-1 text-body-sm" style={{ color }}>
+                          <Icon name={icon} className="text-[15px]" />
+                          {label}
+                        </p>
+                        <p className="text-[20px] leading-tight font-semibold text-on-surface tabular-nums">
+                          {count.toLocaleString("es-MX")}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -424,29 +390,27 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="flex flex-1 flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-headline-sm text-on-surface">Tráfico (últimas 6 h)</h3>
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-sm" style={{ background: TX_COLOR }} />
-                    <span className="text-body-sm text-on-surface-variant">TX</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-sm" style={{ background: RX_COLOR }} />
-                    <span className="text-body-sm text-on-surface-variant">RX</span>
-                  </div>
-                </div>
-              </div>
-
+            <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-card-padding">
+              <h3 className="mb-1 text-label-md text-on-surface">Endpoints con tráfico este mes</h3>
               {usageLoading ? (
-                <div className="flex h-48 items-end gap-2">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="flex-1 rounded" style={{ height: `${30 + i * 10}%` }} />
-                  ))}
-                </div>
+                <Skeleton className="h-10 w-40" />
               ) : (
-                <TrafficChart data={usage?.trafficHourly ?? []} />
+                <>
+                  <p className="text-[20px] font-semibold text-on-surface tabular-nums">
+                    {usage?.endpointsWithStats ?? "—"}
+                    <span className="text-body-md font-normal text-on-surface-variant">
+                      {" "}de {usage?.totalEndpoints?.toLocaleString("es-MX") ?? "—"}
+                    </span>
+                  </p>
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{
+                        width: `${usage?.totalEndpoints ? ((usage.endpointsWithStats ?? 0) / usage.totalEndpoints) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>

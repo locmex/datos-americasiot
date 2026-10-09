@@ -172,7 +172,7 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
               hay hover que lo insinúe. */}
           <Icon
             name="expand_more"
-            className={`text-[20px] text-outline-variant transition-transform ${expanded ? "rotate-180" : ""}`}
+            className={`text-[20px] text-outline transition-transform ${expanded ? "rotate-180" : ""}`}
           />
         </div>
       </div>
@@ -267,7 +267,7 @@ function InvoiceCard({ invoice }: { invoice: Invoice }) {
                 <span className="font-label-md text-label-md text-on-surface-variant">Saldo pendiente</span>
                 <span
                   className="font-label-md text-label-md"
-                  style={{ color: balance > 0 ? "#d97706" : "#059669" }}
+                  style={{ color: balance > 0 ? "#b45309" : "#15803d" }}
                 >
                   {formatCurrency(balance, invoice.currency)}
                 </span>
@@ -427,7 +427,7 @@ export default function ClientInvoicesPage() {
           </div>
         ) : invoices.length === 0 ? (
           <div className="bg-surface-container-lowest border border-hairline rounded-xl py-20 text-center">
-            <Icon name="receipt_long" className="text-[44px] text-outline-variant mb-3" />
+            <Icon name="receipt_long" className="text-[44px] text-outline mb-3" />
             <p className="font-label-md text-label-md text-on-surface">Aún no tienes facturas</p>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
               Aquí aparecerá tu historial de facturación mensual.
@@ -435,7 +435,7 @@ export default function ClientInvoicesPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-surface-container-lowest border border-hairline rounded-xl py-12 text-center">
-            <Icon name="search_off" className="text-[40px] text-outline-variant mb-3" />
+            <Icon name="search_off" className="text-[40px] text-outline mb-3" />
             <p className="font-label-md text-label-md text-on-surface">Sin resultados</p>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
               No se encontraron facturas para "{search}"

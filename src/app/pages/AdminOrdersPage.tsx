@@ -488,7 +488,7 @@ export default function AdminOrdersPage() {
             </>
           ) : (
             <div className="hidden h-[700px] flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest/50 text-center lg:flex">
-              <Icon name="shopping_cart" className="mb-3 text-[40px] text-outline-variant" />
+              <Icon name="shopping_cart" className="mb-3 text-[40px] text-outline" />
               <p className="text-body-md text-on-surface-variant">Seleccioná un pedido</p>
               <p className="mt-1 text-body-sm text-on-surface-variant">
                 Los productos, el envío y el historial aparecen acá

@@ -6,6 +6,7 @@ import {
 import { api } from "../lib/api";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
+import { Iccid } from "../components/Iccid";
 import { PageHeader, IconButton, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
 import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
 import { TableCustomizer } from "../components/table/TableCustomizer";
@@ -277,15 +278,15 @@ function SmsConsoleModal({
 
   const iccid    = device.sim?.iccid_with_luhn || device.sim?.iccid || "—";
   const charPct  = (message.length / 160) * 100;
-  const charColor = message.length > 140 ? "#ef4444" : message.length > 110 ? "#f59e0b" : "#3ECF8E";
+  const charColor = message.length > 140 ? "#ef4444" : message.length > 110 ? "#f59e0b" : "#4a20c4";
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
       <div className="w-full sm:max-w-md sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden" style={{ height: "min(680px, 95dvh)", background: "#fff" }}>
 
         {/* ── Header ─────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-3 shrink-0" style={{ background: "#0f766e" }}>
-          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: "#3ECF8E" }}>
+        <div className="flex items-center gap-3 px-4 py-3 shrink-0" style={{ background: "#1a0450" }}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ background: "#270779" }}>
             IoT
           </div>
           <div className="flex-1 min-w-0">
@@ -316,7 +317,7 @@ function SmsConsoleModal({
         >
           {loadingHistory ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
-              <RefreshCw className="w-7 h-7 animate-spin" style={{ color: "#3ECF8E" }} />
+              <RefreshCw className="w-7 h-7 animate-spin" style={{ color: "#4a20c4" }} />
               <p className="text-xs text-gray-500">Cargando historial SMS…</p>
             </div>
 
@@ -328,7 +329,7 @@ function SmsConsoleModal({
               <button
                 onClick={loadHistory}
                 className="mt-1 px-4 py-1.5 rounded-full text-xs font-semibold text-white"
-                style={{ background: "#3ECF8E" }}
+                style={{ background: "#270779" }}
               >
                 Reintentar
               </button>
@@ -336,11 +337,11 @@ function SmsConsoleModal({
 
           ) : messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(62,207,142,0.15)" }}>
-                <MessageSquare className="w-7 h-7" style={{ color: "#3ECF8E" }} />
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(74,32,196,0.15)" }}>
+                <MessageSquare className="w-7 h-7" style={{ color: "#4a20c4" }} />
               </div>
               <p className="text-sm font-semibold text-gray-500">Sin mensajes aún</p>
-              <p className="text-xs text-gray-400 -mt-2">Los SMS enviados y recibidos aparecerán aquí</p>
+              <p className="text-xs text-outline -mt-2">Los SMS enviados y recibidos aparecerán aquí</p>
             </div>
 
           ) : (
@@ -358,7 +359,7 @@ function SmsConsoleModal({
                           background: isMT
                             ? m.status === "err"      ? "#ef4444"
                               : m.status === "pending" ? "#a3b8a4"
-                              : "#3ECF8E"
+                              : "#4a20c4"
                             : "#ffffff",
                           color: isMT ? "#ffffff" : "#111827",
                           borderRadius: isMT ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
@@ -368,7 +369,7 @@ function SmsConsoleModal({
                         }}
                       >
                         {!isMT && (
-                          <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#0f766e" }}>
+                          <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#4a20c4" }}>
                             {m.src}
                           </p>
                         )}
@@ -413,13 +414,13 @@ function SmsConsoleModal({
 
           {/* Origen row */}
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] text-gray-400 shrink-0 font-medium">Origen:</span>
+            <span className="text-[10px] text-outline shrink-0 font-medium">Origen:</span>
             <input
               type="text"
               value={source}
               onChange={e => setSource(e.target.value)}
               maxLength={17}
-              className="flex-1 text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-teal-300 min-w-0"
+              className="flex-1 text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-violet-300 min-w-0"
               placeholder="AmericasIoT"
             />
             <span
@@ -440,7 +441,7 @@ function SmsConsoleModal({
               rows={1}
               maxLength={160}
               placeholder="Escribe un mensaje"
-              className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200 resize-none leading-snug"
+              className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 resize-none leading-snug"
               style={{ minHeight: 40, maxHeight: 96, overflowY: "auto" }}
               onInput={e => {
                 const el = e.currentTarget;
@@ -458,14 +459,14 @@ function SmsConsoleModal({
               onClick={handleSend}
               disabled={!message.trim() || !sourceValid || sending}
               className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all disabled:opacity-40 active:scale-95"
-              style={{ background: "#3ECF8E" }}
+              style={{ background: "#270779" }}
             >
               {sending
                 ? <RefreshCw className="w-4 h-4 text-white animate-spin" />
                 : <Send className="w-4 h-4 text-white" />}
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1 px-1">Shift+Enter para enviar</p>
+          <p className="text-[10px] text-outline mt-1 px-1">Shift+Enter para enviar</p>
         </div>
       </div>
     </div>
@@ -770,7 +771,7 @@ export default function DevicesPage() {
                     ? (
                       <tr>
                         <td colSpan={cols.visibleColumns.length + 2} className="py-16 text-center">
-                          <Icon name="router" className="mb-3 text-[48px] text-outline-variant" />
+                          <Icon name="router" className="mb-3 text-[48px] text-outline" />
                           <p className="text-body-md text-on-surface-variant">No se encontraron dispositivos</p>
                         </td>
                       </tr>
@@ -861,7 +862,7 @@ export default function DevicesPage() {
                                   );
 
                                 case "ICCID":
-                                  return <td key={c.key} className={`${tdClass} ${mono} max-w-[180px] truncate`}>{iccid}</td>;
+                                  return <td key={c.key} className={tdClass}><Iccid value={iccid} className="text-body-sm" /></td>;
 
                                 case "IMEI":
                                   return <td key={c.key} className={`${tdClass} ${mono} whitespace-nowrap`}>{ep.imei || dash}</td>;

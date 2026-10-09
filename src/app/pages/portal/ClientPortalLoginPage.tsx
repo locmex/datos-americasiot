@@ -55,7 +55,7 @@ export default function ClientPortalLoginPage() {
             <h1 className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>
               Portal de Clientes
             </h1>
-            <p className="text-xs mt-0.5" style={{ color: "#adadb8" }}>
+            <p className="text-xs mt-0.5" style={{ color: "#6b6680" }}>
               Gestión de SIMs y conectividad IoT
             </p>
           </div>
@@ -101,7 +101,7 @@ export default function ClientPortalLoginPage() {
                 color: "#1a1a1a",
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#3ECF8E";
+                e.currentTarget.style.borderColor = "#4a20c4";
                 e.currentTarget.style.background  = "#fff";
               }}
               onBlur={(e) => {
@@ -135,7 +135,7 @@ export default function ClientPortalLoginPage() {
                   color: "#1a1a1a",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#3ECF8E";
+                  e.currentTarget.style.borderColor = "#4a20c4";
                   e.currentTarget.style.background  = "#fff";
                 }}
                 onBlur={(e) => {
@@ -148,7 +148,7 @@ export default function ClientPortalLoginPage() {
                 tabIndex={-1}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: "#c7c7cc" }}
+                style={{ color: "#8f8aa3" }}
               >
                 {showPassword
                   ? <EyeOff className="w-4 h-4" />
@@ -164,7 +164,7 @@ export default function ClientPortalLoginPage() {
             disabled={loading}
             className="w-full h-10 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
             style={{
-              background: loading ? "#7be3bb" : "#3ECF8E",
+              background: loading ? "#7a63c9" : "#4a20c4",
               color: "#000",
               cursor: loading ? "not-allowed" : "pointer",
             }}
@@ -178,7 +178,7 @@ export default function ClientPortalLoginPage() {
         </form>
       </div>
 
-      <p className="text-[11px] mt-5" style={{ color: "#c7c7cc" }}>
+      <p className="text-[11px] mt-5" style={{ color: "#8f8aa3" }}>
         ¿Sin acceso? Contacta al administrador de Americas IoT.
       </p>
     </div>

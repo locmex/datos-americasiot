@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
 import { Icon } from "../components/ui/icon";
+import { Iccid } from "../components/Iccid";
 import { PageHeader, IconButton, FilterPills, SortIcon as SharedSortIcon } from "../components/admin/AdminUI";
 import { useTableColumns, type ColumnDef } from "../components/table/useTableColumns";
 import { TableCustomizer } from "../components/table/TableCustomizer";
@@ -31,7 +32,7 @@ interface Client {
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CFG: Record<number, { label: string; color: string; bg: string; icon: React.FC<any> }> = {
-  0: { label: "Emitida",     color: "#94a3b8", bg: "rgba(148,163,184,0.12)", icon: Circle },
+  0: { label: "Disponible",  color: "#6b6680", bg: "rgba(148,163,184,0.12)", icon: Circle },
   1: { label: "Activa",      color: "#16a34a", bg: "rgba(22,163,74,0.10)",   icon: CheckCircle2 },
   2: { label: "Suspendida",  color: "#d97706", bg: "rgba(217,119,6,0.10)",   icon: PauseCircle },
   3: { label: "Desactivada", color: "#dc2626", bg: "rgba(220,38,38,0.10)",   icon: XCircle },
@@ -110,23 +111,23 @@ function ClientPicker({ clients, value, onChange }: {
         ref={btnRef}
         type="button"
         onClick={handleOpen}
-        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm hover:border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-200"
+        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm hover:border-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-200"
       >
         {selected ? (
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-              style={{ background: "rgba(62,207,142,0.18)", color: "#059669" }}>
+              style={{ background: "rgba(74,32,196,0.18)", color: "#4a20c4" }}>
               {selected.name.charAt(0).toUpperCase()}
             </div>
             <div className="text-left min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{selected.name}</p>
-              {selected.company && <p className="text-xs text-gray-400 truncate">{selected.company}</p>}
+              {selected.company && <p className="text-xs text-outline truncate">{selected.company}</p>}
             </div>
           </div>
         ) : (
-          <span className="text-gray-400 text-sm">Seleccionar cliente…</span>
+          <span className="text-outline text-sm">Seleccionar cliente…</span>
         )}
-        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-outline shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && rect && createPortal(
@@ -141,15 +142,15 @@ function ClientPicker({ clients, value, onChange }: {
         >
           <div className="p-2 border-b border-gray-100 shrink-0">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-outline" />
               <input autoFocus value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar cliente…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:border-teal-400" />
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:border-violet-400" />
             </div>
           </div>
           <div className="overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-center py-6 text-sm text-gray-400">Sin resultados</p>
+              <p className="text-center py-6 text-sm text-outline">Sin resultados</p>
             ) : (
               filtered.map((c) => (
                 <button key={c.id} type="button"
@@ -158,14 +159,14 @@ function ClientPicker({ clients, value, onChange }: {
                   className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ background: "rgba(62,207,142,0.18)", color: "#059669" }}>
+                    style={{ background: "rgba(74,32,196,0.18)", color: "#4a20c4" }}>
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{c.company || c.email}</p>
+                    <p className="text-xs text-outline truncate">{c.company || c.email}</p>
                   </div>
-                  {c.id === value && <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#3ECF8E" }} />}
+                  {c.id === value && <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#4a20c4" }} />}
                 </button>
               ))
             )}
@@ -209,14 +210,14 @@ function AssignModal({ sims, clients, onConfirm, onClose }: {
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(62,207,142,0.12)" }}>
-              <Link2 className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(74,32,196,0.12)" }}>
+              <Link2 className="w-5 h-5" style={{ color: "#4a20c4" }} />
             </div>
             <div>
               <h3 className="font-bold text-gray-900 text-base">
                 {isBulk ? `Asignar ${sims.length} SIMs` : "Asignar SIM"}
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-outline mt-0.5">
                 {isBulk
                   ? `${sims.length} SIMs seleccionadas`
                   : <code className="font-mono">{displayIccid(sims[0])}</code>}
@@ -235,7 +236,7 @@ function AssignModal({ sims, clients, onConfirm, onClose }: {
               {sims.slice(0, 12).map((sim) => (
                 <span key={sim.iccid}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono bg-white border border-gray-200 text-gray-600">
-                  <CreditCard className="w-2.5 h-2.5 text-gray-400" />
+                  <CreditCard className="w-2.5 h-2.5 text-outline" />
                   {displayIccid(sim).slice(-8)}
                 </span>
               ))}
@@ -254,8 +255,8 @@ function AssignModal({ sims, clients, onConfirm, onClose }: {
           {clients.length === 0 ? (
             <div className="text-center py-8">
               <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">No hay clientes registrados</p>
-              <p className="text-xs text-gray-400 mt-1">Crea un cliente en el módulo de Clientes primero</p>
+              <p className="text-sm text-outline">No hay clientes registrados</p>
+              <p className="text-xs text-outline mt-1">Crea un cliente en el módulo de Clientes primero</p>
             </div>
           ) : (
             <ClientPicker clients={clients} value={clientId}
@@ -272,7 +273,7 @@ function AssignModal({ sims, clients, onConfirm, onClose }: {
           <button onClick={handleSubmit}
             disabled={!clientId || loading || clients.length === 0}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-            style={{ background: "#3ECF8E", color: "#000" }}>
+            style={{ background: "#270779", color: "#fff" }}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
             {loading ? "Asignando…" : isBulk ? `Asignar ${sims.length} SIMs` : "Asignar"}
           </button>
@@ -595,12 +596,12 @@ export default function AssignmentPage() {
                     className="flex items-center justify-center w-5 h-5 rounded transition-colors"
                     title={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}>
                     {allVisibleSelected
-                      ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
+                      ? <CheckSquare className="w-4 h-4" style={{ color: "#4a20c4" }} />
                       : someSelected
                         ? <div className="flex h-4 w-4 items-center justify-center rounded border-2 border-primary-container">
                             <div className="h-0.5 w-2 rounded bg-primary-container" />
                           </div>
-                        : <Square className="w-4 h-4 text-outline-variant" />
+                        : <Square className="w-4 h-4 text-outline" />
                     }
                   </button>
                 </th>
@@ -659,7 +660,7 @@ export default function AssignmentPage() {
                           <button onClick={() => toggleOne(sim.iccid)} className="flex items-center justify-center w-5 h-5">
                             {isSelected
                               ? <CheckSquare className="w-4 h-4 text-primary-container" />
-                              : <Square className="w-4 h-4 text-outline-variant hover:text-on-surface-variant" />
+                              : <Square className="w-4 h-4 text-outline hover:text-on-surface-variant" />
                             }
                           </button>
                         </td>
@@ -670,8 +671,8 @@ export default function AssignmentPage() {
                               return (
                                 <td key={c.key} className={cellCls(i)}>
                                   <div className="flex items-center gap-2">
-                                    <Icon name="sd_card" className="shrink-0 text-[18px] text-outline-variant" />
-                                    <code className="font-mono text-body-sm tracking-tight text-on-surface">{iccidDisplay}</code>
+                                    <Icon name="sd_card" className="shrink-0 text-[18px] text-outline" />
+                                    <Iccid value={iccidDisplay} className="text-body-sm" />
                                   </div>
                                 </td>
                               );
@@ -692,7 +693,7 @@ export default function AssignmentPage() {
                                 <td key={c.key} className={cellCls(i)}>
                                   {sim.endpoint?.name
                                     ? <span className="font-mono text-body-sm text-on-surface">{sim.endpoint.name}</span>
-                                    : <span className="text-body-sm italic text-outline-variant">Sin endpoint</span>}
+                                    : <span className="text-body-sm italic text-outline">Sin endpoint</span>}
                                 </td>
                               );
 
@@ -701,7 +702,7 @@ export default function AssignmentPage() {
                                 <td key={c.key} className={cellCls(i)} onClick={(e) => e.stopPropagation()}>
                           {isAssigned ? (
                             <div className="flex items-center gap-2">
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-xs text-on-primary-container">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-xs text-primary">
                                 {sim.localData!.clientName!.charAt(0).toUpperCase()}
                               </div>
                               <span className="max-w-[160px] truncate text-label-md text-on-surface">
@@ -709,7 +710,7 @@ export default function AssignmentPage() {
                               </span>
                             </div>
                           ) : (
-                            <span className="text-body-sm italic text-outline-variant">Sin asignar</span>
+                            <span className="text-body-sm italic text-outline">Sin asignar</span>
                           )}
                                 </td>
                               );
@@ -751,7 +752,7 @@ export default function AssignmentPage() {
             <CreditCard className="w-10 h-10 text-gray-200 mb-3" />
             <p className="text-sm font-medium text-gray-500">No se encontraron SIMs</p>
             {serverQuery && (
-              <p className="text-xs text-gray-400 mt-1">Intenta con otro término de búsqueda</p>
+              <p className="text-xs text-outline mt-1">Intenta con otro término de búsqueda</p>
             )}
           </div>
         )}
@@ -769,21 +770,21 @@ export default function AssignmentPage() {
               {visiblePages().map(p => (
                 <button key={p} onClick={() => goToPage(p)}
                   className="w-8 h-8 rounded-lg text-xs font-medium transition-colors"
-                  style={{ background: p === page ? "#3ECF8E" : "transparent", color: p === page ? "#fff" : "#6b7280", border: p === page ? "none" : "1px solid #e5e7eb" }}>
+                  style={{ background: p === page ? "#270779" : "transparent", color: p === page ? "#fff" : "#6b7280", border: p === page ? "none" : "1px solid #e5e7eb" }}>
                   {p + 1}
                 </button>
               ))}
-              {totalPages > 5 && page < totalPages - 3 && <span className="text-gray-400 text-xs px-1">…{totalPages}</span>}
+              {totalPages > 5 && page < totalPages - 3 && <span className="text-outline text-xs px-1">…{totalPages}</span>}
               <button onClick={() => goToPage(page + 1)} disabled={page >= totalPages - 1} className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors">
                 <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">SIMs por página</span>
+              <span className="text-xs text-outline">SIMs por página</span>
               <select
                 value={perPage}
                 onChange={e => handlePerPageChange(Number(e.target.value))}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-200"
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-200"
               >
                 {PER_PAGE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
@@ -798,13 +799,13 @@ export default function AssignmentPage() {
           <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 px-4 py-2.5 shadow-sm">
             <button onClick={toggleAll} className="flex items-center gap-2 text-sm text-gray-600">
               {allVisibleSelected
-                ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
+                ? <CheckSquare className="w-4 h-4" style={{ color: "#4a20c4" }} />
                 : <Square className="w-4 h-4 text-gray-300" />}
               {allVisibleSelected ? "Deseleccionar todo" : `Seleccionar los ${filtered.length} visibles`}
             </button>
             {someSelected && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(62,207,142,0.15)", color: "#059669" }}>
+                style={{ background: "rgba(74,32,196,0.15)", color: "#4a20c4" }}>
                 {selected.size} sel.
               </span>
             )}
@@ -838,14 +839,14 @@ export default function AssignmentPage() {
                     onClick={() => toggleOne(sim.iccid)}
                     className="bg-white rounded-xl border shadow-sm p-4 flex items-center gap-3 cursor-pointer transition-colors"
                     style={{
-                      borderColor: isSelected ? "rgba(62,207,142,0.5)" : "#f1f5f9",
-                      background:  isSelected ? "rgba(62,207,142,0.04)" : "white",
+                      borderColor: isSelected ? "rgba(74,32,196,0.5)" : "#f1f5f9",
+                      background:  isSelected ? "rgba(74,32,196,0.04)" : "white",
                     }}>
                     {/* Checkbox */}
                     <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                       <button onClick={() => toggleOne(sim.iccid)}>
                         {isSelected
-                          ? <CheckSquare className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+                          ? <CheckSquare className="w-5 h-5" style={{ color: "#4a20c4" }} />
                           : <Square className="w-5 h-5 text-gray-200" />
                         }
                       </button>
@@ -880,7 +881,7 @@ export default function AssignmentPage() {
                       ) : (
                         <button onClick={() => setModalSims([sim])}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-                          style={{ background: "rgba(62,207,142,0.10)", color: "#059669" }}>
+                          style={{ background: "rgba(74,32,196,0.10)", color: "#4a20c4" }}>
                           <UserCheck className="w-3 h-3" />
                           Asignar
                         </button>
@@ -919,7 +920,7 @@ export default function AssignmentPage() {
           style={{ background: "#111827", minWidth: "min(90vw, 480px)", border: "1px solid rgba(255,255,255,0.1)" }}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-              style={{ background: "#3ECF8E", color: "#000" }}>
+              style={{ background: "#270779", color: "#fff" }}>
               {selected.size}
             </div>
             <span className="text-white text-sm font-medium truncate">
@@ -937,13 +938,13 @@ export default function AssignmentPage() {
             )}
             <button onClick={() => setModalSims(selectedSims)}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold"
-              style={{ background: "#3ECF8E", color: "#000" }}>
+              style={{ background: "#270779", color: "#fff" }}>
               <UserCheck className="w-3.5 h-3.5" />
               Asignar a cliente
             </button>
             <button onClick={() => setSelected(new Set())}
               className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10">
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="w-4 h-4 text-outline" />
             </button>
           </div>
         </div>

@@ -11,12 +11,13 @@ import {
 } from "recharts";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../../components/ui/tooltip";
 import { usePopper } from "react-popper";
-import { clientApi } from "../../lib/api";
+import { clientApi, type ClientSimsQuery, type ClientSimsCounts } from "../../lib/api";
 import { ClientAuthContext } from "../../lib/client-auth";
 import { toast } from "sonner";
 import { DeviceDetailModal, EmnifyEndpoint } from "../../components/DeviceDetailModal";
 import { BRAND, STATUS_TOKENS, type Tone } from "../../lib/status-tokens";
 import { Icon } from "../../components/ui/icon";
+import { Iccid } from "../../components/Iccid";
 import { useTableColumns, type ColumnDef } from "../../components/table/useTableColumns";
 import { TableCustomizer } from "../../components/table/TableCustomizer";
 import { RowActionsMenu } from "../../components/table/RowActionsMenu";
@@ -24,7 +25,7 @@ import { RowActionsMenu } from "../../components/table/RowActionsMenu";
 // Colores de las dos series del gráfico de tráfico.
 // Se eligen con contraste de tono Y de luminosidad para que sigan siendo
 // distinguibles en daltonismo; además el gráfico siempre lleva leyenda.
-const TX_COLOR = "#3ECF8E"; // verde de marca — enviado
+const TX_COLOR = "#4a20c4"; // morado de marca — enviado
 const RX_COLOR = "#3b82f6"; // azul — recibido
 
 // Ventana de páginas con elipsis: 1 … 4 5 6 … 20
@@ -107,7 +108,7 @@ function getPortalConnBadge(sim: ClientSIM): { label: string; online: boolean; c
   const hasPdp = !!(pdp?.start_time || pdp?.created || pdp?.ip_address || pdp?.ue_ip_address);
   const rat = resolveRat(sim.rat_type ?? pdp?.rat_type ?? conn?.rat_type);
   const online = hasPdp || statusId === 1 || statusDesc.includes("online");
-  if (online) return { label: rat ? `${rat} Online` : "Online", online: true, color: "#059669", bg: "rgba(5,150,105,0.10)" };
+  if (online) return { label: rat ? `${rat} Online` : "Online", online: true, color: "#15803d", bg: "rgba(22,163,74,0.10)" };
   const attached = statusId === 2 || statusDesc.includes("attach");
   if (attached) return { label: "Registrado", online: false, color: "#d97706", bg: "rgba(217,119,6,0.10)" };
   return { label: "Sin conexión", online: false, color: "#94a3b8", bg: "rgba(148,163,184,0.10)" };
@@ -115,8 +116,8 @@ function getPortalConnBadge(sim: ClientSIM): { label: string; online: boolean; c
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const STATUS = {
-  0: { label: "Sin estado",  color: "#94a3b8", bg: "rgba(148,163,184,0.12)", icon: Circle },
-  1: { label: "Activa",      color: "#059669", bg: "rgba(5,150,105,0.12)",   icon: CheckCircle2 },
+  0: { label: "Disponible",  color: "#6b6680", bg: "rgba(148,163,184,0.12)", icon: Circle },
+  1: { label: "Activa",      color: "#15803d", bg: "rgba(22,163,74,0.12)",   icon: CheckCircle2 },
   2: { label: "Suspendida",  color: "#d97706", bg: "rgba(217,119,6,0.12)",   icon: PauseCircle },
   3: { label: "Desactivada", color: "#dc2626", bg: "rgba(220,38,38,0.12)",   icon: WifiOff },
 } as const;
@@ -757,7 +758,7 @@ function SimDetailSheet({
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-8 rounded-xl border border-dashed border-hairline bg-surface-container-low">
-                      <Icon name="bar_chart" className="text-[32px] text-outline-variant mb-2" />
+                      <Icon name="bar_chart" className="text-[32px] text-outline mb-2" />
                       <p className="font-body-sm text-body-sm text-on-surface-variant">Sin tráfico reciente</p>
                     </div>
                   )}
@@ -775,6 +776,17 @@ function SimDetailSheet({
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 type SortKey = "iccid" | "status" | "usage";
 type SortDir = "asc" | "desc";
+
+// Columnas de "Dispositivos" que el servidor sabe ordenar sobre TODAS las SIMs.
+// Conexión, Operador, IP y Red dependen de la conectividad, que solo se pide
+// para la página visible, así que no se ofrecen como ordenables.
+const DEVICE_SORT: Record<string, ClientSimsQuery["sort"]> = {
+  Dispositivo: "name",
+  Estado: "status",
+  ICCID: "iccid",
+  IMEI: "imei",
+  IMSI: "imsi",
+};
 
 export default function ClientPortalDashboard() {
   const ctx = useContext(ClientAuthContext)!;
@@ -831,11 +843,17 @@ export default function ClientPortalDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [popoverConfirm, popperElement]);
 
-  const loadConnectivity = useCallback(async (currentSims: ClientSIM[]) => {
-    if (currentSims.every((s) => !s.endpointId)) return;
+  // Conectividad de un grupo de SIMs (la página que acaba de llegar). Varias
+  // páginas pueden estar consultándose a la vez: un contador decide cuándo se
+  // apaga el indicador de "cargando".
+  const pendingConnectivity = useRef(0);
+  const loadConnectivity = useCallback(async (batch: ClientSIM[]) => {
+    const ids = batch.map((s) => s.endpointId).filter((id): id is number => id != null);
+    if (ids.length === 0) return;
+    pendingConnectivity.current += 1;
     setConnectivityLoading(true);
     try {
-      const res = await clientApi.getSimsConnectivity();
+      const res = await clientApi.getSimsConnectivity(ids);
       const map: Record<string, any> = res.connectivity || {};
       setSims((prev) =>
         prev.map((s) => {
@@ -848,75 +866,74 @@ export default function ClientPortalDashboard() {
     } catch (_) {
       // connectivity is best-effort, don't show error
     } finally {
-      setConnectivityLoading(false);
+      pendingConnectivity.current -= 1;
+      if (pendingConnectivity.current <= 0) setConnectivityLoading(false);
     }
   }, []);
 
+  // ── Datos paginados en el servidor ──
+  // El backend filtra, busca, ordena y cuenta sobre TODAS las SIMs del cliente
+  // y devuelve solo la página visible; aquí solo se dibuja lo que llega. Cada
+  // cambio de página, filtro, orden o búsqueda hace una petición nueva con los
+  // datos del momento (igual que antes, pero sin traer todas las SIMs).
+  const [serverTotal, setServerTotal] = useState(0);
+  const [counts, setCounts] = useState<ClientSimsCounts>({ total: 0, devices: 0, status: {} });
+  const [fetching, setFetching] = useState(false);
+
+  const searchInput = activeView === "devices" ? deviceSearch : simSearch;
+  const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const query: ClientSimsQuery = activeView === "devices"
+    ? { view: "devices", page: devicePage, perPage: devicePerPage, q: debouncedSearch,
+        sort: DEVICE_SORT[deviceSort.col] ?? "name", dir: deviceSort.dir }
+    : { view: "sims", page: simPage, perPage: simPerPage, q: debouncedSearch, status: statusFilter,
+        sort: sortKey === "status" ? "status" : "iccid", dir: sortDir };
+  const queryKey = JSON.stringify(query);
+
+  // Si llega una respuesta vieja (el usuario ya cambió de página), se descarta.
+  const loadGeneration = useRef(0);
   const load = useCallback(async () => {
-    setLoading(true);
+    const gen = ++loadGeneration.current;
+    const stale = () => gen !== loadGeneration.current;
+    setFetching(true);
     try {
-      const res = await clientApi.getMySims();
-      const simsData: ClientSIM[] = res.sims || [];
-      setSims(simsData);
-      // Phase 2: load connectivity in background without blocking the UI
-      loadConnectivity(simsData);
+      const res = await clientApi.getMySims(JSON.parse(queryKey) as ClientSimsQuery);
+      if (stale()) return;
+      const pageSims: ClientSIM[] = res.sims || [];
+      setSims(pageSims);
+      setServerTotal(res.total ?? pageSims.length);
+      if (res.counts) setCounts(res.counts);
+      loadConnectivity(pageSims);
     } catch (e: any) {
-      toast.error(e.message);
+      if (!stale()) toast.error(e.message);
     } finally {
-      setLoading(false);
+      if (!stale()) {
+        setFetching(false);
+        setLoading(false);
+      }
     }
-  }, [loadConnectivity]);
+  }, [queryKey, loadConnectivity]);
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Computed SIMs for Mis SIMs tab ──
-  const filteredSims = (() => {
-    const byStatus = sims.filter((s) => {
-      if (statusFilter !== null) {
-        if ((s.status?.id ?? 0) !== statusFilter) return false;
-      }
-      return true;
-    });
+  // Mantiene las tarjetas al día cuando el propio cliente cambia un estado.
+  const bumpCounts = (fromId: number, toId: number) => {
+    if (fromId === toId) return;
+    setCounts((c) => ({
+      ...c,
+      status: { ...c.status, [fromId]: Math.max((c.status[fromId] ?? 0) - 1, 0), [toId]: (c.status[toId] ?? 0) + 1 },
+    }));
+  };
 
-    if (simSearch.trim()) {
-      const q = simSearch.toLowerCase().trim();
-      const scored = byStatus.map((s) => {
-        let score = 0;
-        const name = (s.endpoint?.name || "").toLowerCase();
-        const iccidLuhn = (s.iccid_with_luhn || "").toLowerCase();
-        const iccid = (s.iccid || "").toLowerCase();
-
-        if (name === q || iccid === q || iccidLuhn === q) score += 100;
-        else if (name.startsWith(q) || iccid.startsWith(q)) score += 50;
-        else if (name.includes(q) || iccid.includes(q) || iccidLuhn.includes(q)) score += 10;
-
-        return { s, score };
-      }).filter((item) => item.score > 0);
-
-      scored.sort((a, b) => b.score - a.score);
-      return scored.slice(0, 1).map((item) => item.s);
-    }
-    return byStatus;
-  })();
-
-  const sortedSims = [...filteredSims].sort((a, b) => {
-    let cmp = 0;
-    if (sortKey === "iccid") {
-      cmp = (a.iccid_with_luhn || a.iccid).localeCompare(b.iccid_with_luhn || b.iccid);
-    } else if (sortKey === "status") {
-      cmp = (a.status?.id ?? 0) - (b.status?.id ?? 0);
-    } else if (sortKey === "usage") {
-      const ua = getUsageMB(a.usage); const ub = getUsageMB(b.usage);
-      cmp = (ua.tx + ua.rx) - (ub.tx + ub.rx);
-    }
-    return sortDir === "asc" ? cmp : -cmp;
-  });
-
-  // ── Paginación de Mis SIMs (mismo criterio que Dispositivos) ──
-  const simTotalPages = Math.max(1, Math.ceil(sortedSims.length / simPerPage));
-  const simFrom = sortedSims.length === 0 ? 0 : (simPage - 1) * simPerPage + 1;
-  const simTo   = Math.min(simPage * simPerPage, sortedSims.length);
-  const pagedSims = sortedSims.slice((simPage - 1) * simPerPage, simPage * simPerPage);
+  // ── Mis SIMs: filtro, búsqueda y orden los resuelve el servidor ──
+  const simTotalPages = Math.max(1, Math.ceil(serverTotal / simPerPage));
+  const simFrom = serverTotal === 0 ? 0 : (simPage - 1) * simPerPage + 1;
+  const simTo   = Math.min(simPage * simPerPage, serverTotal);
+  const pagedSims = activeView === "sims" ? sims : [];
 
   useEffect(() => {
     setSimPage(1);
@@ -933,6 +950,7 @@ export default function ClientPortalDashboard() {
 
   // ── Device actions ──
   const handleStatusChange = (sim: ClientSIM, newStatus: number) => {
+    bumpCounts(sim.status?.id ?? 0, newStatus);
     setSims((prev) => prev.map((s) => s.iccid === sim.iccid ? { ...s, status: { ...s.status, id: newStatus } } : s));
     setSelectedSim((prev) => prev?.iccid === sim.iccid ? { ...prev, status: { ...prev.status, id: newStatus } } : prev);
   };
@@ -953,6 +971,7 @@ export default function ClientPortalDashboard() {
     setPopoverConfirm(null);
     try {
       await clientApi.updateSimStatus(sim.simId, newStatusId, sim.iccid);
+      bumpCounts(currentStatus, newStatusId);
       setSims((prev) =>
         prev.map((s) => s.iccid === sim.iccid ? { ...s, status: { ...s.status, id: newStatusId, description: isSuspended ? "Activa" : "Suspendida" } } : s)
       );
@@ -1039,72 +1058,11 @@ export default function ClientPortalDashboard() {
     setSelectedDevice({ ep, sim });
   };
 
-  // ── Filtered devices for Dispositivos tab (only SIMs with a real endpoint) ──
-  const devicesOnly = sims.filter((s) => !!s.endpointId);
-
-  const filteredDevices = (() => {
-    let filtered = devicesOnly;
-    if (deviceSearch.trim()) {
-      const q = deviceSearch.toLowerCase().trim();
-      const scored = devicesOnly.map((s) => {
-        let score = 0;
-        const name = (s.endpoint?.name || "").toLowerCase();
-        const imeiLuhn = (s.endpoint?.imei_with_luhn || "").toLowerCase();
-        const imei = (s.endpoint?.imei || s.imei || "").toLowerCase();
-        const iccidLuhn = (s.iccid_with_luhn || "").toLowerCase();
-        const iccid = (s.iccid || "").toLowerCase();
-
-        if (name === q || iccid === q || imei === q || iccidLuhn === q || imeiLuhn === q) score += 100;
-        else if (name.startsWith(q) || iccid.startsWith(q) || imei.startsWith(q)) score += 50;
-        else if (name.includes(q) || iccid.includes(q) || imei.includes(q) || iccidLuhn.includes(q) || imeiLuhn.includes(q)) score += 10;
-
-        return { s, score };
-      }).filter((item) => item.score > 0);
-
-      scored.sort((a, b) => b.score - a.score);
-      filtered = scored.slice(0, 1).map((item) => item.s);
-      return filtered;
-    }
-
-    const { col, dir } = deviceSort;
-    const mult = dir === "asc" ? 1 : -1;
-    return [...filtered].sort((a, b) => {
-      let va = "", vb = "";
-      if (col === "Dispositivo") {
-        va = (a.endpoint?.name || "").toLowerCase();
-        vb = (b.endpoint?.name || "").toLowerCase();
-      } else if (col === "Estado") {
-        va = getStatus(a.status?.id ?? 0).label;
-        vb = getStatus(b.status?.id ?? 0).label;
-      } else if (col === "Conexión") {
-        va = getPortalConnBadge(a).label;
-        vb = getPortalConnBadge(b).label;
-      } else if (col === "ICCID") {
-        va = a.iccid_with_luhn || a.iccid || "";
-        vb = b.iccid_with_luhn || b.iccid || "";
-      } else if (col === "IMEI") {
-        va = a.endpoint?.imei_with_luhn || a.endpoint?.imei || a.imei || "";
-        vb = b.endpoint?.imei_with_luhn || b.endpoint?.imei || b.imei || "";
-      } else if (col === "IMSI") {
-        va = a.imsi || ""; vb = b.imsi || "";
-      } else if (col === "Operador") {
-        va = simOperator(a); vb = simOperator(b);
-      } else if (col === "IP") {
-        va = simIp(a); vb = simIp(b);
-      } else if (col === "Red") {
-        va = simRat(a); vb = simRat(b);
-      }
-      return va < vb ? -mult : va > vb ? mult : 0;
-    });
-  })();
-
-  // ── Paginación de Dispositivos ──
-  // Solo se renderiza la página actual: con 200+ SIMs, montar todas las filas
-  // en el DOM es lo que traba el scroll, el filtrado y el ordenamiento.
-  const deviceTotalPages = Math.max(1, Math.ceil(filteredDevices.length / devicePerPage));
-  const deviceFrom = filteredDevices.length === 0 ? 0 : (devicePage - 1) * devicePerPage + 1;
-  const deviceTo   = Math.min(devicePage * devicePerPage, filteredDevices.length);
-  const pagedDevices = filteredDevices.slice((devicePage - 1) * devicePerPage, devicePage * devicePerPage);
+  // ── Dispositivos: filtro, búsqueda y orden los resuelve el servidor ──
+  const deviceTotalPages = Math.max(1, Math.ceil(serverTotal / devicePerPage));
+  const deviceFrom = serverTotal === 0 ? 0 : (devicePage - 1) * devicePerPage + 1;
+  const deviceTo   = Math.min(devicePage * devicePerPage, serverTotal);
+  const pagedDevices = activeView === "devices" ? sims : [];
 
   // Al cambiar búsqueda, orden, filtro o tamaño de página, volver al inicio
   useEffect(() => {
@@ -1116,7 +1074,30 @@ export default function ClientPortalDashboard() {
     if (devicePage > deviceTotalPages) setDevicePage(deviceTotalPages);
   }, [devicePage, deviceTotalPages]);
 
-  const exportDevicesToCSV = () => {
+  // El navegador ya no tiene todas las SIMs: se piden al servidor (sin paginar)
+  // junto con su conectividad en el momento de exportar.
+  const [exporting, setExporting] = useState(false);
+  const exportDevicesToCSV = async () => {
+    setExporting(true);
+    let devicesOnly: ClientSIM[] = [];
+    try {
+      const res = await clientApi.getMySims({ page: 1, view: "devices", sort: "name", all: true });
+      devicesOnly = res.sims || [];
+      const ids = devicesOnly.map((s) => s.endpointId).filter((id): id is number => id != null);
+      if (ids.length) {
+        const conn = await clientApi.getSimsConnectivity(ids);
+        const map: Record<string, any> = conn.connectivity || {};
+        devicesOnly = devicesOnly.map((s) => {
+          const c = s.endpointId ? map[String(s.endpointId)] : null;
+          return c ? { ...s, connectivity: c, rat_type: c?.pdp_context?.rat_type ?? c?.rat_type ?? s.rat_type } : s;
+        });
+      }
+    } catch (e: any) {
+      toast.error(e.message || "No se pudo exportar");
+      setExporting(false);
+      return;
+    }
+    setExporting(false);
     const headers = ["Nombre", "Estado", "Conexión", "ICCID", "IMEI", "IMSI", "IP"];
     const rows = devicesOnly.map((s) => {
       const conn = getPortalConnBadge(s);
@@ -1143,10 +1124,11 @@ export default function ClientPortalDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const active      = sims.filter((s) => s.status?.id === 1).length;
-  const suspended   = sims.filter((s) => s.status?.id === 2).length;
-  const available   = sims.filter((s) => (s.status?.id ?? 0) === 0).length;
-  const deactivated = sims.filter((s) => s.status?.id === 3).length;
+  // Conteos sobre todas las SIMs del cliente (vienen del servidor)
+  const active      = counts.status[1] ?? 0;
+  const suspended   = counts.status[2] ?? 0;
+  const available   = counts.status[0] ?? 0;
+  const deactivated = counts.status[3] ?? 0;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -1193,7 +1175,7 @@ export default function ClientPortalDashboard() {
               <div className="flex items-center gap-2 text-on-surface-variant">
                 <Icon name="sim_card" />
                 <span className="font-label-md text-label-md whitespace-nowrap">
-                  {loading ? "Cargando…" : `${sims.length} SIM${sims.length !== 1 ? "s" : ""}`}
+                  {loading ? "Cargando…" : fetching ? "Actualizando…" : `${counts.total} SIM${counts.total !== 1 ? "s" : ""}`}
                 </span>
               </div>
               <button
@@ -1211,15 +1193,42 @@ export default function ClientPortalDashboard() {
 
       {/* ── Contenido ──────────────────────────────────────────────────────── */}
       <div className="max-w-[1440px] mx-auto px-container-margin py-section-gap pb-10">
-      {/* Tarjetas de resumen — clicables, filtran la lista */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      {/* Tarjetas de resumen — clicables, filtran la lista. "Total" es la
+          tarjeta de marca; las de estado usan su color semántico (ícono + palabra). */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))] gap-3 mb-8">
+        {(() => {
+          const isSelected = statusFilter === null;
+          const share = counts.total ? active / counts.total : 0;
+          return (
+            <button
+              onClick={() => { setStatusFilter(null); }}
+              aria-pressed={isSelected}
+              className="col-span-2 md:col-span-1 flex items-center gap-4 text-left rounded-2xl p-card-padding text-white transition-opacity hover:opacity-95"
+              style={{ background: "#270779" }}
+            >
+              <div className="min-w-0">
+                <p className="font-body-sm text-body-sm mb-2" style={{ color: "#d8cffa" }}>Tus SIMs</p>
+                <p className="text-[40px] leading-none font-semibold tracking-tight tabular-nums">{loading ? "—" : counts.total}</p>
+                <p className="mt-2 font-body-sm text-body-sm" style={{ color: "#cfc5f5" }}>
+                  {loading ? "Cargando…" : `${active} activa${active !== 1 ? "s" : ""}`}
+                </p>
+              </div>
+              <svg viewBox="0 0 36 36" className="ml-auto h-20 w-20 shrink-0" aria-hidden="true">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="3.4" />
+                {!loading && share > 0 && (
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#22e4c8" strokeWidth="3.4"
+                    strokeDasharray={`${share * 100} 100`} strokeLinecap="round" transform="rotate(-90 18 18)" />
+                )}
+              </svg>
+            </button>
+          );
+        })()}
         {[
-          { label: "Total SIMs",   value: sims.length, filter: null, icon: null,            border: "border-hairline",            hover: "hover:bg-row-hover",            labelColor: "text-on-surface-variant", ring: "ring-primary" },
-          { label: "Activas",      value: active,      filter: 1,    icon: "check_circle",  border: "border-primary-container/40", hover: "hover:bg-surface-container-low", labelColor: "text-primary",            ring: "ring-primary" },
-          { label: "Suspendidas",  value: suspended,   filter: 2,    icon: "warning",       border: "border-warning/40",           hover: "hover:bg-amber-50/60",           labelColor: "text-on-warning",         ring: "ring-warning" },
-          { label: "Disponibles",  value: available,   filter: 0,    icon: "inventory_2",   border: "border-hairline",             hover: "hover:bg-row-hover",             labelColor: "text-tertiary",           ring: "ring-tertiary" },
-          { label: "Desactivadas", value: deactivated, filter: 3,    icon: "cancel",        border: "border-error-container",      hover: "hover:bg-error-container/20",    labelColor: "text-error",              ring: "ring-error" },
-        ].map(({ label, value, filter, icon, border, hover, labelColor, ring }) => {
+          { label: "Activas",      value: active,      filter: 1, icon: "check_circle", color: "#15803d", tint: "rgba(22,163,74,0.10)" },
+          { label: "Suspendidas",  value: suspended,   filter: 2, icon: "pause_circle", color: "#b45309", tint: "rgba(217,119,6,0.10)" },
+          { label: "Disponibles",  value: available,   filter: 0, icon: "radio_button_unchecked", color: "#57536a", tint: "rgba(87,83,106,0.10)" },
+          { label: "Desactivadas", value: deactivated, filter: 3, icon: "cancel",       color: "#b91c1c", tint: "rgba(220,38,38,0.10)" },
+        ].map(({ label, value, filter, icon, color, tint }) => {
           const isSelected = statusFilter === filter;
           return (
             <button
@@ -1228,17 +1237,17 @@ export default function ClientPortalDashboard() {
                 setStatusFilter(filter);
                 setActiveView("sims"); // al filtrar por estado, la vista útil es Mis SIMs
               }}
-              className={`group relative overflow-hidden text-left bg-surface-container-lowest border ${border} ${hover} ${isSelected ? `ring-2 ${ring}` : ""} rounded-xl p-card-padding transition-colors`}
+              aria-pressed={isSelected}
+              className="text-left bg-surface-container-lowest border border-outline-variant rounded-2xl p-card-padding transition-shadow hover:border-outline"
+              style={isSelected ? { borderColor: color, boxShadow: `0 0 0 3px ${tint}` } : undefined}
             >
-              {/* Acento decorativo de la tarjeta destacada */}
-              {filter === 1 && (
-                <div className="absolute right-0 top-0 w-16 h-16 bg-primary-container opacity-10 rounded-bl-full" />
-              )}
-              <p className={`font-body-sm text-body-sm ${labelColor} uppercase tracking-wider mb-2 flex items-center gap-1`}>
-                {icon && <Icon name={icon} className="text-[14px]" />}
+              <p className="font-body-sm text-body-sm text-on-surface-variant mb-3 flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: tint, color }}>
+                  <Icon name={icon} className="text-[16px]" />
+                </span>
                 {label}
               </p>
-              <p className="font-display-lg text-display-lg text-on-surface group-hover:text-primary transition-colors">
+              <p className="text-[28px] leading-none font-semibold tracking-tight text-on-surface tabular-nums">
                 {loading ? "—" : value}
               </p>
             </button>
@@ -1249,7 +1258,7 @@ export default function ClientPortalDashboard() {
       {/* Layout: contenido a la izquierda. En "Mis SIMs" se abre una segunda
           columna para el panel de detalle, que es un bloque independiente. */}
       <div className={activeView === "sims" ? "lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4" : ""}>
-      <div className="min-w-0">
+      <div className={`min-w-0 transition-opacity ${fetching && !loading ? "opacity-60" : ""}`} aria-busy={fetching}>
 
       {/* Tabs & Exportar — encabezado de la tarjeta de contenido */}
       <div className="bg-surface-container-lowest border border-hairline border-b-0 rounded-t-xl px-card-padding flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
@@ -1271,13 +1280,14 @@ export default function ClientPortalDashboard() {
             </button>
           ))}
         </div>
-        {!loading && devicesOnly.length > 0 && activeView === "devices" && (
+        {!loading && counts.devices > 0 && activeView === "devices" && (
           <button
             onClick={exportDevicesToCSV}
-            className="flex items-center gap-2 px-4 py-2 mb-2 sm:mb-0 bg-white border border-hairline rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md shrink-0"
+            disabled={exporting}
+            className="flex items-center gap-2 px-4 py-2 mb-2 sm:mb-0 bg-white border border-hairline rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md shrink-0 disabled:opacity-60"
           >
-            <Icon name="download" className="text-[18px]" />
-            Exportar
+            <Icon name={exporting ? "progress_activity" : "download"} className={`text-[18px] ${exporting ? "animate-spin" : ""}`} />
+            {exporting ? "Exportando…" : "Exportar"}
           </button>
         )}
       </div>
@@ -1286,7 +1296,7 @@ export default function ClientPortalDashboard() {
       {activeView === "sims" && (
         <>
           {/* Filtro activo — franja dentro de la tarjeta */}
-          {!loading && sims.length > 0 && statusFilter !== null && (
+          {!loading && counts.total > 0 && statusFilter !== null && (
             <div className="bg-surface-container-lowest border-x border-hairline px-card-padding py-3 flex items-center gap-2">
               <span className="font-body-sm text-body-sm text-on-surface-variant">Filtro activo:</span>
               <button
@@ -1313,17 +1323,17 @@ export default function ClientPortalDashboard() {
                 </div>
               ))}
             </div>
-          ) : sims.length === 0 ? (
+          ) : counts.total === 0 ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl py-20 text-center">
-              <Icon name="sim_card" className="text-[48px] text-outline-variant mb-3" />
+              <Icon name="sim_card" className="text-[48px] text-outline mb-3" />
               <p className="font-label-md text-label-md text-on-surface">Sin SIMs asignadas</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xs mx-auto">
                 Contacta a tu administrador para que te asigne SIMs a tu cuenta.
               </p>
             </div>
-          ) : sortedSims.length === 0 ? (
+          ) : serverTotal === 0 ? (
             <div className="bg-surface-container-lowest border border-hairline border-t-0 rounded-b-xl py-12 text-center">
-              <Icon name="search_off" className="text-[40px] text-outline-variant mb-3" />
+              <Icon name="search_off" className="text-[40px] text-outline mb-3" />
               <p className="font-label-md text-label-md text-on-surface">Sin resultados</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
                 No se encontraron SIMs para "{simSearch}"
@@ -1374,8 +1384,8 @@ export default function ClientPortalDashboard() {
                           className={`table-row-hover group border-b border-hairline last:border-0 cursor-pointer ${isSelected ? "bg-primary-container/10" : ""}`}
                         >
                           {/* ICCID */}
-                          <td className="p-4 font-mono font-body-sm text-body-sm text-on-surface whitespace-nowrap">
-                            {iccid}
+                          <td className="p-4 font-body-sm text-body-sm whitespace-nowrap">
+                            <Iccid value={iccid} className="text-body-sm" />
                           </td>
 
                           {/* Dispositivo */}
@@ -1386,7 +1396,7 @@ export default function ClientPortalDashboard() {
                                 <span className="truncate max-w-[180px]">{sim.endpoint.name}</span>
                               </span>
                             ) : (
-                              <span className="italic font-body-sm text-body-sm text-outline-variant">Sin dispositivo</span>
+                              <span className="italic font-body-sm text-body-sm text-outline">Sin dispositivo</span>
                             )}
                           </td>
 
@@ -1416,7 +1426,7 @@ export default function ClientPortalDashboard() {
                           <td className="p-4 text-right">
                             <Icon
                               name="chevron_right"
-                              className={`text-[20px] transition-colors ${isSelected ? "text-primary" : "text-outline-variant group-hover:text-on-surface-variant"}`}
+                              className={`text-[20px] transition-colors ${isSelected ? "text-primary" : "text-outline group-hover:text-on-surface-variant"}`}
                             />
                           </td>
                         </tr>
@@ -1430,7 +1440,7 @@ export default function ClientPortalDashboard() {
               <div className="border-t border-hairline px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
                 <div className="flex items-center gap-3">
                   <span className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
-                    Mostrando {simFrom}–{simTo} de {sortedSims.length}
+                    Mostrando {simFrom}–{simTo} de {serverTotal}
                   </span>
                   <select
                     value={simPerPage}
@@ -1519,17 +1529,17 @@ export default function ClientPortalDashboard() {
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
-            ) : devicesOnly.length === 0 ? (
+            ) : counts.devices === 0 ? (
               <div className="py-20 text-center">
-                <Icon name="devices_off" className="text-[48px] text-outline-variant mb-3" />
+                <Icon name="devices_off" className="text-[48px] text-outline mb-3" />
                 <p className="font-label-md text-label-md text-on-surface">Sin dispositivos</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xs mx-auto">
                   Tus SIMs todavía no están vinculadas a un dispositivo.
                 </p>
               </div>
-            ) : filteredDevices.length === 0 ? (
+            ) : serverTotal === 0 ? (
               <div className="py-12 text-center">
-                <Icon name="search_off" className="text-[40px] text-outline-variant mb-3" />
+                <Icon name="search_off" className="text-[40px] text-outline mb-3" />
                 <p className="font-label-md text-label-md text-on-surface">Sin resultados</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
                   No se encontraron dispositivos para "{deviceSearch}"
@@ -1553,6 +1563,7 @@ export default function ClientPortalDashboard() {
                       </th>
                       {deviceCols.visibleColumns.map((c, i) => {
                         const active = deviceSort.col === c.key;
+                        const sortable = c.key in DEVICE_SORT;
                         return (
                           <th
                             key={c.key}
@@ -1560,6 +1571,11 @@ export default function ClientPortalDashboard() {
                               deviceCols.columnLines ? "border-r border-hairline last:border-r-0" : ""
                             } ${i === 0 ? "sticky left-0 z-10 bg-row-hover" : ""}`}
                           >
+                            {!sortable ? (
+                              <span className="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant">
+                                {c.label}
+                              </span>
+                            ) : (
                             <button
                               onClick={() => setDeviceSort((prev) =>
                                 prev.col === c.key
@@ -1576,6 +1592,7 @@ export default function ClientPortalDashboard() {
                                 className={`hover-reveal text-[14px] transition-opacity ${active ? "opacity-100 text-primary" : "opacity-0 group-hover:opacity-50"}`}
                               />
                             </button>
+                            )}
                           </th>
                         );
                       })}
@@ -1619,7 +1636,7 @@ export default function ClientPortalDashboard() {
                               deviceCols.columnLines ? "border-r border-hairline last:border-r-0" : ""
                             } ${i === 0 ? "sticky left-0 z-10 bg-surface-container-lowest group-hover:bg-row-hover" : ""}`;
                             const mono = "font-mono font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap";
-                            const naught = <span className="italic text-outline-variant">No disponible</span>;
+                            const naught = <span className="italic text-outline">No disponible</span>;
 
                             switch (c.key) {
                               case "Dispositivo":
@@ -1692,7 +1709,7 @@ export default function ClientPortalDashboard() {
                                 );
 
                               case "ICCID":
-                                return <td key={c.key} className={`${tdClass} ${mono}`}>{sim.iccid_with_luhn || sim.iccid || "—"}</td>;
+                                return <td key={c.key} className={tdClass}><Iccid value={sim.iccid_with_luhn || sim.iccid} className="text-body-sm" /></td>;
 
                               case "IMEI":
                                 return (
@@ -1777,11 +1794,11 @@ export default function ClientPortalDashboard() {
             )}
 
             {/* Paginación */}
-            {!loading && filteredDevices.length > 0 && (
+            {!loading && serverTotal > 0 && (
               <div className="border-t border-hairline px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
                 <div className="flex items-center gap-3">
                   <span className="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">
-                    Mostrando {deviceFrom}–{deviceTo} de {filteredDevices.length}
+                    Mostrando {deviceFrom}–{deviceTo} de {serverTotal}
                   </span>
                   <select
                     value={devicePerPage}
@@ -1852,7 +1869,7 @@ export default function ClientPortalDashboard() {
               />
             ) : (
               <div className="bg-surface-container-lowest border border-hairline rounded-xl p-8 text-center">
-                <Icon name="ads_click" className="text-[36px] text-outline-variant mb-2" />
+                <Icon name="ads_click" className="text-[36px] text-outline mb-2" />
                 <p className="font-label-md text-label-md text-on-surface">Selecciona una SIM</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
                   Haz clic en una fila para ver su información y consumo.

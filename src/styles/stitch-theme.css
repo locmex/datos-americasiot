@@ -10,33 +10,34 @@
       primary-container…), con los MISMOS nombres del HTML de Stitch para que
       el markup se porte 1:1.
 
-   Nota sobre los dos verdes (no es un error, son roles distintos):
-     primary            #006c45  → texto de links, nav activa, subrayados
-     primary-container  #3ecf8e  → rellenos, indicadores, acentos de marca
+   Marca Americas IoT (morado), dos roles:
+     primary            #4a20c4  → texto de links, nav activa, foco (8:1 sobre blanco)
+     primary-container  #270779  → botón primario, rellenos y acentos de marca
+   El verde queda reservado para estados ("activa", "en línea"): ver status-tokens.ts.
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* 1 ── Re-mapeo de los tokens base de shadcn ─────────────────────────────────── */
 :root {
-  --background: #f8f9ff;
-  --foreground: #0b1c30;
+  --background: #f6f5fa;
+  --foreground: #17132a;
   --card: #ffffff;
-  --card-foreground: #0b1c30;
+  --card-foreground: #17132a;
   --popover: #ffffff;
-  --popover-foreground: #0b1c30;
-  --primary: #006c45;
+  --popover-foreground: #17132a;
+  --primary: #4a20c4;
   --primary-foreground: #ffffff;
-  --secondary: #006c4a;
+  --secondary: #270779;
   --secondary-foreground: #ffffff;
-  --muted: #eff4ff;
-  --muted-foreground: #3d4a41;
-  --accent: #e5eeff;
-  --accent-foreground: #0b1c30;
+  --muted: #f1eff7;
+  --muted-foreground: #4f4a63;
+  --accent: #efeafc;
+  --accent-foreground: #17132a;
   --destructive: #ba1a1a;
   --destructive-foreground: #ffffff;
-  --border: #e8e8ed;
-  --input: #e8e8ed;
+  --border: #e3e0ec;
+  --input: #e3e0ec;
   --input-background: #ffffff;
-  --ring: #006c45;
+  --ring: #4a20c4;
   /* radius-lg = 0.5rem y radius-xl = 0.75rem, igual que Stitch */
   --radius: 0.5rem;
 }
@@ -44,27 +45,27 @@
 /* 2 ── Tokens propios de Stitch ──────────────────────────────────────────────── */
 @theme {
   /* Superficies */
-  --color-surface: #f8f9ff;
-  --color-surface-dim: #cbdbf5;
-  --color-surface-bright: #f8f9ff;
+  --color-surface: #f6f5fa;
+  --color-surface-dim: #dcd8e8;
+  --color-surface-bright: #faf9fc;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #eff4ff;
-  --color-surface-container: #e5eeff;
-  --color-surface-container-high: #dce9ff;
-  --color-surface-container-highest: #d3e4fe;
-  --color-surface-variant: #d3e4fe;
-  --color-surface-tint: #006c45;
+  --color-surface-container-low: #f4f2f9;
+  --color-surface-container: #eeebf5;
+  --color-surface-container-high: #e8e4f1;
+  --color-surface-container-highest: #e1dcec;
+  --color-surface-variant: #e1dcec;
+  --color-surface-tint: #4a20c4;
 
   /* Contenido sobre superficies */
-  --color-on-surface: #0b1c30;
-  --color-on-surface-variant: #3d4a41;
-  --color-on-background: #0b1c30;
-  --color-inverse-surface: #213145;
-  --color-inverse-on-surface: #eaf1ff;
+  --color-on-surface: #17132a;
+  --color-on-surface-variant: #4f4a63;
+  --color-on-background: #17132a;
+  --color-inverse-surface: #1a0450;
+  --color-inverse-on-surface: #f4f0fa;
 
   /* Contornos */
-  --color-outline: #6c7a70;
-  --color-outline-variant: #bbcabe;
+  --color-outline: #6b6680;
+  --color-outline-variant: #dcd7e6;
 
   /* Verde de marca (rellenos y acentos).
      `primary` y `secondary` los aporta theme.css vía @theme inline; acá solo
@@ -72,31 +73,31 @@
      no generara ninguna regla (el texto caía a on-background, casi negro). */
   --color-on-primary: #ffffff;
   --color-on-secondary: #ffffff;
-  --color-primary-container: #3ecf8e;
-  --color-on-primary-container: #005434;
-  --color-inverse-primary: #51df9c;
-  --color-primary-fixed: #71fcb6;
-  --color-primary-fixed-dim: #51df9c;
-  --color-on-primary-fixed: #002112;
-  --color-on-primary-fixed-variant: #005233;
+  --color-primary-container: #270779;
+  --color-on-primary-container: #ffffff;
+  --color-inverse-primary: #b6a8ee;
+  --color-primary-fixed: #e6defc;
+  --color-primary-fixed-dim: #35109c;
+  --color-on-primary-fixed: #ffffff;
+  --color-on-primary-fixed-variant: #270779;
 
   /* Secundario */
-  --color-secondary-container: #82f5c1;
-  --color-on-secondary-container: #00714e;
-  --color-secondary-fixed: #85f8c4;
-  --color-secondary-fixed-dim: #68dba9;
-  --color-on-secondary-fixed: #002114;
-  --color-on-secondary-fixed-variant: #005137;
+  --color-secondary-container: #e6defc;
+  --color-on-secondary-container: #35109c;
+  --color-secondary-fixed: #e6defc;
+  --color-secondary-fixed-dim: #b6a8ee;
+  --color-on-secondary-fixed: #1a0450;
+  --color-on-secondary-fixed-variant: #35109c;
 
   /* Terciario (neutro azulado) */
-  --color-tertiary: #545f73;
+  --color-tertiary: #5b5670;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #adb8cf;
-  --color-on-tertiary-container: #3e495c;
-  --color-tertiary-fixed: #d8e3fb;
-  --color-tertiary-fixed-dim: #bcc7de;
-  --color-on-tertiary-fixed: #111c2d;
-  --color-on-tertiary-fixed-variant: #3c475a;
+  --color-tertiary-container: #c9c3d9;
+  --color-on-tertiary-container: #3f3a55;
+  --color-tertiary-fixed: #e6e2f0;
+  --color-tertiary-fixed-dim: #cbc5da;
+  --color-on-tertiary-fixed: #17132a;
+  --color-on-tertiary-fixed-variant: #3f3a55;
 
   /* Error */
   --color-error: #ba1a1a;
@@ -106,9 +107,9 @@
 
   /* Semánticos de estado (hardcodeados en el HTML de Stitch) */
   --color-warning: #f59e0b;
-  --color-on-warning: #d97706;
-  --color-hairline: #e8e8ed;
-  --color-row-hover: #f9fafb;
+  --color-on-warning: #b45309;
+  --color-hairline: #e6e3ee;
+  --color-row-hover: #faf9fc;
 
   /* ── Escala tipográfica ── */
   --text-display-lg: 32px;
@@ -147,16 +148,17 @@
   --text-label-xs--letter-spacing: 0.03em;
   --text-label-xs--font-weight: 700;
 
-  /* Familias (todas Inter; existen para portar el markup de Stitch 1:1) */
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-display-lg: Inter, sans-serif;
-  --font-display-md: Inter, sans-serif;
-  --font-headline-sm: Inter, sans-serif;
-  --font-body-lg: Inter, sans-serif;
-  --font-body-md: Inter, sans-serif;
-  --font-body-sm: Inter, sans-serif;
-  --font-label-md: Inter, sans-serif;
-  --font-label-xs: Inter, sans-serif;
+  /* Familias: Volte (marca Americas IoT) para todo; ICCID/IMEI en mono */
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-display-lg: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-display-md: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-headline-sm: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-body-lg: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-body-md: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-body-sm: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-label-md: Volte, ui-sans-serif, system-ui, sans-serif;
+  --font-label-xs: Volte, ui-sans-serif, system-ui, sans-serif;
 
   /* ── Espaciado (base 4px) ── */
   --spacing-base: 4px;
@@ -185,11 +187,8 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Botón primario (CTA).
-   Usa el verde de MARCA (#3ecf8e = primary-container), no `primary` (#006c45).
-   `primary` es el verde generado por Material 3 para TEXTO sobre fondo claro;
-   como relleno de un botón grande pesa demasiado y no se parece al logo.
-   El texto va en on-primary-fixed (#002112): 8.6:1 de contraste, AAA. */
+/* Botón primario (CTA): morado de marca #270779 con texto blanco (13:1, AAA).
+   Hover un tono más claro (#35109c). */
 .btn-primary {
   background-color: var(--color-primary-container);
   color: var(--color-on-primary-fixed);
@@ -220,14 +219,14 @@
 
 /* Punto de conexión que late (dispositivo online) */
 @keyframes stitch-pulse {
-  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.7); }
-  70%  { transform: scale(1);    box-shadow: 0 0 0 6px rgba(62, 207, 142, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(62, 207, 142, 0); }
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
 }
 .pulse-dot { animation: stitch-pulse 2s infinite; }
 
 /* Hover de fila de tabla */
-.table-row-hover:hover { background-color: #f9fafb; }
+.table-row-hover:hover { background-color: #faf9fc; }
 
 /* Tailwind v4 pone `cursor: default` en los botones por preflight.
    Restauramos el puntero de mano en todo lo clickeable. */

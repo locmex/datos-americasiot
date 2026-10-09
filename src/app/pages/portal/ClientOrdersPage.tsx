@@ -110,7 +110,7 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
   if (filtered.length === 0) {
     return (
       <div className="bg-surface-container-lowest border border-hairline rounded-xl py-20 text-center">
-        <Icon name={search ? "search_off" : "inventory_2"} className="text-[44px] text-outline-variant mb-3" />
+        <Icon name={search ? "search_off" : "inventory_2"} className="text-[44px] text-outline mb-3" />
         <p className="font-label-md text-label-md text-on-surface">
           {search ? "Sin resultados" : "No hay productos disponibles"}
         </p>
@@ -142,7 +142,7 @@ function CatalogTab({ search, onOrderCreated }: { search: string; onOrderCreated
                   <Icon name="inventory_2" />
                 </div>
                 {inCart && (
-                  <span className="bg-primary-container/20 text-on-primary-container px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
+                  <span className="bg-primary-container/20 text-primary px-2 py-1 rounded-md font-label-xs text-label-xs flex items-center gap-1">
                     <Icon name="check_circle" className="text-[14px]" filled />
                     En el pedido
                   </span>
@@ -293,7 +293,7 @@ function HistoryTab() {
   if (orders.length === 0) {
     return (
       <div className="bg-surface-container-lowest border border-hairline rounded-xl py-20 text-center">
-        <Icon name="shopping_cart" className="text-[44px] text-outline-variant mb-3" />
+        <Icon name="shopping_cart" className="text-[44px] text-outline mb-3" />
         <p className="font-label-md text-label-md text-on-surface">Aún no has realizado pedidos</p>
         <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
           Explora el catálogo y arma tu primer pedido.

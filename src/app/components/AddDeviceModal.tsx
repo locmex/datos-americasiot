@@ -26,7 +26,7 @@ function Field({
         {required && <span className="text-red-400">*</span>}
         {hint && (
           <span
-            className="inline-flex items-center cursor-help text-gray-400 hover:text-gray-600"
+            className="inline-flex items-center cursor-help text-outline hover:text-gray-600"
             title={hint}
           >
             <Info className="w-3.5 h-3.5" />
@@ -55,7 +55,7 @@ function SelectField({
         value={value}
         onChange={e => onChange(e.target.value)}
         disabled={disabled || loading || options.length === 0}
-        className="w-full appearance-none text-sm border border-gray-200 rounded-xl px-4 py-2.5 pr-10 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-300 disabled:bg-gray-50 disabled:text-gray-400 transition-colors"
+        className="w-full appearance-none text-sm border border-gray-200 rounded-xl px-4 py-2.5 pr-10 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 disabled:bg-gray-50 disabled:text-outline transition-colors"
       >
         <option value="">
           {loading ? "Cargando..." : options.length === 0 ? "Sin opciones" : placeholder}
@@ -66,7 +66,7 @@ function SelectField({
           </option>
         ))}
       </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline pointer-events-none" />
     </div>
   );
 }
@@ -76,14 +76,14 @@ const SIM_STATUS_OPTS = [
   { id: "all", label: "Todos",      color: "#6b7280" },
   { id: "1",   label: "Activa",     color: "#16a34a" },
   { id: "2",   label: "Suspendida", color: "#d97706" },
-  { id: "0",   label: "Emitida",    color: "#6366f1" },
+  { id: "0",   label: "Disponible", color: "#6b6680" },
 ] as const;
 
 function getSimStatus(s: any): { label: string; color: string } {
   const id = s?.status?.id ?? 0;
   if (id === 1) return { label: "Activa",     color: "#16a34a" };
   if (id === 2) return { label: "Suspendida", color: "#d97706" };
-  return              { label: "Emitida",     color: "#6366f1" };
+  return              { label: "Disponible",  color: "#6b6680" };
 }
 
 // ── Inline SIM Picker ─────────────────────────────────────────────
@@ -198,7 +198,7 @@ function SimPicker({
             <p className="text-xs font-semibold text-gray-500">
               {search || statusF !== "all" ? "Ninguna SIM coincide" : "Sin SIMs disponibles"}
             </p>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[10px] text-outline">
               {search || statusF !== "all" ? "Prueba con otros filtros" : "Todas las SIMs ya están asignadas"}
             </p>
           </div>
@@ -233,7 +233,7 @@ function SimPicker({
                     <p className="text-xs font-mono font-semibold text-gray-700 truncate">
                       {iccid ? `…${iccid.slice(-12)}` : `SIM #${sim.id}`}
                     </p>
-                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">
+                    <p className="text-[10px] text-outline font-mono mt-0.5">
                       {sim.msisdn || "Sin MSISDN"}
                     </p>
                   </div>
@@ -253,7 +253,7 @@ function SimPicker({
       {/* Footer */}
       {!loading && !error && (
         <div className="px-4 py-2 border-t border-indigo-50 bg-white/60 flex items-center justify-between">
-          <p className="text-[10px] text-gray-400">
+          <p className="text-[10px] text-outline">
             {filtered.length} SIM{filtered.length !== 1 ? "s" : ""} disponible{filtered.length !== 1 ? "s" : ""}
           </p>
           {selectedSim && (
@@ -375,7 +375,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
         {/* ── Header ── */}
         <div
           className="flex items-center justify-between px-6 py-4 shrink-0"
-          style={{ background: "linear-gradient(135deg, #0f766e, #0ea5e9)" }}
+          style={{ background: "linear-gradient(135deg, #1a0450, #4a20c4)" }}
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
@@ -399,9 +399,9 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
           <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16 px-6">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(62,207,142,0.12)" }}
+              style={{ background: "rgba(74,32,196,0.12)" }}
             >
-              <CheckCircle2 className="w-9 h-9 text-teal-500" />
+              <CheckCircle2 className="w-9 h-9 text-green-600" />
             </div>
             <div className="text-center">
               <p className="text-base font-bold text-gray-800">¡Dispositivo creado!</p>
@@ -435,7 +435,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Ej. Tracker Flotilla MX-001"
-                className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-300 transition-colors"
+                className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 transition-colors"
                 autoFocus
               />
               {name.trim().length > 0 && name.trim().length < 2 && (
@@ -509,21 +509,21 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
             <div
               className="rounded-xl border transition-colors"
               style={{
-                borderColor: imeiLock ? "#5eead4" : "#e5e7eb",
-                background: imeiLock ? "rgba(62,207,142,0.04)" : "white",
+                borderColor: imeiLock ? "#b6a8ee" : "#e5e7eb",
+                background: imeiLock ? "rgba(74,32,196,0.04)" : "white",
               }}
             >
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: imeiLock ? "rgba(62,207,142,0.12)" : "rgba(148,163,184,0.10)" }}
+                    style={{ background: imeiLock ? "rgba(74,32,196,0.12)" : "rgba(148,163,184,0.10)" }}
                   >
-                    <Lock className="w-4 h-4" style={{ color: imeiLock ? "#0d9488" : "#94a3b8" }} />
+                    <Lock className="w-4 h-4" style={{ color: imeiLock ? "#4a20c4" : "#6b6680" }} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Bloqueo de IMEI</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-outline">
                       Solo este dispositivo físico puede usar la SIM
                     </p>
                   </div>
@@ -532,7 +532,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                   type="button"
                   onClick={() => { setImeiLock(v => !v); if (imeiLock) setImei(""); }}
                   className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none"
-                  style={{ background: imeiLock ? "#3ECF8E" : "#d1d5db" }}
+                  style={{ background: imeiLock ? "#270779" : "#d1d5db" }}
                 >
                   <span
                     className="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200"
@@ -544,7 +544,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
               {imeiLock && (
                 <div className="px-4 pb-4">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Shield className="w-3.5 h-3.5 text-teal-500" />
+                    <Shield className="w-3.5 h-3.5 text-violet-600" />
                     <label className="text-xs font-semibold text-gray-600">
                       IMEI del dispositivo
                     </label>
@@ -554,7 +554,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                     value={imei}
                     onChange={e => setImei(e.target.value.replace(/[^\d]/g, "").slice(0, 16))}
                     placeholder="15 o 16 dígitos"
-                    className="w-full text-sm font-mono border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200 transition-colors"
+                    className="w-full text-sm font-mono border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 transition-colors"
                     maxLength={16}
                   />
                   {imei.length > 0 && imei.length < 14 && (
@@ -563,7 +563,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                     </p>
                   )}
                   {imei.length >= 14 && (
-                    <p className="text-xs text-teal-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-green-700 mt-1 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> IMEI válido
                     </p>
                   )}
@@ -578,21 +578,21 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
             >
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-outline pointer-events-none" />
                   <input
                     type="text"
                     value={tagInput}
                     onChange={e => setTagInput(e.target.value)}
                     onKeyDown={handleTagKeyDown}
                     placeholder="Ej. flota-norte, cliente-abc…"
-                    className="w-full text-sm border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-200 transition-colors"
+                    className="w-full text-sm border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 transition-colors"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={addTag}
                   disabled={!tagInput.trim()}
-                  className="px-3 py-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 transition-colors disabled:opacity-40"
+                  className="px-3 py-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-200 transition-colors disabled:opacity-40"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -616,7 +616,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                   ))}
                 </div>
               )}
-              <p className="text-[10px] text-gray-400 mt-1">
+              <p className="text-[10px] text-outline mt-1">
                 Enter o coma para añadir · Click en ✕ para eliminar
               </p>
             </Field>
@@ -640,7 +640,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Asignar SIM</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-outline">
                       {assignSim && simIccid
                         ? <span className="text-indigo-600 font-medium font-mono">…{simIccid.slice(-12)}</span>
                         : "Vincula una SIM de tu inventario emnify"}
@@ -684,7 +684,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
         {/* ── Footer ── */}
         {!success && (
           <div className="shrink-0 px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 bg-gray-50/60">
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-outline">
               <span className="text-red-400">*</span> campos requeridos
             </div>
             <div className="flex items-center gap-2">
@@ -701,7 +701,7 @@ export function AddDeviceModal({ onClose, onCreated }: Props) {
                 className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                 style={{
                   background: canSubmit
-                    ? "linear-gradient(135deg, #3ECF8E, #0ea5e9)"
+                    ? "linear-gradient(135deg, #270779, #4a20c4)"
                     : "#d1d5db",
                 }}
               >

@@ -48,7 +48,7 @@ function addLuhnDigit(iccid: string): string {
 }
 
 const SIM_STATUS_COLOR: Record<number, string> = { 0: "#94a3b8", 1: "#16a34a", 2: "#d97706", 3: "#dc2626" };
-const SIM_STATUS_LABEL: Record<number, string> = { 0: "Emitida", 1: "Activa", 2: "Suspendida", 3: "Desactivada" };
+const SIM_STATUS_LABEL: Record<number, string> = { 0: "Disponible", 1: "Activa", 2: "Suspendida", 3: "Desactivada" };
 
 // ─── Step 1: Client Info ──────────────────────────────────────────────────────
 function StepClientInfo({ form, setForm, errors }: {
@@ -75,7 +75,7 @@ function StepClientInfo({ form, setForm, errors }: {
         className={`w-full px-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-all ${
           errors[key]
             ? "border-red-300 focus:ring-red-100 bg-red-50"
-            : "border-gray-200 focus:ring-emerald-100 focus:border-emerald-400 bg-gray-50"
+            : "border-gray-200 focus:ring-violet-100 focus:border-violet-400 bg-gray-50"
         }`}
       />
       {errors[key] && <p className="text-xs text-red-500 flex items-center gap-1">{errors[key]}</p>}
@@ -96,7 +96,7 @@ function StepClientInfo({ form, setForm, errors }: {
           value={form.notes}
           onChange={(e) => setForm((f: any) => ({ ...f, notes: e.target.value }))}
           placeholder="Notas adicionales..."
-          className="w-full h-20 px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 resize-none bg-gray-50"
+          className="w-full h-20 px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 resize-none bg-gray-50"
         />
       </div>
     </div>
@@ -177,12 +177,12 @@ function SimPagedList({
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-outline" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar ICCID o dispositivo…"
-          className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 bg-gray-50"
+          className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 bg-gray-50"
         />
       </div>
 
@@ -191,12 +191,12 @@ function SimPagedList({
         <div className="flex items-center justify-between">
           <button onClick={togglePage} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors">
             {allPageSelected
-              ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
+              ? <CheckSquare className="w-4 h-4" style={{ color: "#4a20c4" }} />
               : <Square className="w-4 h-4 text-gray-300" />}
             {allPageSelected ? "Deseleccionar página" : "Seleccionar página"}
           </button>
           {selected.size > 0 && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(62,207,142,0.15)", color: "#059669" }}>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(74,32,196,0.15)", color: "#4a20c4" }}>
               {selected.size} seleccionada{selected.size !== 1 ? "s" : ""}
             </span>
           )}
@@ -214,7 +214,7 @@ function SimPagedList({
         ) : pageSims.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center px-4">
             <CreditCard className="w-8 h-8 text-gray-200 mb-2" />
-            <p className="text-sm font-medium text-gray-400">
+            <p className="text-sm font-medium text-outline">
               {allUnassigned.length === 0 ? "No hay SIMs sin asignar disponibles" : "Sin resultados para tu búsqueda"}
             </p>
           </div>
@@ -229,11 +229,11 @@ function SimPagedList({
                   key={sim.iccid}
                   onClick={() => toggleOne(sim.iccid)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all hover:bg-gray-50"
-                  style={{ background: isSelected ? "rgba(62,207,142,0.05)" : undefined }}
+                  style={{ background: isSelected ? "rgba(74,32,196,0.05)" : undefined }}
                 >
                   <div className="shrink-0">
                     {isSelected
-                      ? <CheckSquare className="w-4 h-4" style={{ color: "#3ECF8E" }} />
+                      ? <CheckSquare className="w-4 h-4" style={{ color: "#4a20c4" }} />
                       : <Square className="w-4 h-4 text-gray-200" />}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -252,7 +252,7 @@ function SimPagedList({
       {/* Pagination */}
       {!loading && totalPages > 1 && (
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="text-xs text-gray-400 whitespace-nowrap">
+          <span className="text-xs text-outline whitespace-nowrap">
             {from}–{to} de {filtered.length} SIMs
           </span>
           <div className="flex items-center gap-1">
@@ -265,7 +265,7 @@ function SimPagedList({
             </button>
             {visiblePages().map((pg, i) =>
               pg === "…" ? (
-                <span key={`ell-${i}`} className="w-7 h-7 flex items-center justify-center text-xs text-gray-400">…</span>
+                <span key={`ell-${i}`} className="w-7 h-7 flex items-center justify-center text-xs text-outline">…</span>
               ) : (
                 <button
                   key={pg}
@@ -273,7 +273,7 @@ function SimPagedList({
                   className="w-7 h-7 rounded-lg text-xs font-semibold transition-colors"
                   style={
                     pg === safePage
-                      ? { background: "#3ECF8E", color: "#fff" }
+                      ? { background: "#270779", color: "#fff" }
                       : { color: "#6b7280" }
                   }
                 >
@@ -333,18 +333,18 @@ function StepPortal({ password, setPassword, confirmPw, setConfirmPw }: {
         <div key={label} className="space-y-1.5">
           <label className="text-sm font-medium text-gray-700">{label}</label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-outline" />
             <input
               type={showPw ? "text" : "password"}
               value={val}
               onChange={(e) => set(e.target.value)}
               placeholder={placeholder}
-              className="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 bg-gray-50"
+              className="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 bg-gray-50"
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-gray-600"
             >
               {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -370,7 +370,7 @@ function StepPortal({ password, setPassword, confirmPw, setConfirmPw }: {
         </div>
       )}
       {match && (
-        <p className="text-xs text-emerald-600 flex items-center gap-1">
+        <p className="text-xs text-green-700 flex items-center gap-1">
           <Check className="w-3 h-3" /> Las contraseñas coinciden
         </p>
       )}
@@ -471,7 +471,7 @@ function CreateClientStepper({ open, onClose, onSaved }: {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-gray-900 text-lg leading-tight">Nuevo Cliente</h3>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-outline mt-0.5">
                 Paso {step + 1} de {STEPS.length} — {STEPS[step].label}
               </p>
             </div>
@@ -494,16 +494,16 @@ function CreateClientStepper({ open, onClose, onSaved }: {
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all"
                       style={{
-                        background: done || active ? "#3ECF8E" : "#f3f4f6",
+                        background: done || active ? "#270779" : "#f3f4f6",
                         color: done || active ? "#fff" : "#9ca3af",
-                        boxShadow: active ? "0 0 0 4px rgba(62,207,142,0.18)" : "none",
+                        boxShadow: active ? "0 0 0 4px rgba(74,32,196,0.18)" : "none",
                       }}
                     >
                       {done ? <Check className="w-4 h-4" /> : <s.icon className="w-4 h-4" />}
                     </div>
                     <span
                       className="text-[10px] mt-1 font-semibold"
-                      style={{ color: done || active ? "#059669" : "#9ca3af" }}
+                      style={{ color: done || active ? "#4a20c4" : "#9ca3af" }}
                     >
                       {s.label}
                     </span>
@@ -511,7 +511,7 @@ function CreateClientStepper({ open, onClose, onSaved }: {
                   {i < STEPS.length - 1 && (
                     <div
                       className="flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all"
-                      style={{ background: i < step ? "#3ECF8E" : "#e5e7eb" }}
+                      style={{ background: i < step ? "#270779" : "#e5e7eb" }}
                     />
                   )}
                 </div>
@@ -554,7 +554,7 @@ function CreateClientStepper({ open, onClose, onSaved }: {
               {step > 0 && !isLastStep && (
                 <button
                   onClick={() => setStep((s) => s + 1)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-600 border border-dashed border-gray-200 hover:border-gray-300 transition-colors"
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-outline hover:text-gray-600 border border-dashed border-gray-200 hover:border-gray-300 transition-colors"
                 >
                   Omitir
                 </button>
@@ -564,7 +564,7 @@ function CreateClientStepper({ open, onClose, onSaved }: {
                   onClick={handleCreate}
                   disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-black transition-all disabled:opacity-60"
-                  style={{ background: "#3ECF8E" }}
+                  style={{ background: "#270779" }}
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   {saving ? "Creando..." : "Crear Cliente"}
@@ -573,7 +573,7 @@ function CreateClientStepper({ open, onClose, onSaved }: {
                 <button
                   onClick={handleNext}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-black transition-all"
-                  style={{ background: "#3ECF8E" }}
+                  style={{ background: "#270779" }}
                 >
                   Siguiente
                   <ArrowRight className="w-4 h-4" />
@@ -628,7 +628,7 @@ function EditClientModal({ open, onClose, onSaved, client }: {
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <div>
             <h3 className="font-bold text-gray-900">Editar Cliente</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Modifica los datos del cliente</p>
+            <p className="text-xs text-outline mt-0.5">Modifica los datos del cliente</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
             <X className="w-4 h-4 text-gray-500" />
@@ -648,7 +648,7 @@ function EditClientModal({ open, onClose, onSaved, client }: {
                 value={(form as any)[key]}
                 onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                 placeholder={ph}
-                className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 bg-gray-50"
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 bg-gray-50"
               />
             </div>
           ))}
@@ -658,7 +658,7 @@ function EditClientModal({ open, onClose, onSaved, client }: {
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Notas adicionales..."
-              className="w-full h-20 px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 resize-none bg-gray-50"
+              className="w-full h-20 px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 resize-none bg-gray-50"
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -669,7 +669,7 @@ function EditClientModal({ open, onClose, onSaved, client }: {
               type="submit"
               disabled={loading}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-black transition-all disabled:opacity-60"
-              style={{ background: "#3ECF8E" }}
+              style={{ background: "#270779" }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Guardar Cambios
@@ -710,12 +710,12 @@ function SimPickerModal({ client, onClose, onAssigned }: {
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(62,207,142,0.12)" }}>
-              <Link2 className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(74,32,196,0.12)" }}>
+              <Link2 className="w-5 h-5" style={{ color: "#4a20c4" }} />
             </div>
             <div>
               <h3 className="font-bold text-gray-900">Asignar SIMs</h3>
-              <p className="text-xs text-gray-400 mt-0.5">a <span className="font-semibold text-gray-600">{client.name}</span></p>
+              <p className="text-xs text-outline mt-0.5">a <span className="font-semibold text-gray-600">{client.name}</span></p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
@@ -735,7 +735,7 @@ function SimPickerModal({ client, onClose, onAssigned }: {
             onClick={handleAssign}
             disabled={selected.size === 0 || saving}
             className="flex-1 font-semibold text-black"
-            style={{ background: "#3ECF8E" }}
+            style={{ background: "#270779" }}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserCheck className="w-4 h-4 mr-2" />}
             {saving ? "Asignando…" : `Asignar ${selected.size > 0 ? selected.size : ""} SIM${selected.size !== 1 ? "s" : ""}`}
@@ -786,25 +786,25 @@ function ChipsDrawer({ client, chips, onClose, onRefresh }: {
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm bg-white shadow-2xl flex flex-col">
         <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0" style={{ background: "rgba(62,207,142,0.15)", color: "#059669" }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0" style={{ background: "rgba(74,32,196,0.15)", color: "#4a20c4" }}>
             {client.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-gray-900 truncate">{client.name}</h3>
-            {client.company && <p className="text-xs text-gray-400 truncate">{client.company}</p>}
+            {client.company && <p className="text-xs text-outline truncate">{client.company}</p>}
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 shrink-0">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
         <div className="px-5 py-3 border-b border-gray-100 shrink-0 space-y-1">
-          <p className="flex items-center gap-2 text-xs text-gray-500"><Mail className="w-3.5 h-3.5 text-gray-400" />{client.email}</p>
-          {client.phone && <p className="flex items-center gap-2 text-xs text-gray-500"><Phone className="w-3.5 h-3.5 text-gray-400" />{client.phone}</p>}
+          <p className="flex items-center gap-2 text-xs text-gray-500"><Mail className="w-3.5 h-3.5 text-outline" />{client.email}</p>
+          {client.phone && <p className="flex items-center gap-2 text-xs text-gray-500"><Phone className="w-3.5 h-3.5 text-outline" />{client.phone}</p>}
         </div>
         <div className="px-5 py-3 border-b border-gray-100 shrink-0">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-gray-400" />
+              <CreditCard className="w-4 h-4 text-outline" />
               {clientChips.length} SIM{clientChips.length !== 1 ? "s" : ""} asignada{clientChips.length !== 1 ? "s" : ""}
             </p>
             {clientChips.length > 1 && (
@@ -815,8 +815,8 @@ function ChipsDrawer({ client, chips, onClose, onRefresh }: {
           </div>
           {clientChips.length > 3 && (
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-              <input value={searchChip} onChange={(e) => setSearchChip(e.target.value)} placeholder="Filtrar chips…" className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-emerald-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-outline" />
+              <input value={searchChip} onChange={(e) => setSearchChip(e.target.value)} placeholder="Filtrar chips…" className="w-full pl-7 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-violet-400" />
             </div>
           )}
         </div>
@@ -824,19 +824,19 @@ function ChipsDrawer({ client, chips, onClose, onRefresh }: {
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <CreditCard className="w-8 h-8 text-gray-200 mb-2" />
-              <p className="text-sm text-gray-400 font-medium">
+              <p className="text-sm text-outline font-medium">
                 {clientChips.length === 0 ? "Sin SIMs asignadas" : "Sin resultados"}
               </p>
               {clientChips.length === 0 && (
-                <p className="text-xs text-gray-400 mt-1">Usa el botón de abajo para asignar SIMs</p>
+                <p className="text-xs text-outline mt-1">Usa el botón de abajo para asignar SIMs</p>
               )}
             </div>
           ) : (
             filtered.map((chip) => (
               <div key={chip.iccid}
                 className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/60 group hover:border-gray-200 transition-colors">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(62,207,142,0.1)" }}>
-                  <CreditCard className="w-3.5 h-3.5" style={{ color: "#3ECF8E" }} />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(74,32,196,0.1)" }}>
+                  <CreditCard className="w-3.5 h-3.5" style={{ color: "#4a20c4" }} />
                 </div>
                 <code className="flex-1 text-xs font-mono text-gray-700 truncate min-w-0">
                   {addLuhnDigit(chip.iccid)}
@@ -848,7 +848,7 @@ function ChipsDrawer({ client, chips, onClose, onRefresh }: {
                   title="Quitar chip"
                 >
                   {removingIccid === chip.iccid
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-outline" />
                     : <X className="w-3.5 h-3.5 text-red-400" />}
                 </button>
               </div>
@@ -856,7 +856,7 @@ function ChipsDrawer({ client, chips, onClose, onRefresh }: {
           )}
         </div>
         <div className="px-5 py-4 border-t border-gray-100 shrink-0 space-y-2">
-          <Button onClick={() => setShowPicker(true)} className="w-full font-semibold text-black gap-2" style={{ background: "#3ECF8E" }}>
+          <Button onClick={() => setShowPicker(true)} className="w-full font-semibold text-white gap-2" style={{ background: "#270779" }}>
             <Plus className="w-4 h-4" />Asignar más SIMs
           </Button>
           <Button variant="outline" onClick={onClose} className="w-full">Cerrar</Button>
@@ -938,12 +938,12 @@ function PortalPasswordModal({ client, onClose, onSaved }: {
       <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(62,207,142,0.12)" }}>
-              <KeyRound className="w-5 h-5" style={{ color: "#3ECF8E" }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(74,32,196,0.12)" }}>
+              <KeyRound className="w-5 h-5" style={{ color: "#4a20c4" }} />
             </div>
             <div>
               <h3 className="font-bold text-gray-900">{client.portalEnabled ? "Cambiar contraseña" : "Habilitar Portal"}</h3>
-              <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[180px]">{client.name}</p>
+              <p className="text-xs text-outline mt-0.5 truncate max-w-[180px]">{client.name}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
@@ -951,20 +951,20 @@ function PortalPasswordModal({ client, onClose, onSaved }: {
         <div className="px-6 py-5 space-y-4">
           {checking ? (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 border border-gray-100">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-              <span className="text-xs text-gray-400">Verificando estado del portal...</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-outline" />
+              <span className="text-xs text-outline">Verificando estado del portal...</span>
             </div>
           ) : portalStatus ? (
             <>
               <div className="flex items-start gap-2 p-3 rounded-xl text-xs" style={{
-                background: portalStatus.portalEnabled && portalStatus.keyFound !== "none" ? "rgba(62,207,142,0.07)" : "rgba(245,158,11,0.07)",
-                border: `1px solid ${portalStatus.portalEnabled && portalStatus.keyFound !== "none" ? "rgba(62,207,142,0.2)" : "rgba(245,158,11,0.2)"}`,
+                background: portalStatus.portalEnabled && portalStatus.keyFound !== "none" ? "rgba(22,163,74,0.07)" : "rgba(245,158,11,0.07)",
+                border: `1px solid ${portalStatus.portalEnabled && portalStatus.keyFound !== "none" ? "rgba(22,163,74,0.2)" : "rgba(245,158,11,0.2)"}`,
               }}>
                 {portalStatus.portalEnabled && portalStatus.keyFound !== "none"
-                  ? <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#059669" }} />
+                  ? <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#15803d" }} />
                   : <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#d97706" }} />}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold" style={{ color: portalStatus.portalEnabled && portalStatus.keyFound !== "none" ? "#059669" : "#92400e" }}>
+                  <p className="font-semibold" style={{ color: portalStatus.portalEnabled && portalStatus.keyFound !== "none" ? "#15803d" : "#92400e" }}>
                     {portalStatus.portalEnabled && portalStatus.keyFound !== "none"
                       ? "Acceso configurado correctamente"
                       : portalStatus.keyFound === "none"
@@ -993,17 +993,17 @@ function PortalPasswordModal({ client, onClose, onSaved }: {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">URL de acceso del cliente</label>
             <div className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50">
-              <Globe className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <Globe className="w-3.5 h-3.5 text-outline shrink-0" />
               <span className="flex-1 text-xs font-mono text-gray-700 truncate">{portalUrl}</span>
-              <button onClick={handleCopy} className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors" style={{ background: copied ? "rgba(62,207,142,0.15)" : "#f3f4f6", color: copied ? "#059669" : "#6b7280" }}>
+              <button onClick={handleCopy} className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors" style={{ background: copied ? "rgba(74,32,196,0.15)" : "#f3f4f6", color: copied ? "#4a20c4" : "#6b7280" }}>
                 {copied ? <CheckCircle2 className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copied ? "Copiado" : "Copiar"}
               </button>
-              <a href={portalUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors">
+              <a href={portalUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 p-1 rounded-lg text-outline hover:text-violet-700 hover:bg-violet-50 transition-colors">
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
-            <p className="text-[11px] text-gray-400 px-1">
+            <p className="text-[11px] text-outline px-1">
               Comparte esta URL con el cliente. Usará su email <strong className="text-gray-600">{client.email}</strong> y la contraseña que configures abajo.
             </p>
           </div>
@@ -1014,9 +1014,9 @@ function PortalPasswordModal({ client, onClose, onSaved }: {
             <div key={label} className="space-y-1.5">
               <label className="text-sm font-medium text-gray-700">{label}</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                <input type={showPw ? "text" : "password"} value={val} onChange={(e) => set(e.target.value)} placeholder="••••••••" className="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-400" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-outline" />
+                <input type={showPw ? "text" : "password"} value={val} onChange={(e) => set(e.target.value)} placeholder="••••••••" className="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:border-violet-400" />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-outline">
                   {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
@@ -1024,7 +1024,7 @@ function PortalPasswordModal({ client, onClose, onSaved }: {
           ))}
           <div className="flex gap-3 pt-1">
             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
-            <button onClick={handleSave} disabled={loading || !password || !confirm} className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50" style={{ background: "#3ECF8E", color: "#000" }}>
+            <button onClick={handleSave} disabled={loading || !password || !confirm} className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50" style={{ background: "#270779", color: "#fff" }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
               {loading ? "Guardando..." : client.portalEnabled ? "Actualizar" : "Habilitar acceso"}
             </button>
@@ -1176,7 +1176,7 @@ export default function ClientsPage() {
                 {/* Cabecera de la card */}
                 <div className="flex items-start justify-between gap-2 p-card-padding pb-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-md text-on-primary-container">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container/20 text-label-md text-primary">
                       {client.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">

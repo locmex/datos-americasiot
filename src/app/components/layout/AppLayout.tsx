@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, Navigate, NavLink, useLocation } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "../../lib/auth-context";
-import { AmericasIoTLogo } from "../AmericasIoTLogo";
+import { BrandLockup } from "../BrandLockup";
 import { Icon } from "../ui/icon";
 import { BILLING_ENABLED } from "../../lib/features";
 
@@ -37,19 +37,22 @@ function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const title = pageTitles[location.pathname] ?? "";
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-20 flex h-14 items-center gap-3 border-b border-outline-variant bg-surface-container-lowest px-4 md:hidden">
+    <header
+      className="fixed top-0 right-0 left-0 z-20 flex h-14 items-center gap-3 px-4 md:hidden"
+      style={{ background: "#1a0450" }}
+    >
       <button
         onClick={onMenuClick}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
         aria-label="Abrir menú"
       >
         <Icon name="menu" />
       </button>
 
-      <AmericasIoTLogo height={22} forceLight />
+      <BrandLockup size="sm" />
 
       {title && (
-        <span className="flex-1 truncate text-right text-label-md text-on-surface-variant">
+        <span className="flex-1 truncate text-right text-label-md" style={{ color: "#b6abc9" }}>
           {title}
         </span>
       )}
