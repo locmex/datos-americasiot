@@ -6,6 +6,7 @@ import { db, buildTrackingUrl } from "./db.tsx";
 import { syncSimPeriod } from "./billing/sim-periods.ts";
 import { computeProrationFactor, startOfM, startNext } from "./billing/proration.ts";
 import { iccid19, queryClientSims } from "./portal/client-sims.ts";
+import { formatTags, parseTags } from "./emnify/tags.ts";
 
 const app = new Hono();
 app.use("*", logger(console.log));
@@ -917,7 +918,7 @@ app.post("/make-server-ef736a01/emnify/endpoints", async (c) => {
     };
     if (imei_lock)         payload.imei_lock = true;
     if (imei_lock && imei) payload.imei      = String(imei).trim();
-    if (Array.isArray(tags) && tags.length > 0) payload.tags = tags;
+    if (formatTags(tags))  payload.tags      = formatTags(tags);
     if (sim_iccid?.trim()) payload.sim = { iccid: String(sim_iccid).trim() };
 
     console.log(`[create endpoint] payload: ${JSON.stringify(payload)}`);
@@ -964,7 +965,7 @@ app.get("/make-server-ef736a01/emnify/endpoints", async (c) => {
       const iccidL = addLuhnDigit(ep.sim?.iccid || "").toLowerCase();
       const imei   = normalizeImei(ep.imei).toLowerCase();
       const imeiRaw = String(ep.imei || "").toLowerCase(); // also match raw IMEISV
-      const tags   = (ep.tags || []).join(" ").toLowerCase();
+      const tags   = parseTags(ep.tags).join(" ").toLowerCase();
       const id     = String(ep.id || "");
       return (
         name.includes(qLow)    ||
@@ -1076,7 +1077,8 @@ app.get("/make-server-ef736a01/emnify/endpoints", async (c) => {
     // ── Normalize IMEI: IMEISV (16 digits) → IMEI (15 digits) ───────────────
     // emnify REST API returns `imei` as 16-digit IMEISV; we convert to the
     // 15-digit IMEI (TAC+SNR+Luhn) so it matches the emnify portal display.
-    items = items.map((ep: any) => ({ ...ep, imei: normalizeImei(ep.imei) }));
+    // Tags arrive as a comma-separated string; the UI expects string[].
+    items = items.map((ep: any) => ({ ...ep, imei: normalizeImei(ep.imei), tags: parseTags(ep.tags) }));
 
     // ── Enrich each endpoint with /endpoint/{id}/connectivity ─────────────────
     // The emnify list endpoint (/endpoint) does NOT include connectivity data.
@@ -1139,8 +1141,8 @@ app.get("/make-server-ef736a01/emnify/endpoints/:id", async (c) => {
       console.log(`[conn] id=${epId} status=${JSON.stringify(conn.status)} rat=${JSON.stringify(conn.rat_type)} mno=${JSON.stringify(conn.mno)} op=${JSON.stringify(conn.operator)} country=${JSON.stringify(conn.country)} pdp=${JSON.stringify(conn.pdp_context)} last_updated=${conn.last_updated}`);
     }
 
-    // Normalize IMEISV → IMEI also in detail view
-    return c.json({ ...data, imei: normalizeImei(data.imei), _connectivity: conn ?? null });
+    // Normalize IMEISV → IMEI and tags string → string[] also in detail view
+    return c.json({ ...data, imei: normalizeImei(data.imei), tags: parseTags(data.tags), _connectivity: conn ?? null });
   } catch (e: any) {
     console.log("Error getting endpoint detail:", e);
     return c.json({ error: `Error obteniendo endpoint: ${e.message}` }, 500);
