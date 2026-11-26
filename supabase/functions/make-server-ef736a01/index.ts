@@ -7,6 +7,7 @@ import { syncSimPeriod } from "./billing/sim-periods.ts";
 import { computeProrationFactor, startOfM, startNext } from "./billing/proration.ts";
 import { iccid19, queryClientSims } from "./portal/client-sims.ts";
 import { formatTags, parseTags } from "./emnify/tags.ts";
+import { createEmnifyAuth, isEmnifyAuthError } from "./emnify/auth.ts";
 
 const app = new Hono();
 app.use("*", logger(console.log));
@@ -89,34 +90,16 @@ async function hashPassword(password: string): Promise<string> {
 // EMNIFY APPLICATION TOKEN AUTH (server-side)
 // Uses EMNIFY_API_TOKEN env var — never asks user for emnify credentials
 // ────────────────────────────────────────────────
-let cachedEmnifyJWT: { token: string; expiresAt: number } | null = null;
+// Shared JWT cache (memory + KV), single in-flight /authenticate and a shared
+// cooldown on 429 — see emnify/auth.ts.
+const emnifyAuth = createEmnifyAuth({
+  baseUrl: EMNIFY_BASE,
+  getAppToken: () => Deno.env.get("EMNIFY_API_TOKEN"),
+  store: { get: kv.get, set: kv.set },
+});
 
-async function getEmnifyToken(): Promise<string> {
-  if (cachedEmnifyJWT && cachedEmnifyJWT.expiresAt > Date.now() + 5 * 60 * 1000) {
-    return cachedEmnifyJWT.token;
-  }
-  const rawToken = Deno.env.get("EMNIFY_API_TOKEN");
-  if (!rawToken) throw new Error("EMNIFY_API_TOKEN no configurado en los secrets de Supabase");
-
-  const appToken = rawToken.trim();
-  console.log(`emnify: intentando autenticar con token (longitud: ${appToken.length})`);
-
-  const res = await fetch(`${EMNIFY_BASE}/authenticate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ application_token: appToken }),
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    console.log(`emnify auth falló: status=${res.status}, body=${txt}`);
-    throw new Error(`Token de emnify inválido (${res.status}). Ve a emnify Portal → Integrations → Application Tokens y verifica que el token sea correcto y esté activo.`);
-  }
-  const { auth_token } = await res.json();
-  if (!auth_token) throw new Error("emnify no devolvió auth_token");
-
-  cachedEmnifyJWT = { token: auth_token, expiresAt: Date.now() + 50 * 60 * 1000 };
-  console.log("emnify JWT cacheado OK");
-  return auth_token;
+function getEmnifyToken(): Promise<string> {
+  return emnifyAuth.getToken();
 }
 
 async function emnifyFetch(path: string, options: RequestInit = {}, baseUrl = EMNIFY_BASE) {
@@ -2508,6 +2491,9 @@ async function emnifyFetchRetry(path: string, options: RequestInit = {}, baseUrl
     try {
       return await emnifyFetch(path, options, baseUrl);
     } catch (e: any) {
+      // Authentication failures (including a 429 cooldown) are not retried here:
+      // retrying would hit /authenticate again and extend emnify's lockout.
+      if (isEmnifyAuthError(e)) throw e;
       const status = Number(/emnify (\d{3})/.exec(String(e?.message))?.[1] ?? 0);
       const retriable = status === 429 || status >= 500 || status === 0;
       if (!retriable || attempt >= EMNIFY_RETRY_DELAYS_MS.length) throw e;
